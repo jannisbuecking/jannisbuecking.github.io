@@ -1,16 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "../vendor/three/three.module.js";
-import { createCentrifuge, inspectionPose } from "../research-model.js";
+import { createCentrifuge, inspectionPose, RESEARCH_STOPS } from "../research-model.js";
 
 const colors = { metal: "#d9ded5", rim: "#586359", paper: "#fdfcf8", accent: "#28694b", balance: "#e7eae3" };
 
-test("six equal tubes occupy equally spaced positions with three opposing balance pairs", () => {
+test("three adjacent research tubes and three balance tubes occupy six equal slots", () => {
   const model = createCentrifuge(colors);
   try {
     assert.equal(model.tubeGroups.length, 6);
     assert.equal(model.tubeGroups.filter(tube => tube.userData.kind === "research").length, 3);
     assert.equal(model.tubeGroups.filter(tube => tube.userData.kind === "balance").length, 3);
+    assert.ok(model.tubeGroups.slice(0, 3).every(tube => tube.userData.kind === "research"));
+    assert.ok(model.tubeGroups.slice(3).every(tube => tube.userData.kind === "balance"));
     for (let index = 0; index < 6; index++) {
       const tube = model.tubeGroups[index];
       const next = model.tubeGroups[(index + 1) % 6];
@@ -21,6 +23,24 @@ test("six equal tubes occupy equally spaced positions with three opposing balanc
       assert.notEqual(tube.userData.kind, opposite.userData.kind);
       assert.deepEqual(tube.getObjectByName("tube-wall").geometry.parameters, opposite.getObjectByName("tube-wall").geometry.parameters);
       assert.deepEqual(tube.getObjectByName("liquid-column").geometry.parameters, opposite.getObjectByName("liquid-column").geometry.parameters);
+    }
+  } finally { model.dispose(); }
+});
+
+test("continuous scrolling brings each adjacent research tube forward without intermediate stops", () => {
+  const model = createCentrifuge(colors);
+  try {
+    RESEARCH_STOPS.forEach((progress, index) => {
+      const pose = inspectionPose(progress);
+      model.assembly.rotation.y = pose.rotorAngle;
+      model.assembly.updateMatrixWorld(true);
+      const position = model.tubeGroups[index].getWorldPosition(new THREE.Vector3());
+      assert.ok(Math.abs(position.x) < 1e-9);
+      assert.ok(position.z > 0);
+      assert.ok(Math.abs(pose.closeUp - 1) < 1e-9);
+    });
+    for (let progress = .37; progress < .95; progress += .01) {
+      assert.ok(inspectionPose(progress + .005).rotorAngle < inspectionPose(progress).rotorAngle);
     }
   } finally { model.dispose(); }
 });

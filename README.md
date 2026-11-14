@@ -90,9 +90,9 @@ ribosome schematic from the owner's
 Native page scrolling moves the three project cards through the ribosome, from
 the AUG start codon to the UAA stop codon. The scene animates only while visible.
 
-The **List** control shows all projects without animation. Visitors who prefer
-reduced motion start in List view; JavaScript-disabled browsers and short windows
-also retain the ordinary project list. In Explore view, focus the display and use
+The project animation starts automatically as the page scrolls, without a view
+toggle. Reduced-motion preferences, disabled JavaScript, and short windows
+automatically use the ordinary project cards. Focus the display and use
 Left/Right or Home/End to navigate. Project links remain reachable by Tab, and
 direct links such as `#project-mammoth` bring the relevant card into view.
 
@@ -100,29 +100,30 @@ direct links such as `#project-mammoth` bring the relevant card into view.
 
 The research section at `#research`, immediately after the introduction and
 above the science projects, uses a rigid six-position rotor with equal
-tubes spaced 60° apart. Research tubes occupy positions 1, 3, and 5; balancing
-tubes occupy positions 2, 4, and 6, giving three opposed pairs. Tube transforms,
+tubes spaced 60° apart. The research tubes are adjacent in positions 1, 2, and 3;
+balancing tubes occupy positions 4, 5, and 6, giving three opposed pairs. Tube transforms,
 dimensions, and fill levels remain fixed relative to the rotor throughout.
 
 The camera starts exactly overhead using an orthographic projection, showing
 only the six circular caps. It moves along a vertical arc to the side while the
-rotor stays still. Subsequent scrolling indexes the entire assembly around its
-vertical axis to bring each research tube forward. The side view zooms into the
+rotor stays still. Subsequent scrolling continuously turns the entire assembly
+around its vertical axis from Boston to UCSF to Heidelberg, without intermediate
+stops or balancing tubes passing between the research roles. The side view zooms into the
 front tube, with the full institution, dates, role, lab, and research summary
-printed on its curved label. The camera briefly pulls back during indexing,
-then returns to a close-up at each reading position. There is no separate
+printed on its curved label. The camera gently pulls back while passing between
+neighboring labels. There is no separate
 description panel. The same source text remains available to screen readers
-and in List view.
+and in the automatic static fallback.
 Upward scrolling reverses this sequence. Rendering stops while still or offscreen.
 
 This is an inspection view of a loaded rotor with the tubes at rest, not a
 simulation of operating-speed centrifugation. See the manufacturer's explanation
 of [swinging-bucket rotor positions](https://www.beckman.com/centrifuges/rotors/swinging-bucket).
 
-The three labeled navigation buttons and research tubes jump to a research role.
 Direct links include `#research-boston`, `#research-ucsf`, and
-`#research-heidelberg`. List view preserves all research text without animation;
-it is also the default for reduced motion and the fallback on short screens,
+`#research-heidelberg`. There are no view toggles or tube-selection controls;
+native page scrolling drives the sequence. An automatic static layout preserves
+all research text for reduced motion, short screens,
 when JavaScript is disabled, or when WebGL is unavailable. The renderer is
 Three.js 0.187.0, sourced from its npm release with the upstream MIT license.
 

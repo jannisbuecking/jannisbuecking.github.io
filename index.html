@@ -7,11 +7,11 @@
     <meta name="color-scheme" content="light dark">
     <title>Jannis Buecking</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="projects.css">
-    <link rel="stylesheet" href="research.css?v=tube-closeups">
+    <link rel="stylesheet" href="projects.css?v=continuous-scroll">
+    <link rel="stylesheet" href="research.css?v=continuous-scroll">
     <script src="contributions.js" defer></script>
-    <script src="projects.js" defer></script>
-    <script type="module" src="research.js?v=tube-closeups"></script>
+    <script src="projects.js?v=continuous-scroll" defer></script>
+    <script type="module" src="research.js?v=continuous-scroll"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -37,15 +37,11 @@
         </ul>
       </section>
 
-      <section class="section research-experience" id="research" aria-labelledby="research-title" data-view="explore">
+      <section class="section research-experience" id="research" aria-labelledby="research-title">
         <div class="research-journey" id="research-display">
           <div class="research-scene">
             <div class="research-heading">
               <div><p class="eyebrow">Across three labs</p><h2 id="research-title">Research experience</h2></div>
-              <div class="research-view-switch" role="group" aria-label="Research view" hidden>
-                <button type="button" data-research-view="explore" aria-pressed="true" aria-controls="research-display">Explore</button>
-                <button type="button" data-research-view="list" aria-pressed="false" aria-controls="research-display" aria-label="Research list without animation">List</button>
-              </div>
             </div>
             <div class="research-stage" role="region" aria-label="Six-tube centrifuge: three research tubes and three balancing tubes">
               <div class="research-visual" aria-label="Six-position centrifuge rotor"></div>
@@ -77,11 +73,6 @@
               </div>
             </div>
             <div class="research-controls" hidden>
-              <div class="research-tube-nav" role="group" aria-label="Focus a research tube">
-                <button type="button" data-research-index="0" aria-controls="research-boston">Boston</button>
-                <button type="button" data-research-index="1" aria-controls="research-ucsf">UCSF</button>
-                <button type="button" data-research-index="2" aria-controls="research-heidelberg">Heidelberg</button>
-              </div>
               <span class="research-scroll-cue">Scroll to change your perspective ↓</span>
             </div>
             <div class="research-progress" aria-hidden="true"><span></span></div>
@@ -89,7 +80,7 @@
         </div>
       </section>
 
-      <section id="projects" class="section rna-projects" data-view="rna" aria-labelledby="projects-title">
+      <section id="projects" class="section rna-projects" aria-labelledby="projects-title">
         <div class="rna-journey" id="projects-display">
           <div class="rna-scene">
             <div class="section-heading">
@@ -97,12 +88,8 @@
                 <p class="eyebrow">Selected work</p>
                 <h2 id="projects-title">Science projects</h2>
               </div>
-              <div class="project-view-switch" role="group" aria-label="Project view" hidden>
-                <button type="button" data-project-view="rna" aria-pressed="true" aria-controls="projects-display">Explore</button>
-                <button type="button" data-project-view="list" aria-pressed="false" aria-controls="projects-display" aria-label="List view without animation">List</button>
-              </div>
             </div>
-            <p id="project-navigation-help" class="sr-only">Scroll to move along the mRNA. When the project display is focused, use the left and right arrow keys to browse projects, or Home and End to jump to the first and last project. Choose List for a view without animation.</p>
+            <p id="project-navigation-help" class="sr-only">Scroll to move along the mRNA. When the project display is focused, use the left and right arrow keys to browse projects, or Home and End to jump to the first and last project.</p>
             <div class="rna-stage">
               <svg class="rna-ribosome" aria-hidden="true"><g class="rna-ribosome-shape"><path class="subunit-large" data-subunit="60S" d="M-178 -25 C-204 -54 -202 -111 -168 -142 C-155 -181 -108 -201 -67 -187 C-30 -217 24 -214 62 -188 C108 -204 158 -176 170 -141 C207 -122 212 -78 188 -48 C169 -20 128 -16 91 -25 C48 -32 28 -47 -9 -41 C-52 -35 -70 -17 -109 -16 C-137 -14 -160 -15 -178 -25 Z"/><path class="subunit-small" data-subunit="40S" d="M-164 24 C-183 9 -174 -19 -152 -25 C-129 -45 -96 -29 -91 -7 L-67 13 C-31 -4 10 3 35 13 C66 -3 106 5 119 29 C154 35 173 62 158 86 C143 111 109 117 88 117 C53 142 7 144 -23 126 C-58 141 -104 121 -115 97 C-151 101 -181 79 -177 54 C-176 42 -172 33 -164 24 Z"/></g></svg>
               <div class="rna-viewport" tabindex="0" role="region" aria-label="Science project explorer" aria-describedby="project-navigation-help">

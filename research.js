@@ -1,5 +1,5 @@
 import * as THREE from "./vendor/three/three.module.js";
-import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS } from "./research-model.js?v=tube-closeups";
+import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=continuous-scroll";
 
 (() => {
   const section = document.getElementById("research");
@@ -13,16 +13,13 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS } from ".
   const controls = section.querySelector(".research-controls");
   const progressBar = section.querySelector(".research-progress span");
   const cue = section.querySelector(".research-scroll-cue");
-  const nav = [...section.querySelectorAll("[data-research-index]")];
-  const viewSwitch = section.querySelector(".research-view-switch");
-  const viewButtons = [...viewSwitch.querySelectorAll("button")];
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const theme = window.matchMedia("(prefers-color-scheme: dark)");
   const sizeReference = document.createElement("div");
   sizeReference.className = "research-size-reference";
   sizeReference.setAttribute("aria-hidden", "true");
   scene.append(sizeReference);
-  const stops = [.38, .65, .92];
+  const stops = RESEARCH_STOPS;
   const experiences = articles.map(article => {
     const paragraphs = [...article.querySelectorAll(".research-paper p")];
     const [role, lab] = paragraphs[0].textContent.trim().split(" · ");
@@ -34,7 +31,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS } from ".
   });
   const clamp = (value, low = 0, high = 1) => Math.max(low, Math.min(high, value));
   let enabled = false, unavailable = false, queued = false, layoutQueued = false;
-  let width = 0, stableHeight = 0, distance = 0, current = 0, savedProgress = 0;
+  let width = 0, stableHeight = 0, distance = 0, current = 0;
   let ready = false, lastTime = 0, renderer, world, camera, model;
   let canvasWidth = 0, canvasHeight = 0;
 
@@ -117,7 +114,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS } from ".
       renderer.toneMappingExposure = 1.1;
       renderer.setClearColor(0x000000, 0);
       renderer.domElement.setAttribute("role", "img");
-      renderer.domElement.setAttribute("aria-label", "Six equally spaced, upright tubes in a centrifuge rotor. Scroll to zoom in and read the full research details on tubes 1, 3, and 5, or choose List for a text view.");
+      renderer.domElement.setAttribute("aria-label", "Six equally spaced, upright tubes in a centrifuge rotor. Scroll to zoom in and read the full research details on adjacent tubes 1, 2, and 3.");
       renderer.domElement.setAttribute("aria-describedby", articles.map(article => article.id).join(" "));
       visual.append(renderer.domElement);
       world = new THREE.Scene();
@@ -130,18 +127,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS } from ".
       world.add(fill);
       camera = new THREE.OrthographicCamera(-5, 5, 5, -5, .1, 100);
       buildModel();
-      const raycaster = new THREE.Raycaster();
-      renderer.domElement.addEventListener("click", event => {
-        const rect = renderer.domElement.getBoundingClientRect();
-        const pointer = new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
-        raycaster.setFromCamera(pointer, camera);
-        const hits = raycaster.intersectObjects(model.tubeGroups, true);
-        if (!hits.length) return;
-        let object = hits[0].object;
-        while (object && object.userData.researchIndex === undefined) object = object.parent;
-        if (object?.userData.researchIndex >= 0) goToTube(object.userData.researchIndex);
-      });
-      renderer.domElement.addEventListener("webglcontextlost", event => { event.preventDefault(); unavailable = true; setView("list"); });
+      renderer.domElement.addEventListener("webglcontextlost", event => { event.preventDefault(); unavailable = true; refreshAnimation(); });
       return true;
     } catch {
       renderer?.dispose();
@@ -168,7 +154,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS } from ".
     reset();
     width = section.clientWidth;
     stableHeight = sizeReference.getBoundingClientRect().height;
-    if (section.dataset.view !== "explore" || unavailable) return;
+    if (motion.matches || unavailable) return;
     const headingHeight = heading.getBoundingClientRect().height + 24;
     const stageHeight = stableHeight - headingHeight - (width <= 760 ? 98 : 76);
     if (width < 260 || stageHeight < 440 || !initializeRenderer()) return;
@@ -226,7 +212,6 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS } from ".
       if (depth > front) { front = depth; nearest = index; }
     }
     articles.forEach((article, index) => article.classList.toggle("is-current", nearest === index));
-    nav.forEach((button, index) => button.setAttribute("aria-pressed", String(tilt > .8 && nearest === index)));
     cue.textContent = tilt < .98 ? "Scroll to lower the viewpoint ↓" : `${String(nearest + 1).padStart(2, "0")} / 03 · ${nearest === 2 ? "Scroll to continue" : "Scroll to the next research tube"} ↓`;
     progressBar.style.transform = `scaleX(${progress})`;
     section.dataset.phase = tilt < .02 ? "top" : tilt < .98 ? "turning" : "side";
@@ -256,27 +241,19 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS } from ".
     window.scrollTo({ top: window.scrollY + journey.getBoundingClientRect().top + progress * distance, behavior: immediate || motion.matches ? "instant" : "smooth" });
     request();
   }
-  function setView(view) {
-    if (view === section.dataset.view) return;
+  function refreshAnimation() {
     const before = section.getBoundingClientRect();
     const reading = before.top < window.innerHeight && before.bottom > 0;
-    if (enabled) savedProgress = targetProgress();
-    section.dataset.view = view;
-    viewButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.researchView === view)));
-    reset(); layout();
-    if (reading) window.scrollTo({ top: window.scrollY + section.getBoundingClientRect().top + (enabled ? savedProgress * distance : 0), behavior: "instant" });
-    else if (before.bottom <= 0) window.scrollBy({ top: section.getBoundingClientRect().bottom - before.bottom, behavior: "instant" });
-    ready = false; request();
+    layout();
+    if (!enabled) {
+      if (reading) window.scrollTo({ top: window.scrollY + section.getBoundingClientRect().top, behavior: "instant" });
+      else if (before.bottom <= 0) window.scrollBy({ top: section.getBoundingClientRect().bottom - before.bottom, behavior: "instant" });
+    }
+    ready = false;
+    request();
   }
-  nav.forEach((button, index) => button.addEventListener("click", () => goToTube(index)));
-  viewButtons.forEach(button => button.addEventListener("click", () => setView(button.dataset.researchView)));
   const routeHash = () => { const index = articles.findIndex(article => `#${article.id}` === location.hash); if (index >= 0) goToTube(index, true); };
-  if (motion.matches) {
-    section.dataset.view = "list";
-    viewButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.researchView === "list")));
-  }
-  viewSwitch.hidden = false;
-  motion.addEventListener("change", () => { if (motion.matches) setView("list"); });
+  motion.addEventListener("change", refreshAnimation);
   theme.addEventListener("change", () => { if (model) { buildModel(); request(); } });
   window.addEventListener("scroll", request, { passive: true });
   window.addEventListener("resize", scheduleLayout, { passive: true });

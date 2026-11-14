@@ -3,12 +3,6 @@
 .rna-scene { position: relative; isolation: isolate; }
 .rna-size-reference { position: absolute; top: 0; left: 0; width: 0; height: 100vh; height: 100svh; visibility: hidden; pointer-events: none; contain: strict; }
 .rna-projects .section-heading { align-items: center; padding-top: 1.5rem; }
-.project-view-switch { display: flex; gap: 3px; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
-.project-view-switch[hidden] { display: none; }
-.project-view-switch button { min-height: 36px; min-width: 66px; padding: .5rem .8rem; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font: 600 .75rem system-ui, sans-serif; cursor: pointer; }
-.project-view-switch button[aria-pressed="true"] { background: var(--tag); color: var(--accent); }
-.project-view-switch button:hover { color: var(--accent); }
-.project-view-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .rna-viewport { position: relative; }
 .rna-viewport:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 .rna-track { gap: 1rem; border: 0; }
@@ -45,7 +39,6 @@
   .rna-projects .project { padding: 1.25rem; }
   .rna-projects .project + .project { padding: 1.25rem; border: 1px solid var(--border); }
   .rna-projects .project-category { margin-bottom: 1rem; }
-  .project-view-switch button { min-height: 40px; min-width: 58px; }
 }
 @media (max-width: 700px) {
   .rna-projects.is-enhanced .nucleotide-mark { width: 72px; height: 72px; font-size: 34px; }

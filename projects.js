@@ -17,8 +17,6 @@
   const shape = section.querySelector(".rna-ribosome-shape");
   const primeStart = section.querySelector(".rna-start");
   const primeEnd = section.querySelector(".rna-end");
-  const controls = section.querySelector(".project-view-switch");
-  const buttons = [...controls.querySelectorAll("button")];
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const sizeReference = document.createElement("div");
   sizeReference.className = "rna-size-reference";
@@ -28,7 +26,7 @@
   let enabled = false, queued = false, layoutQueued = false;
   let width = 0, sceneHeight = 0, baseline = 0, center = 0, scale = 1;
   let startCamera = 0, travel = 0, distance = 0, camera = 0;
-  let cameraReady = false, lastTime = 0, phase = 0, savedProgress = 0;
+  let cameraReady = false, lastTime = 0, phase = 0;
   let nodes = [], phosphates = [], projectNodes = [], firstX = 0, lastX = 0;
 
   function svg(tag, attributes) {
@@ -62,7 +60,7 @@
     reset();
     width = section.clientWidth;
     sceneHeight = sizeReference.getBoundingClientRect().height;
-    if (section.dataset.view !== "rna") return;
+    if (motion.matches) return;
     const mobile = width <= 700;
     const cardWidth = mobile ? Math.max(230, width - 40) : Math.min(500, Math.max(330, width * .44));
     // Measure actual wrapped content before deciding whether the scene fits.
@@ -149,7 +147,7 @@
   }
   function frame(time) {
     queued = false;
-    if (!enabled || section.dataset.view !== "rna") return;
+    if (!enabled) return;
     const p = progress();
     const bounds = scene.getBoundingClientRect();
     const visible = bounds.bottom > 0 && bounds.top < window.innerHeight && !document.hidden;
@@ -188,17 +186,14 @@
     window.scrollTo({ top: journey.getBoundingClientRect().top + window.scrollY + fraction * distance, behavior: immediate || motion.matches ? "instant" : "smooth" });
     request();
   }
-  function setView(view) {
-    if (section.dataset.view === view) return;
+  function refreshAnimation() {
     const before = section.getBoundingClientRect();
-    const readingProjects = before.top < window.innerHeight && before.bottom > 0;
-    if (enabled) savedProgress = progress();
-    section.dataset.view = view;
-    buttons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.projectView === view)));
-    reset();
+    const reading = before.top < window.innerHeight && before.bottom > 0;
     layout();
-    if (readingProjects) window.scrollTo({ top: section.getBoundingClientRect().top + window.scrollY + (enabled ? savedProgress * distance : 0), behavior: "instant" });
-    else if (before.bottom <= 0) window.scrollBy({ top: section.getBoundingClientRect().bottom - before.bottom, behavior: "instant" });
+    if (!enabled) {
+      if (reading) window.scrollTo({ top: window.scrollY + section.getBoundingClientRect().top, behavior: "instant" });
+      else if (before.bottom <= 0) window.scrollBy({ top: section.getBoundingClientRect().bottom - before.bottom, behavior: "instant" });
+    }
     cameraReady = false;
     request();
   }
@@ -215,12 +210,6 @@
     goToCard(cards[clamp(destinations[event.key], 0, cards.length - 1)].id);
   });
   const routeHash = () => { if (location.hash.startsWith("#project-")) goToCard(location.hash.slice(1), true); };
-  buttons.forEach(button => button.addEventListener("click", () => setView(button.dataset.projectView)));
-  if (motion.matches) {
-    section.dataset.view = "list";
-    buttons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.projectView === "list")));
-  }
-  controls.hidden = false;
   window.addEventListener("scroll", request, { passive: true });
   window.addEventListener("resize", scheduleLayout, { passive: true });
   window.addEventListener("hashchange", routeHash);
@@ -228,7 +217,7 @@
   // the pinned journey after its card has already been centered.
   window.addEventListener("load", () => requestAnimationFrame(routeHash), { once: true });
   document.addEventListener("visibilitychange", request);
-  motion.addEventListener("change", () => { if (motion.matches) setView("list"); else request(); });
+  motion.addEventListener("change", refreshAnimation);
   if (window.ResizeObserver) {
     const observer = new ResizeObserver(scheduleLayout);
     observer.observe(section);

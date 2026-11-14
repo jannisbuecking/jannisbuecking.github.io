@@ -4,7 +4,8 @@ import * as THREE from "./vendor/three/three.module.js";
 
 export const SLOT_COUNT = 6;
 export const SLOT_RADIUS = 2.8;
-export const RESEARCH_SLOTS = [0, 2, 4];
+export const RESEARCH_SLOTS = [0, 1, 2];
+export const RESEARCH_STOPS = [.36, .66, .96];
 export const CAP_TOP = 1.781;
 
 const tau = Math.PI * 2;
@@ -13,9 +14,9 @@ const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
 
 export function inspectionPose(progress) {
   const tilt = smooth((progress - .1) / .22);
-  const rotorAngle = -tau / 3 * (smooth((progress - .44) / .14) + smooth((progress - .7) / .14));
-  const indexing = start => Math.sin(Math.PI * clamp((progress - start) / .14)) ** 2;
-  const closeUp = smooth((progress - .26) / .1) * (1 - .65 * indexing(.44)) * (1 - .65 * indexing(.7));
+  const sweep = smooth((progress - RESEARCH_STOPS[0]) / (RESEARCH_STOPS[2] - RESEARCH_STOPS[0]));
+  const rotorAngle = -tau / 3 * sweep;
+  const closeUp = smooth((progress - .26) / .1) * (1 - .35 * Math.sin(Math.PI * 2 * sweep) ** 2);
   return { tilt, cameraAngle: tilt * Math.PI / 2, rotorAngle, closeUp };
 }
 
