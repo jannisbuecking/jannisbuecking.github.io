@@ -8,8 +8,10 @@
     <title>Jannis Buecking</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="projects.css">
+    <link rel="stylesheet" href="research.css">
     <script src="contributions.js" defer></script>
     <script src="projects.js" defer></script>
+    <script src="research.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -173,36 +175,69 @@
             <h2 id="experience-title">Experience &amp; education</h2>
           </div>
         </div>
-        <div class="experience-grid">
-          <section class="experience-group" aria-labelledby="research-title">
-            <h3 id="research-title">Research</h3>
-            <ol class="experience-list">
-              <li>
-                <span class="entry-year">2026</span>
-                <div>
-                  <h4>Boston Children’s Hospital</h4>
+        <section class="research-experience" id="research" aria-labelledby="research-title" data-view="explore">
+          <div class="research-journey" id="research-display">
+            <div class="research-scene">
+              <div class="research-heading">
+                <div><p class="eyebrow">Across three labs</p><h3 id="research-title">Research experience</h3></div>
+                <div class="research-view-switch" role="group" aria-label="Research view" hidden>
+                  <button type="button" data-research-view="explore" aria-pressed="true" aria-controls="research-display">Explore</button>
+                  <button type="button" data-research-view="list" aria-pressed="false" aria-controls="research-display" aria-label="Research list without animation">List</button>
+                </div>
+              </div>
+              <div class="research-stage" role="region" aria-label="Scroll through three research experiences on centrifuge tubes">
+                <div class="research-floor-shadow" aria-hidden="true"></div>
+                <div class="research-machine" aria-hidden="true"><span>RESEARCH / 03</span><i></i></div>
+                <div class="research-rotor" aria-hidden="true"><div class="research-rotor-disc"></div><div class="research-rotor-hub"></div></div>
+                <div class="research-tubes">
+                  <article class="research-tube" id="research-boston">
+                    <div class="research-glass" aria-hidden="true"><span class="research-liquid"></span><span class="research-graduations"></span></div>
+                    <button type="button" class="research-cap" aria-label="Focus Boston Children’s research experience"></button>
+                    <div class="research-compact-label" aria-hidden="true"><span>2026</span><strong>Boston Children’s</strong><span>Walsh lab</span></div>
+                    <div class="research-paper">
+                      <span class="entry-year">2026</span>
+                      <h4 class="research-institution">Boston Children’s Hospital</h4>
                   <p class="entry-role">Visiting Research Fellow · Walsh lab</p>
                   <p>Single-nucleus and spatial genomics in neurofibromatosis type 1.</p>
-                </div>
-              </li>
-              <li>
-                <span class="entry-year">2023</span>
-                <div>
-                  <h4>University of California, San Francisco</h4>
+                    </div>
+                  </article>
+                  <article class="research-tube" id="research-ucsf">
+                    <div class="research-glass" aria-hidden="true"><span class="research-liquid"></span><span class="research-graduations"></span></div>
+                    <button type="button" class="research-cap" aria-label="Focus UC San Francisco research experience"></button>
+                    <div class="research-compact-label" aria-hidden="true"><span>2023</span><strong>UC San Francisco</strong><span>Kampmann lab</span></div>
+                    <div class="research-paper">
+                      <span class="entry-year">2023</span>
+                      <h4 class="research-institution">University of California, San Francisco</h4>
                   <p class="entry-role">Visiting Research Fellow · Kampmann lab</p>
                   <p>CRISPR screens of tau aggregation in iPSC-derived neurons.</p>
-                </div>
-              </li>
-              <li>
-                <span class="entry-year">2021–present</span>
-                <div>
-                  <h4>Institute of Human Genetics Heidelberg</h4>
+                    </div>
+                  </article>
+                  <article class="research-tube" id="research-heidelberg">
+                    <div class="research-glass" aria-hidden="true"><span class="research-liquid"></span><span class="research-graduations"></span></div>
+                    <button type="button" class="research-cap" aria-label="Focus Heidelberg research experience"></button>
+                    <div class="research-compact-label" aria-hidden="true"><span>2021–present</span><strong>Heidelberg</strong><span>Schaaf &amp; Laugsch</span></div>
+                    <div class="research-paper">
+                      <span class="entry-year">2021–present</span>
+                      <h4 class="research-institution">Institute of Human Genetics Heidelberg</h4>
                   <p class="entry-role">Medical doctoral candidate · Schaaf &amp; Laugsch labs</p>
                   <p>MAGEL2, cortical development, and multi-omics.</p>
+                    </div>
+                  </article>
                 </div>
-              </li>
-            </ol>
-          </section>
+              </div>
+              <div class="research-controls" hidden>
+                <div class="research-tube-nav" role="group" aria-label="Focus a research tube">
+                  <button type="button" data-research-index="0" aria-controls="research-boston">Boston</button>
+                  <button type="button" data-research-index="1" aria-controls="research-ucsf">UCSF</button>
+                  <button type="button" data-research-index="2" aria-controls="research-heidelberg">Heidelberg</button>
+                </div>
+                <span class="research-scroll-cue">Scroll to change your perspective ↓</span>
+              </div>
+              <div class="research-progress" aria-hidden="true"><span></span></div>
+            </div>
+          </div>
+        </section>
+        <div class="experience-grid">
           <section class="experience-group" aria-labelledby="education-title">
             <h3 id="education-title">Education</h3>
             <ol class="experience-list">

@@ -15,6 +15,7 @@ GitHub profile links.
 - `index.html`: page content and metadata.
 - `styles.css`: layout, colors, and light/dark appearance.
 - `projects.css` and `projects.js`: the scroll-driven mRNA and ribosome project explorer.
+- `research.css` and `research.js`: the centrifuge journey from top view to side view and through the three research tubes.
 - `contributions.js`: interactive contribution calendar with day tooltips and arrow-key navigation.
 - `data/contributions.json`: saved public GitHub contribution data for local preview and fallback.
 - `scripts/update_contributions.py`: refreshes contribution data using Python's standard library.
@@ -92,3 +93,17 @@ reduced motion start in List view; JavaScript-disabled browsers and short window
 also retain the ordinary project list. In Explore view, focus the display and use
 Left/Right or Home/End to navigate. Project links remain reachable by Tab, and
 direct links such as `#project-mammoth` bring the relevant card into view.
+
+## Research centrifuge
+
+The research section at `#research` starts with an overhead view of all three
+research tubes. Native page scrolling tilts the centrifuge into a side view,
+then brings Boston, UCSF, and Heidelberg to the front, with reading pauses
+between turns. The animation reverses when scrolling upward and stops drawing
+when the scene is still or offscreen.
+
+The three labeled navigation buttons and tube caps jump to a research role.
+Direct links include `#research-boston`, `#research-ucsf`, and
+`#research-heidelberg`. List view preserves all research text without animation;
+it is also the default for reduced motion and the fallback on short screens or
+when JavaScript is disabled.
