@@ -151,7 +151,7 @@ Three.js 0.187.0, sourced from its npm release with the upstream MIT license.
 Run the geometry regression checks with:
 
 ```sh
-node --test tests/research-model.test.mjs
+node --test tests/*.test.mjs
 ```
 
 The checks cover the six-slot geometry and opposing pairs, rigid tube poses
@@ -160,3 +160,19 @@ the ordering of overhead alignment, cap opening, descent, and scene handoff,
 consistency between pellet grain coordinates and the molecular morph endpoints,
 unique ownership for all 81 components, and continuous circle-to-contour geometry.
 They also run before each deployment.
+
+## Clinical room concept previews
+
+Two separate scrollable prototypes are published alongside the main website:
+
+- [Microscope → clinical laboratory](https://jannisbuecking.github.io/previews/clinical-laboratory.html): pull back from the optical field into a cutaway laboratory, then approach three workstation clipboards.
+- [Monitor → consultation room](https://jannisbuecking.github.io/previews/clinical-consultation.html): pull back from the molecular image on a monitor, then open and inspect three folders on the desk.
+
+Both use the site's existing Zomba, Great Ormond Street, and UT Southwestern
+clinical entries. The facts are in `previews/clinical-data.js`; each page also
+contains an accessible static copy. The main homepage remains the existing site
+while these concepts are compared. Scroll upward to reverse either sequence.
+Direct links `#zomba`, `#london`, and `#dallas` approach the respective records.
+Reduced motion, disabled JavaScript, short windows, and unavailable WebGL use the
+static entries. The room checks verify optical visibility, legible camera framing,
+unobstructed open records, and rigid furniture throughout forward/reverse movement.
