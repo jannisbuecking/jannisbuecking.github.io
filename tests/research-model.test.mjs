@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "../vendor/three/three.module.js";
-import { createCentrifuge, inspectionPose, molecularPose, molecularOwners, pelletComponent, unfoldPoint, samplePolygon, circleToShape, RESEARCH_STOPS } from "../research-model.js";
+import { createCentrifuge, inspectionPose, openingRotation, molecularPose, molecularOwners, pelletComponent, unfoldPoint, samplePolygon, circleToShape, EXPERIENCE_SLOTS, RESEARCH_STOPS } from "../research-model.js";
 
 const colors = { metal: "#d9ded5", rim: "#586359", paper: "#fdfcf8", accent: "#28694b", balance: "#e7eae3" };
 
@@ -44,14 +44,17 @@ test("molecular particles originate at the modeled pellet grains and arrive exac
   } finally { model.dispose(); }
 });
 
-test("three adjacent research tubes and three balance tubes occupy six equal slots", () => {
+test("three adjacent research tubes, two education tubes, and the project sample occupy six equal slots", () => {
   const model = createCentrifuge(colors);
   try {
     assert.equal(model.tubeGroups.length, 6);
     assert.equal(model.tubeGroups.filter(tube => tube.userData.kind === "research").length, 3);
-    assert.equal(model.tubeGroups.filter(tube => tube.userData.kind === "balance").length, 3);
+    assert.equal(model.tubeGroups.filter(tube => tube.userData.kind === "education").length, 2);
+    assert.equal(model.tubeGroups.filter(tube => tube.userData.kind === "projects").length, 1);
     assert.ok(model.tubeGroups.slice(0, 3).every(tube => tube.userData.kind === "research"));
-    assert.ok(model.tubeGroups.slice(3).every(tube => tube.userData.kind === "balance"));
+    assert.equal(model.tubeGroups[3].userData.kind, "projects");
+    assert.ok(model.tubeGroups.slice(4).every(tube => tube.userData.kind === "education"));
+    assert.deepEqual(EXPERIENCE_SLOTS.map(slot => model.tubeGroups[slot].userData.researchIndex), [0, 1, 2, 3, 4]);
     for (let index = 0; index < 6; index++) {
       const tube = model.tubeGroups[index];
       const next = model.tubeGroups[(index + 1) % 6];
@@ -59,29 +62,42 @@ test("three adjacent research tubes and three balance tubes occupy six equal slo
       const cosine = tube.position.dot(next.position) / (tube.position.length() * next.position.length());
       assert.ok(Math.abs(Math.acos(cosine) - Math.PI / 3) < 1e-9);
       assert.ok(tube.position.clone().add(opposite.position).length() < 1e-9);
-      assert.notEqual(tube.userData.kind, opposite.userData.kind);
       assert.deepEqual(tube.getObjectByName("tube-wall").geometry.parameters, opposite.getObjectByName("tube-wall").geometry.parameters);
       assert.deepEqual(tube.getObjectByName("liquid-column").geometry.parameters, opposite.getObjectByName("liquid-column").geometry.parameters);
     }
   } finally { model.dispose(); }
 });
 
-test("continuous scrolling brings each adjacent research tube forward without intermediate stops", () => {
+test("continuous scrolling brings all five research and education labels forward", () => {
   const model = createCentrifuge(colors);
   try {
     RESEARCH_STOPS.forEach((progress, index) => {
       const pose = inspectionPose(progress);
       model.assembly.rotation.y = pose.rotorAngle;
       model.assembly.updateMatrixWorld(true);
-      const position = model.tubeGroups[index].getWorldPosition(new THREE.Vector3());
+      const position = model.tubeGroups[EXPERIENCE_SLOTS[index]].getWorldPosition(new THREE.Vector3());
       assert.ok(Math.abs(position.x) < 1e-9);
       assert.ok(position.z > 0);
       assert.ok(Math.abs(pose.closeUp - 1) < 1e-9);
     });
-    for (let progress = RESEARCH_STOPS[0] + .01; progress < RESEARCH_STOPS[2] - .01; progress += .01) {
+    for (let progress = RESEARCH_STOPS[0] + .01; progress < RESEARCH_STOPS.at(-1) - .01; progress += .01) {
       assert.ok(inspectionPose(progress + .005).rotorAngle < inspectionPose(progress).rotorAngle);
     }
   } finally { model.dispose(); }
+});
+
+test("the opening rotation settles overhead without moving tubes relative to the rotor", () => {
+  for (const angle of [0, .8, -2, Math.PI, Math.PI * 4.2]) {
+    assert.ok(Math.abs(Math.sin(openingRotation(0, angle) - angle)) < 1e-9);
+    assert.ok(Math.abs(openingRotation(.056, angle)) < 1e-9);
+    assert.ok(Math.abs(openingRotation(.5, angle)) < 1e-9);
+    for (let step = 0; step < 56; step++) {
+      const progress = step / 1000;
+      assert.equal(inspectionPose(progress).cameraAngle, 0);
+      assert.ok(Math.abs(openingRotation(progress + .001, angle)) <= Math.abs(openingRotation(progress, angle)) + 1e-9);
+      assert.ok(Math.abs(openingRotation(progress + 1e-7, angle) - openingRotation(progress, angle)) < .00002);
+    }
+  }
 });
 
 test("camera tilt never rotates the rotor and subsequent indexing preserves all tube poses", () => {

@@ -5,13 +5,21 @@ import * as THREE from "./vendor/three/three.module.js";
 export const SLOT_COUNT = 6;
 export const SLOT_RADIUS = 2.8;
 export const RESEARCH_SLOTS = [0, 1, 2];
-export const RESEARCH_STOPS = [.2016, .3696, .5376];
+export const EDUCATION_SLOTS = [4, 5];
+export const EXPERIENCE_SLOTS = [...RESEARCH_SLOTS, ...EDUCATION_SLOTS];
+export const RESEARCH_STOPS = [.2016, .2856, .3696, .4536, .5376];
 export const SAMPLE_SLOT = 3;
 export const CAP_TOP = 1.781;
 
 const tau = Math.PI * 2;
 const clamp = value => Math.max(0, Math.min(1, value));
 const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
+
+// Settle a slow opening rotation before the camera leaves its overhead view.
+export function openingRotation(progress, angle) {
+  const shortest = Math.atan2(Math.sin(angle), Math.cos(angle));
+  return shortest * (1 - smooth(progress / .056));
+}
 
 export function molecularPose(progress) {
   return {
@@ -79,9 +87,13 @@ export function inspectionPose(progress) {
   const molecules = smooth((progress - .89) / .07);
   const handoff = smooth((progress - .94) / .06);
   const tilt = smooth((reading - .1) / .22) * (1 - rise);
-  const sweep = smooth((progress - RESEARCH_STOPS[0]) / (RESEARCH_STOPS[2] - RESEARCH_STOPS[0]));
-  const rotorAngle = -tau / 3 * sweep - tau / 6 * select;
-  const closeUp = smooth((reading - .26) / .1) * (1 - .35 * Math.sin(Math.PI * 2 * sweep) ** 2) * (1 - rise);
+  let index = 0;
+  while (index < RESEARCH_STOPS.length - 2 && progress > RESEARCH_STOPS[index + 1]) index++;
+  const between = smooth((progress - RESEARCH_STOPS[index]) / (RESEARCH_STOPS[index + 1] - RESEARCH_STOPS[index]));
+  const slot = EXPERIENCE_SLOTS[index] + (EXPERIENCE_SLOTS[index + 1] - EXPERIENCE_SLOTS[index]) * between;
+  const rotorAngle = -tau / 6 * (slot + (SAMPLE_SLOT - EXPERIENCE_SLOTS.at(-1)) * select);
+  const pullback = EXPERIENCE_SLOTS[index + 1] - EXPERIENCE_SLOTS[index] > 1 ? .55 : .35;
+  const closeUp = smooth((reading - .26) / .1) * (1 - pullback * Math.sin(Math.PI * between) ** 2) * (1 - rise);
   const focus = smooth((progress - .72) / .08);
   const phase = progress < .56 ? (tilt < .02 ? "top" : tilt < .98 ? "turning" : "side")
     : progress < .68 ? "return" : progress < .74 ? "sample" : progress < .80 ? "opening"
@@ -131,10 +143,10 @@ export function createCentrifuge(colors, textureFactory = () => null) {
 
   for (let slot = 0; slot < SLOT_COUNT; slot++) {
     const theta = slot * tau / SLOT_COUNT;
-    const researchIndex = RESEARCH_SLOTS.indexOf(slot);
+    const researchIndex = EXPERIENCE_SLOTS.indexOf(slot);
     const tube = new THREE.Group();
     tube.name = `tube-${slot + 1}`;
-    tube.userData = { slot, researchIndex, kind: researchIndex >= 0 ? "research" : "balance" };
+    tube.userData = { slot, researchIndex, kind: RESEARCH_SLOTS.includes(slot) ? "research" : EDUCATION_SLOTS.includes(slot) ? "education" : "projects" };
     tube.position.set(Math.sin(theta) * SLOT_RADIUS, 0, Math.cos(theta) * SLOT_RADIUS);
     tube.rotation.y = theta;
     assembly.add(tube);

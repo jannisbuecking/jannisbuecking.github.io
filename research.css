@@ -1,7 +1,7 @@
 .research-experience { position: relative; margin-bottom: clamp(3.5rem, 7vw, 6rem); }
 .research-scene { position: relative; isolation: isolate; }
 .research-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; padding-top: 1.5rem; }
-.research-heading h2 { margin: 0; font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 600; letter-spacing: -.035em; }
+.research-heading h1 { margin: 0; line-height: 1.2; font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 600; letter-spacing: -.035em; }
 .research-stage { position: relative; }
 .research-visual, .research-progress { display: none; }
 .research-tubes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
@@ -31,12 +31,12 @@
 @media (max-width: 760px) {
   .research-tubes { grid-template-columns: 1fr; gap: 1rem; }
   .research-heading { gap: .75rem; }
-  .research-heading h2 { font-size: 1.5rem; }
+  .research-heading h1 { font-size: 1.5rem; }
   .research-experience.is-enhanced .research-stage { bottom: 98px; }
   .research-experience.is-enhanced .research-controls { bottom: 20px; }
   .research-scroll-cue { font-size: .65rem; }
 }
 @media (max-width: 420px) {
   .research-heading { align-items: start; }
-  .research-heading h2 { font-size: 1.35rem; }
+  .research-heading h1 { font-size: 1.35rem; }
 }

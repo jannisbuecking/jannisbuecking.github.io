@@ -8,7 +8,7 @@ portal. It uses static HTML, CSS, and JavaScript, with no installation or build
 step. The research and clinical-room illustrations use a locally vendored Three.js renderer.
 
 The page also includes publications, concise research and education entries,
-clinical electives, teaching experience, and Google Scholar, LinkedIn, and
+clinical electives, and Google Scholar, LinkedIn, and
 GitHub profile links.
 
 ## Edit the site
@@ -16,7 +16,7 @@ GitHub profile links.
 - `index.html`: page content and metadata.
 - `styles.css`: layout, colors, and light/dark appearance.
 - `projects.css` and `projects.js`: the scroll-driven mRNA and ribosome project explorer.
-- `research.css`, `research.js`, and `research-model.js`: the six-tube 3D rotor, scroll-driven inspection camera, and research descriptions.
+- `research.css`, `research.js`, and `research-model.js`: the six-tube 3D rotor, scroll-driven inspection camera, and research/education descriptions.
 - `clinical.css`, `clinical.js`, and `clinical-snapshot.js`: the live RNA-to-monitor handoff and Clinic experience.
 - `desk-phone.css`, `desk-phone.js`, and `phone-geometry.js`: the desk iPhone, interactive projected HTML screen, and contact links.
 - `previews/clinical-room-model.js` and `previews/clinical-textures.js`: shared room geometry and document textures for the integrated room and concept previews.
@@ -78,11 +78,11 @@ python3 scripts/update_contributions.py
 
 ## Background and publication details
 
-Research, education, clinical, and teaching entries are condensed from the
+Research, education, and clinical entries are condensed from the
 owner-provided CV screenshots. The publication list was checked against the
 owner's [Google Scholar profile](https://scholar.google.com/citations?hl=en&user=bZB3VLoAAAAJ)
 on 14 November 2026. Each entry links to its DOI or Scholar record, with
-preprints and the conference abstract labeled separately. These entries are
+preprints labeled separately. These entries are
 edited in `index.html`; only the GitHub contribution calendar updates automatically.
 
 ## Animated science projects
@@ -101,24 +101,25 @@ direct links such as `#project-mammoth` bring the relevant card into view.
 
 ## Research centrifuge
 
-The research section at `#research`, immediately after the introduction and
-above the science projects, uses a rigid six-position rotor with equal
-tubes spaced 60° apart. The research tubes are adjacent in positions 1, 2, and 3;
-the other three tubes occupy positions 4, 5, and 6, giving three opposed pairs.
+The page opens directly on the centrifuge at `#research`, above the science
+projects. Its rigid six-position rotor has equal tubes spaced 60° apart.
+The research tubes are adjacent in positions 1, 2, and 3; Harvard and Heidelberg
+education occupy positions 5 and 6. Position 4 holds the project sample.
 Tube transforms and dimensions remain fixed relative to the rotor throughout.
 
 The camera starts exactly overhead using an orthographic projection, showing
-only the six circular caps. It moves along a vertical arc to the side while the
-rotor stays still. Subsequent scrolling continuously turns the entire assembly
-around its vertical axis from Boston to UCSF to Heidelberg, without intermediate
-stops or balancing tubes passing between the research roles. The side view zooms into the
+only the six circular caps. A slow idle rotation runs while this opening view is
+visible; the first scroll settles it with the first research tube aligned before
+the camera moves along a vertical arc to the side. Subsequent scrolling turns the entire assembly
+around its vertical axis from Boston to UCSF to Heidelberg, then Harvard and
+Heidelberg University. The three research roles remain adjacent. The side view zooms into the
 front tube, with the full institution, dates, role, lab, and research summary
 printed on its curved label. The camera gently pulls back while passing between
 neighboring labels. There is no separate
 description panel. The same source text remains available to screen readers
 and in the automatic static fallback.
-After the third role, the camera pulls back and returns overhead before the rotor
-indexes one additional position. Tube four, labeled **Projects**, opens: only its
+After the fifth research/education label, the camera pulls back and returns overhead before the rotor
+indexes back to the project sample. Tube four, labeled **Projects**, opens: only its
 cap lifts and moves aside. The camera centers over its opening and descends toward
 a modeled pellet in the conical tip. Liquid is hidden during this illustrative
 scale change so the pellet remains visible. Its 100 modeled grains are projected
@@ -137,17 +138,17 @@ scroll-driven morph state; reversing the scroll folds the components back into
 their original pellet positions.
 
 The complete sequence reverses with upward scrolling. Research rendering stops
-while still or offscreen. The transition is enabled only when both animated
+while still or offscreen, except for the slow opening rotation. The transition is enabled only when both animated
 sections fit the viewport; otherwise the existing independent sections remain.
 
-This is an inspection view of a loaded rotor with the tubes at rest, not a
-simulation of operating-speed centrifugation. See the manufacturer's explanation
+This is an illustrative inspection view of a loaded rotor, with a slow opening
+rotation and scroll-driven indexing. See the manufacturer's explanation
 of [swinging-bucket rotor positions](https://www.beckman.com/centrifuges/rotors/swinging-bucket).
 
 Direct links include `#research-boston`, `#research-ucsf`, and
-`#research-heidelberg`. There are no view toggles or tube-selection controls;
+`#research-heidelberg`, `#education-harvard`, and `#education-heidelberg`. There are no view toggles or tube-selection controls;
 native page scrolling drives the sequence. An automatic static layout preserves
-all research text for reduced motion, short screens,
+all research and education text for reduced motion, short screens,
 when JavaScript is disabled, or when WebGL is unavailable. The renderer is
 Three.js 0.187.0, sourced from its npm release with the upstream MIT license.
 
@@ -179,7 +180,7 @@ Scrolling holds the camera on the clipboard and turns its sheets over the top
 clip: Zomba, Great Ormond Street, then UT Southwestern.
 Their text comes directly from the clinical entries in `index.html`, which also
 serve as the accessible static fallback. Clinical experience is no longer repeated
-in the later education/teaching grid. Upward scrolling turns the sheets back in order and returns through the monitor
+in a separate background section. Upward scrolling turns the sheets back in order and returns through the monitor
 into the live RNA sequence.
 
 The final scroll chapter approaches the smaller iPhone lying on

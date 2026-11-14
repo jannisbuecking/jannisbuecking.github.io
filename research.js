@@ -1,6 +1,6 @@
 import * as THREE from "./vendor/three/three.module.js";
 import "./projects.js?v=full-clinical";
-import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=pellet-shapes";
+import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openingRotation, EXPERIENCE_SLOTS, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=centrifuge-first";
 
 (() => {
   const section = document.getElementById("research");
@@ -35,7 +35,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEA
   let enabled = false, unavailable = false, queued = false, layoutQueued = false, linked = false;
   let width = 0, stableHeight = 0, distance = 0, current = 0;
   let ready = false, lastTime = 0, renderer, world, camera, model;
-  let canvasWidth = 0, canvasHeight = 0;
+  let canvasWidth = 0, canvasHeight = 0, idleAngle = 0, bridgeProgress;
 
   function palette() {
     const style = getComputedStyle(document.documentElement);
@@ -56,7 +56,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEA
         ctx.font = "600 90px system-ui, sans-serif";
         ctx.fillText(String(slot + 1).padStart(2, "0"), 128, 142);
         ctx.font = "500 31px system-ui, sans-serif";
-        ctx.fillText(index >= 0 ? ["BOS", "UCSF", "HD"][index] : slot === 3 ? "PROJECTS" : "BAL", 128, 194);
+        ctx.fillText(index >= 0 ? ["BOS", "UCSF", "HD", "HARVARD", "HD UNI"][index] : slot === 3 ? "PROJECTS" : "BAL", 128, 194);
       } else {
         ctx.fillStyle = colors.paper;
         ctx.fillRect(0, 0, 1024, 1536);
@@ -120,7 +120,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEA
       renderer.toneMappingExposure = 1.1;
       renderer.setClearColor(0x000000, 0);
       renderer.domElement.setAttribute("role", "img");
-      renderer.domElement.setAttribute("aria-label", "Six upright tubes in a centrifuge rotor. Scroll to read research on tubes 1, 2, and 3, then return overhead, open tube 4, and descend into its pellet to enter the mRNA science projects.");
+      renderer.domElement.setAttribute("aria-label", "Six upright tubes in a centrifuge rotor. Scroll to read research on tubes 1, 2, and 3 and education on tubes 5 and 6, then return overhead, open tube 4, and descend into its pellet to enter the mRNA science projects.");
       renderer.domElement.setAttribute("aria-describedby", articles.map(article => article.id).join(" "));
       visual.append(renderer.domElement);
       world = new THREE.Scene();
@@ -146,6 +146,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEA
   function request() { if (!queued) { queued = true; requestAnimationFrame(frame); } }
   function reset() {
     enabled = false;
+    bridgeProgress = undefined;
     section.classList.remove("is-enhanced");
     journey.style.removeProperty("height");
     scene.style.removeProperty("--research-details");
@@ -177,7 +178,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEA
     section.style.setProperty("--lab-viewport", `${stableHeight}px`);
     controls.hidden = false;
     scene.style.setProperty("--research-stage-top", `${headingHeight}px`);
-    distance = Math.max(stableHeight * 4.2, 2800) / (linked ? .56 : 1);
+    distance = Math.max(stableHeight * 6.8, 4500) / (linked ? .56 : 1);
     journey.style.height = `${stableHeight + distance}px`;
     canvasWidth = canvasHeight = 0;
     if (wasPinned) window.scrollTo({ top: window.scrollY + journey.getBoundingClientRect().top + previous * distance, behavior: "instant" });
@@ -196,6 +197,9 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEA
   }
   function syncBridge(pose, origins) {
     if (!linked) return;
+    // Idle rotor frames do not change the downstream molecular scene.
+    if (pose.progress === bridgeProgress && !origins) return;
+    bridgeProgress = pose.progress;
     const transition = molecularPose(pose.progress);
     const rect = projects.getBoundingClientRect();
     const bridging = transition.particles > 0 && rect.top > .5;
@@ -236,7 +240,8 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEA
     camera.up.set(0, Math.sin(cameraAngle), -Math.cos(cameraAngle));
     camera.lookAt(0, targetY, targetZ);
     camera.updateProjectionMatrix();
-    model.assembly.rotation.y = rotorAngle;
+    const angle = rotorAngle + openingRotation(pose.progress, idleAngle);
+    model.assembly.rotation.y = angle;
     model.openSample(opening);
     world.updateMatrixWorld(true);
     camera.updateMatrixWorld(true);
@@ -259,15 +264,16 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEA
     heading.style.opacity = (1 - molecules).toFixed(4);
     controls.style.opacity = (1 - molecules).toFixed(4);
     let nearest = 0, front = -Infinity;
-    for (let index = 0; index < 3; index++) {
-      const depth = Math.cos(rotorAngle + RESEARCH_SLOTS[index] * Math.PI / 3);
+    for (let index = 0; index < articles.length; index++) {
+      const depth = Math.cos(angle + EXPERIENCE_SLOTS[index] * Math.PI / 3);
       if (depth > front) { front = depth; nearest = index; }
     }
     articles.forEach((article, index) => article.classList.toggle("is-current", nearest === index));
     const transitionCues = { return: "Scroll to return overhead ↓", sample: "Tube 04 · From sample to discovery ↓", opening: "Scroll to open the tube ↓", diving: "Into the pellet ↓", molecular: "From sample to molecular scale ↓", ribosome: "Science projects · mRNA → ribosome" };
-    cue.textContent = transitionCues[pose.phase] || (tilt < .98 ? "Scroll to lower the viewpoint ↓" : `${String(nearest + 1).padStart(2, "0")} / 03 · ${nearest === 2 ? "Scroll to continue" : "Scroll to the next research tube"} ↓`);
+    cue.textContent = transitionCues[pose.phase] || (tilt < .98 ? "Scroll to lower the viewpoint ↓" : `${String(nearest + 1).padStart(2, "0")} / 05 · ${nearest === 4 ? "Scroll to continue" : "Scroll to the next tube"} ↓`);
     progressBar.style.transform = `scaleX(${progress})`;
     section.dataset.phase = pose.phase;
+    section.dataset.rotorAngle = angle.toFixed(5);
     section.dataset.activeTube = nearest.toString();
     section.dataset.tubeCount = model.tubeGroups.length.toString();
     section.dataset.closeup = closeUp.toFixed(3);
@@ -287,8 +293,10 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEA
     if (!ready || motion.matches || target < .0005 || target > .9995) current = target;
     else current += (target - current) * (1 - Math.exp(-dt / 65));
     ready = true;
+    const idle = target < .0005 && current < .0005;
+    if (idle) idleAngle += dt * .000055;
     draw(current);
-    if (Math.abs(current - target) > .00003) request();
+    if (idle || Math.abs(current - target) > .00003) request();
   }
   function goToTube(index, immediate = false) {
     if (!enabled) return;
