@@ -6,6 +6,10 @@ A small static website hosted on GitHub Pages, showcasing the MAGEL2 multi-omics
 atlas, MAMMOTH, and the Institute of Human Genetics Heidelberg database and tool
 portal. It uses plain HTML, CSS, and JavaScript, with no package dependencies.
 
+The page also includes publications, concise research and education entries,
+clinical electives, teaching experience, and Google Scholar, LinkedIn, and
+GitHub profile links.
+
 ## Edit the site
 
 - `index.html`: page content and metadata.
@@ -64,3 +68,12 @@ To refresh the saved snapshot locally:
 ```sh
 python3 scripts/update_contributions.py
 ```
+
+## Background and publication details
+
+Research, education, clinical, and teaching entries are condensed from the
+owner-provided CV screenshots. The publication list was checked against the
+owner's [Google Scholar profile](https://scholar.google.com/citations?hl=en&user=bZB3VLoAAAAJ)
+on 14 November 2026. Each entry links to its DOI or Scholar record, with
+preprints and the conference abstract labeled separately. These entries are
+edited in `index.html`; only the GitHub contribution calendar updates automatically.
