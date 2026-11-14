@@ -14,7 +14,9 @@ const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
 export function inspectionPose(progress) {
   const tilt = smooth((progress - .1) / .22);
   const rotorAngle = -tau / 3 * (smooth((progress - .44) / .14) + smooth((progress - .7) / .14));
-  return { tilt, cameraAngle: tilt * 78 * Math.PI / 180, rotorAngle };
+  const indexing = start => Math.sin(Math.PI * clamp((progress - start) / .14)) ** 2;
+  const closeUp = smooth((progress - .26) / .1) * (1 - .65 * indexing(.44)) * (1 - .65 * indexing(.7));
+  return { tilt, cameraAngle: tilt * Math.PI / 2, rotorAngle, closeUp };
 }
 
 export function createCentrifuge(colors, textureFactory = () => null) {
@@ -97,7 +99,7 @@ export function createCentrifuge(colors, textureFactory = () => null) {
       const labelMaterial = new THREE.MeshBasicMaterial({ map: labelTexture, toneMapped: false, side: THREE.FrontSide });
       materials.push(labelMaterial);
       // A curved label fixed to the outward-facing tube wall, never a billboard.
-      mount(tube, new THREE.CylinderGeometry(.487, .487, 1.75, 48, 1, true, -Math.PI * .43, Math.PI * .86), labelMaterial, 0, .12, 0, "tube-label");
+      mount(tube, new THREE.CylinderGeometry(.487, .487, 1.9, 48, 1, true, -Math.PI * .43, Math.PI * .86), labelMaterial, 0, .02, 0, "tube-label");
     }
   }
   const base = new THREE.Group();

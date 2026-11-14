@@ -1,13 +1,13 @@
-.research-experience { position: relative; margin-bottom: 3rem; }
+.research-experience { position: relative; margin-bottom: clamp(3.5rem, 7vw, 6rem); }
 .research-scene { position: relative; isolation: isolate; }
 .research-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; padding-top: 1.5rem; }
-.research-heading h3 { margin: 0; font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 600; letter-spacing: -.035em; }
+.research-heading h2 { margin: 0; font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 600; letter-spacing: -.035em; }
 .research-view-switch { display: flex; gap: 3px; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
 .research-view-switch[hidden], .research-controls[hidden] { display: none; }
 .research-view-switch button { min-height: 36px; min-width: 66px; padding: .5rem .8rem; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font: 600 .75rem system-ui, sans-serif; cursor: pointer; }
 .research-view-switch button[aria-pressed="true"] { background: var(--tag); color: var(--accent); }
 .research-stage { position: relative; }
-.research-visual, .research-overview, .research-progress { display: none; }
+.research-visual, .research-progress { display: none; }
 .research-tubes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
 .research-tube { min-width: 0; padding: 1.5rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
 .research-paper > .entry-year { display: block; margin-bottom: .75rem; }
@@ -25,20 +25,11 @@
 .research-experience.is-enhanced .research-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: clip; background: var(--background); }
 .research-experience.is-enhanced .research-heading { position: relative; z-index: 5; margin-bottom: 0; }
 .research-experience.is-enhanced .research-stage { position: absolute; top: var(--research-stage-top); bottom: 76px; width: 100%; isolation: isolate; overflow: clip; }
-.research-experience.is-enhanced .research-visual { display: block; position: absolute; left: 0; top: 0; bottom: 0; width: 63%; }
+.research-experience.is-enhanced .research-visual { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
 .research-visual canvas { display: block; width: 100%; height: 100%; }
-.research-experience.is-enhanced .research-overview,
-.research-experience.is-enhanced .research-tubes { display: block; position: absolute; right: 0; top: 50%; width: 32%; transform: translateY(-50%); }
-.research-experience.is-enhanced .research-overview { opacity: var(--research-overview, 1); pointer-events: none; }
-.research-overview h4 { margin: 0 0 1rem; font-size: clamp(1.25rem, 2vw, 1.65rem); font-weight: 550; line-height: 1.4; letter-spacing: -.03em; }
-.research-overview > p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.8; }
-.research-model-caption { display: inline-block; margin-top: 1.25rem; color: var(--muted); font-size: .7rem; }
-.research-experience.is-enhanced .research-tube { display: none; padding: 0; border: 0; border-radius: 0; background: none; opacity: var(--research-details, 0); }
-.research-experience.is-enhanced .research-tube.is-current { display: block; }
-.research-experience.is-enhanced .research-institution { font-size: clamp(1.15rem, 2vw, 1.5rem); line-height: 1.4; font-weight: 550; letter-spacing: -.025em; }
-.research-experience.is-enhanced .research-paper > .entry-year { color: var(--accent); font-weight: 600; }
-.research-experience.is-enhanced .research-paper p { font-size: .9rem; line-height: 1.8; }
-.research-experience.is-enhanced .research-paper .entry-role { font-size: .8rem; }
+/* Keep the full source text available to assistive technology and List view.
+   The illustrated view displays that same text on the physical tube labels. */
+.research-experience.is-enhanced .research-tubes { display: block; position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: normal; }
 .research-experience.is-enhanced .research-controls { position: absolute; bottom: 22px; left: 0; right: 0; z-index: 5; padding-top: 12px; border-top: 1px solid var(--border); }
 .research-experience.is-enhanced .research-progress { display: block; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--tag); }
 .research-progress span { display: block; width: 100%; height: 100%; background: var(--accent); transform: scaleX(0); transform-origin: left; }
@@ -46,27 +37,15 @@
 @media (max-width: 760px) {
   .research-tubes { grid-template-columns: 1fr; gap: 1rem; }
   .research-heading { gap: .75rem; }
-  .research-heading h3 { font-size: 1.5rem; }
+  .research-heading h2 { font-size: 1.5rem; }
   .research-view-switch button { min-width: 58px; min-height: 40px; }
   .research-experience.is-enhanced .research-stage { bottom: 98px; }
-  .research-experience.is-enhanced .research-visual { width: 100%; height: 61%; bottom: auto; }
-  .research-experience.is-enhanced .research-overview,
-  .research-experience.is-enhanced .research-tubes { left: 0; right: 0; top: 64%; width: 100%; transform: none; }
-  .research-overview h4 { margin-bottom: .5rem; font-size: 1.1rem; }
-  .research-overview h4 br { display: none; }
-  .research-overview > p:not(.eyebrow) { font-size: .8rem; line-height: 1.6; }
-  .research-overview .eyebrow { margin-bottom: .4rem; }
-  .research-model-caption { margin-top: .5rem; }
-  .research-experience.is-enhanced .research-institution { font-size: 1.1rem; line-height: 1.35; margin-bottom: .5rem; }
-  .research-experience.is-enhanced .research-paper > .entry-year { margin-bottom: .4rem; }
-  .research-experience.is-enhanced .research-paper p { font-size: .8rem; line-height: 1.55; margin-top: .4rem; }
-  .research-experience.is-enhanced .research-paper .entry-role { font-size: .75rem; }
   .research-experience.is-enhanced .research-controls { bottom: 20px; }
   .research-scroll-cue { font-size: .65rem; }
 }
 @media (max-width: 420px) {
   .research-heading { align-items: start; }
-  .research-heading h3 { font-size: 1.35rem; }
+  .research-heading h2 { font-size: 1.35rem; }
   .research-view-switch button { min-width: 48px; padding-inline: .6rem; }
   .research-tube-nav button { padding-inline: .65rem; }
 }

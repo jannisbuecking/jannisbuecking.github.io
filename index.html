@@ -8,16 +8,17 @@
     <title>Jannis Buecking</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="projects.css">
-    <link rel="stylesheet" href="research.css?v=six-tubes-3d">
+    <link rel="stylesheet" href="research.css?v=tube-closeups">
     <script src="contributions.js" defer></script>
     <script src="projects.js" defer></script>
-    <script type="module" src="research.js?v=six-tubes-3d"></script>
+    <script type="module" src="research.js?v=tube-closeups"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
       <a class="wordmark" href="./" aria-label="Jannis Buecking, home">JB<span aria-hidden="true">.</span></a>
       <nav aria-label="Main navigation">
+        <a href="#research">Research</a>
         <a href="#projects">Projects</a>
         <a href="#publications">Publications</a>
         <a href="#experience">Experience</a>
@@ -34,6 +35,58 @@
           <li><a href="https://www.linkedin.com/in/jannis-buecking-0465a9210/" rel="me">LinkedIn <span aria-hidden="true">↗</span></a></li>
           <li><a href="https://github.com/jannisbuecking" rel="me">GitHub <span aria-hidden="true">↗</span></a></li>
         </ul>
+      </section>
+
+      <section class="section research-experience" id="research" aria-labelledby="research-title" data-view="explore">
+        <div class="research-journey" id="research-display">
+          <div class="research-scene">
+            <div class="research-heading">
+              <div><p class="eyebrow">Across three labs</p><h2 id="research-title">Research experience</h2></div>
+              <div class="research-view-switch" role="group" aria-label="Research view" hidden>
+                <button type="button" data-research-view="explore" aria-pressed="true" aria-controls="research-display">Explore</button>
+                <button type="button" data-research-view="list" aria-pressed="false" aria-controls="research-display" aria-label="Research list without animation">List</button>
+              </div>
+            </div>
+            <div class="research-stage" role="region" aria-label="Six-tube centrifuge: three research tubes and three balancing tubes">
+              <div class="research-visual" aria-label="Six-position centrifuge rotor"></div>
+              <div class="research-tubes">
+                <article class="research-tube" id="research-boston">
+                  <div class="research-paper">
+                    <span class="entry-year">2026</span>
+                    <h4 class="research-institution">Boston Children’s Hospital</h4>
+                <p class="entry-role">Visiting Research Fellow · Walsh lab</p>
+                <p>Single-nucleus and spatial genomics in neurofibromatosis type 1.</p>
+                  </div>
+                </article>
+                <article class="research-tube" id="research-ucsf">
+                  <div class="research-paper">
+                    <span class="entry-year">2023</span>
+                    <h4 class="research-institution">University of California, San Francisco</h4>
+                <p class="entry-role">Visiting Research Fellow · Kampmann lab</p>
+                <p>CRISPR screens of tau aggregation in iPSC-derived neurons.</p>
+                  </div>
+                </article>
+                <article class="research-tube" id="research-heidelberg">
+                  <div class="research-paper">
+                    <span class="entry-year">2021–present</span>
+                    <h4 class="research-institution">Institute of Human Genetics Heidelberg</h4>
+                <p class="entry-role">Medical doctoral candidate · Schaaf &amp; Laugsch labs</p>
+                <p>MAGEL2, cortical development, and multi-omics.</p>
+                  </div>
+                </article>
+              </div>
+            </div>
+            <div class="research-controls" hidden>
+              <div class="research-tube-nav" role="group" aria-label="Focus a research tube">
+                <button type="button" data-research-index="0" aria-controls="research-boston">Boston</button>
+                <button type="button" data-research-index="1" aria-controls="research-ucsf">UCSF</button>
+                <button type="button" data-research-index="2" aria-controls="research-heidelberg">Heidelberg</button>
+              </div>
+              <span class="research-scroll-cue">Scroll to change your perspective ↓</span>
+            </div>
+            <div class="research-progress" aria-hidden="true"><span></span></div>
+          </div>
+        </div>
       </section>
 
       <section id="projects" class="section rna-projects" data-view="rna" aria-labelledby="projects-title">
@@ -175,58 +228,6 @@
             <h2 id="experience-title">Experience &amp; education</h2>
           </div>
         </div>
-        <section class="research-experience" id="research" aria-labelledby="research-title" data-view="explore">
-          <div class="research-journey" id="research-display">
-            <div class="research-scene">
-              <div class="research-heading">
-                <div><p class="eyebrow">Across three labs</p><h3 id="research-title">Research experience</h3></div>
-                <div class="research-view-switch" role="group" aria-label="Research view" hidden>
-                  <button type="button" data-research-view="explore" aria-pressed="true" aria-controls="research-display">Explore</button>
-                  <button type="button" data-research-view="list" aria-pressed="false" aria-controls="research-display" aria-label="Research list without animation">List</button>
-                </div>
-              </div>
-              <div class="research-stage" role="region" aria-label="Six-tube centrifuge: three research tubes and three balancing tubes">
-                <div class="research-visual" aria-label="Six-position centrifuge rotor"></div>
-                <div class="research-overview"><p class="eyebrow">Six-position rotor</p><h4>Three research tubes.<br> Three balancing tubes.</h4><p>Scroll to move from the overhead view to the side, then explore each research tube.</p><span class="research-model-caption">Loaded rotor · inspection view</span></div>
-                <div class="research-tubes">
-                  <article class="research-tube" id="research-boston">
-                    <div class="research-paper">
-                      <span class="entry-year">2026</span>
-                      <h4 class="research-institution">Boston Children’s Hospital</h4>
-                  <p class="entry-role">Visiting Research Fellow · Walsh lab</p>
-                  <p>Single-nucleus and spatial genomics in neurofibromatosis type 1.</p>
-                    </div>
-                  </article>
-                  <article class="research-tube" id="research-ucsf">
-                    <div class="research-paper">
-                      <span class="entry-year">2023</span>
-                      <h4 class="research-institution">University of California, San Francisco</h4>
-                  <p class="entry-role">Visiting Research Fellow · Kampmann lab</p>
-                  <p>CRISPR screens of tau aggregation in iPSC-derived neurons.</p>
-                    </div>
-                  </article>
-                  <article class="research-tube" id="research-heidelberg">
-                    <div class="research-paper">
-                      <span class="entry-year">2021–present</span>
-                      <h4 class="research-institution">Institute of Human Genetics Heidelberg</h4>
-                  <p class="entry-role">Medical doctoral candidate · Schaaf &amp; Laugsch labs</p>
-                  <p>MAGEL2, cortical development, and multi-omics.</p>
-                    </div>
-                  </article>
-                </div>
-              </div>
-              <div class="research-controls" hidden>
-                <div class="research-tube-nav" role="group" aria-label="Focus a research tube">
-                  <button type="button" data-research-index="0" aria-controls="research-boston">Boston</button>
-                  <button type="button" data-research-index="1" aria-controls="research-ucsf">UCSF</button>
-                  <button type="button" data-research-index="2" aria-controls="research-heidelberg">Heidelberg</button>
-                </div>
-                <span class="research-scroll-cue">Scroll to change your perspective ↓</span>
-              </div>
-              <div class="research-progress" aria-hidden="true"><span></span></div>
-            </div>
-          </div>
-        </section>
         <div class="experience-grid">
           <section class="experience-group" aria-labelledby="education-title">
             <h3 id="education-title">Education</h3>

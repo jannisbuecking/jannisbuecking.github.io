@@ -33,7 +33,8 @@ test("camera tilt never rotates the rotor and subsequent indexing preserves all 
     for (let step = 0; step <= 100; step++) {
       const pose = inspectionPose(step / 100);
       if (step <= 32) assert.ok(Math.abs(pose.rotorAngle) < 1e-12);
-      assert.ok(pose.cameraAngle >= 0 && pose.cameraAngle < Math.PI / 2);
+      assert.ok(pose.cameraAngle >= 0 && pose.cameraAngle <= Math.PI / 2);
+      assert.ok(pose.closeUp >= 0 && pose.closeUp <= 1);
       model.assembly.rotation.y = pose.rotorAngle;
       model.assembly.updateMatrixWorld(true);
       model.tubeGroups.forEach((tube, index) => {

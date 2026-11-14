@@ -1,5 +1,5 @@
 import * as THREE from "./vendor/three/three.module.js";
-import { createCentrifuge, inspectionPose, RESEARCH_SLOTS } from "./research-model.js";
+import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS } from "./research-model.js?v=tube-closeups";
 
 (() => {
   const section = document.getElementById("research");
@@ -23,9 +23,15 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS } from "./research-mod
   sizeReference.setAttribute("aria-hidden", "true");
   scene.append(sizeReference);
   const stops = [.38, .65, .92];
-  const names = ["BOSTON", "UCSF", "HEIDELBERG"];
-  const labs = ["Walsh lab", "Kampmann lab", "Schaaf / Laugsch"];
-  const years = ["2026", "2023", "2021–present"];
+  const experiences = articles.map(article => {
+    const paragraphs = [...article.querySelectorAll(".research-paper p")];
+    const [role, lab] = paragraphs[0].textContent.trim().split(" · ");
+    return {
+      year: article.querySelector(".entry-year").textContent.trim(),
+      institution: article.querySelector(".research-institution").textContent.trim(),
+      role, lab, topic: paragraphs[1].textContent.trim(),
+    };
+  });
   const clamp = (value, low = 0, high = 1) => Math.max(low, Math.min(high, value));
   let enabled = false, unavailable = false, queued = false, layoutQueued = false;
   let width = 0, stableHeight = 0, distance = 0, current = 0, savedProgress = 0;
@@ -40,8 +46,8 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS } from "./research-mod
   function textureFactory(colors) {
     return (kind, slot, index) => {
       const canvas = document.createElement("canvas");
-      canvas.width = kind === "cap" ? 256 : 768;
-      canvas.height = kind === "cap" ? 256 : 1024;
+      canvas.width = kind === "cap" ? 256 : 1024;
+      canvas.height = kind === "cap" ? 256 : 1536;
       const ctx = canvas.getContext("2d");
       if (kind === "cap") {
         ctx.fillStyle = index >= 0 ? colors.accent : colors.balance;
@@ -54,22 +60,40 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS } from "./research-mod
         ctx.fillText(index >= 0 ? ["BOS", "UCSF", "HD"][index] : "BAL", 128, 194);
       } else {
         ctx.fillStyle = colors.paper;
-        ctx.fillRect(0, 0, 768, 1024);
+        ctx.fillRect(0, 0, 1024, 1536);
+        const left = 192, contentWidth = 640;
+        const wrap = (text, y, font, lineHeight, color) => {
+          ctx.font = font;
+          ctx.fillStyle = color;
+          let line = "";
+          for (const word of text.split(/\s+/)) {
+            const candidate = line ? `${line} ${word}` : word;
+            if (line && ctx.measureText(candidate).width > contentWidth) {
+              ctx.fillText(line, left, y);
+              y += lineHeight;
+              line = word;
+            } else line = candidate;
+          }
+          if (line) { ctx.fillText(line, left, y); y += lineHeight; }
+          return y;
+        };
+        if (index >= 0) {
+          const item = experiences[index];
+          let y = wrap(item.year, 114, "600 72px system-ui, sans-serif", 80, colors.accent);
+          y = wrap(item.institution, y + 56, "650 76px system-ui, sans-serif", 90, colors.text);
+          y = wrap(item.role, y + 42, "400 60px system-ui, sans-serif", 76, colors.muted);
+          y = wrap(item.lab, y + 16, "500 60px system-ui, sans-serif", 76, colors.text);
+          ctx.fillStyle = colors.accent;
+          ctx.fillRect(left, y + 20, contentWidth, 4);
+          y = wrap(item.topic, y + 106, "400 60px system-ui, sans-serif", 80, colors.text);
+          if (y > 1370) throw new Error("Research text exceeds the tube label");
+        } else {
+          wrap("BALANCE", 220, "600 84px system-ui, sans-serif", 106, colors.muted);
+          wrap(`Position ${slot + 1}`, 430, "400 64px system-ui, sans-serif", 84, colors.muted);
+        }
         ctx.fillStyle = colors.muted;
-        ctx.font = "400 66px system-ui, sans-serif";
-        ctx.fillText(index >= 0 ? years[index] : "BALANCE", 70, 140);
-        ctx.fillStyle = colors.text;
-        const words = index >= 0 ? names[index].split(" ") : ["COUNTER", "BALANCE"];
-        const lines = index === 2 ? ["HEIDEL", "BERG"] : words;
-        ctx.font = "650 110px system-ui, sans-serif";
-        lines.forEach((line, i) => ctx.fillText(line, 70, 330 + i * 135));
-        ctx.fillStyle = colors.muted;
-        ctx.font = "400 59px system-ui, sans-serif";
-        ctx.fillText(index >= 0 ? labs[index] : `Position ${slot + 1}`, 70, 670);
-        ctx.fillStyle = colors.accent;
-        ctx.fillRect(70, 770, 628, 5);
-        ctx.font = "500 56px system-ui, sans-serif";
-        ctx.fillText(`TUBE ${String(slot + 1).padStart(2, "0")}`, 70, 900);
+        ctx.font = "600 56px system-ui, sans-serif";
+        ctx.fillText(`TUBE ${String(slot + 1).padStart(2, "0")}`, left, 1450);
       }
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
@@ -93,7 +117,8 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS } from "./research-mod
       renderer.toneMappingExposure = 1.1;
       renderer.setClearColor(0x000000, 0);
       renderer.domElement.setAttribute("role", "img");
-      renderer.domElement.setAttribute("aria-label", "Six equally spaced, upright tubes in a centrifuge rotor. Research tubes occupy positions 1, 3, and 5; balancing tubes occupy 2, 4, and 6.");
+      renderer.domElement.setAttribute("aria-label", "Six equally spaced, upright tubes in a centrifuge rotor. Scroll to zoom in and read the full research details on tubes 1, 3, and 5, or choose List for a text view.");
+      renderer.domElement.setAttribute("aria-describedby", articles.map(article => article.id).join(" "));
       visual.append(renderer.domElement);
       world = new THREE.Scene();
       world.add(new THREE.HemisphereLight(0xffffff, 0x8d9a90, 2.3));
@@ -169,7 +194,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS } from "./research-mod
     });
   }
   function draw(progress) {
-    const { tilt, cameraAngle, rotorAngle } = inspectionPose(progress);
+    const { tilt, cameraAngle, rotorAngle, closeUp } = inspectionPose(progress);
     const w = visual.clientWidth, h = visual.clientHeight;
     if (!w || !h) return;
     if (w !== canvasWidth || h !== canvasHeight) {
@@ -177,17 +202,20 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS } from "./research-mod
       canvasWidth = w; canvasHeight = h;
     }
     const aspect = w / h;
-    const viewHeight = Math.max(7.7, 8.55 / aspect);
+    const overviewHeight = Math.max(8.4, 8.55 / aspect);
+    const labelHeight = Math.max(2.55, 1.28 / aspect);
+    const viewHeight = overviewHeight + (labelHeight - overviewHeight) * closeUp;
     camera.left = -viewHeight * aspect / 2;
     camera.right = viewHeight * aspect / 2;
     camera.top = viewHeight / 2;
     camera.bottom = -viewHeight / 2;
-    camera.zoom = 1 + tilt * .08;
-    const targetY = .1 + tilt * .15;
-    camera.position.set(0, targetY + Math.cos(cameraAngle) * 18, Math.sin(cameraAngle) * 18);
+    camera.zoom = 1;
+    const targetY = .1 + (.02 - .1) * closeUp;
+    const targetZ = (SLOT_RADIUS + .487) * closeUp;
+    camera.position.set(0, targetY + Math.cos(cameraAngle) * 18, targetZ + Math.sin(cameraAngle) * 18);
     // A stable camera basis throughout the vertical orbit: no roll or pole flip.
     camera.up.set(0, Math.sin(cameraAngle), -Math.cos(cameraAngle));
-    camera.lookAt(0, targetY, 0);
+    camera.lookAt(0, targetY, targetZ);
     camera.updateProjectionMatrix();
     model.assembly.rotation.y = rotorAngle;
     // Tube transforms are immutable; only this parent assembly indexes.
@@ -197,8 +225,6 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS } from "./research-mod
       const depth = Math.cos(rotorAngle + RESEARCH_SLOTS[index] * Math.PI / 3);
       if (depth > front) { front = depth; nearest = index; }
     }
-    scene.style.setProperty("--research-details", clamp((tilt - .55) / .25));
-    scene.style.setProperty("--research-overview", clamp((.45 - tilt) / .15));
     articles.forEach((article, index) => article.classList.toggle("is-current", nearest === index));
     nav.forEach((button, index) => button.setAttribute("aria-pressed", String(tilt > .8 && nearest === index)));
     cue.textContent = tilt < .98 ? "Scroll to lower the viewpoint ↓" : `${String(nearest + 1).padStart(2, "0")} / 03 · ${nearest === 2 ? "Scroll to continue" : "Scroll to the next research tube"} ↓`;
@@ -206,6 +232,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS } from "./research-mod
     section.dataset.phase = tilt < .02 ? "top" : tilt < .98 ? "turning" : "side";
     section.dataset.activeTube = nearest.toString();
     section.dataset.tubeCount = model.tubeGroups.length.toString();
+    section.dataset.closeup = closeUp.toFixed(3);
   }
   function frame(time) {
     queued = false;

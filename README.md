@@ -98,7 +98,8 @@ direct links such as `#project-mammoth` bring the relevant card into view.
 
 ## Research centrifuge
 
-The research section at `#research` uses a rigid six-position rotor with equal
+The research section at `#research`, immediately after the introduction and
+above the science projects, uses a rigid six-position rotor with equal
 tubes spaced 60° apart. Research tubes occupy positions 1, 3, and 5; balancing
 tubes occupy positions 2, 4, and 6, giving three opposed pairs. Tube transforms,
 dimensions, and fill levels remain fixed relative to the rotor throughout.
@@ -106,8 +107,12 @@ dimensions, and fill levels remain fixed relative to the rotor throughout.
 The camera starts exactly overhead using an orthographic projection, showing
 only the six circular caps. It moves along a vertical arc to the side while the
 rotor stays still. Subsequent scrolling indexes the entire assembly around its
-vertical axis to bring each research tube forward. Labels are curved surfaces
-attached to the tubes, with full descriptions shown alongside for readability.
+vertical axis to bring each research tube forward. The side view zooms into the
+front tube, with the full institution, dates, role, lab, and research summary
+printed on its curved label. The camera briefly pulls back during indexing,
+then returns to a close-up at each reading position. There is no separate
+description panel. The same source text remains available to screen readers
+and in List view.
 Upward scrolling reverses this sequence. Rendering stops while still or offscreen.
 
 This is an inspection view of a loaded rotor with the tubes at rest, not a
