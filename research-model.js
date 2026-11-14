@@ -1,14 +1,14 @@
-// A loaded, stationary six-position rotor. Scrolling changes the inspection
+// A rigid six-position rotor. Scrolling changes the inspection
 // camera and indexes the complete assembly; tube poses never change locally.
 import * as THREE from "./vendor/three/three.module.js";
 
 export const SLOT_COUNT = 6;
 export const SLOT_RADIUS = 2.8;
-export const RESEARCH_SLOTS = [0, 1, 2];
-export const EDUCATION_SLOTS = [4, 5];
-export const EXPERIENCE_SLOTS = [...RESEARCH_SLOTS, ...EDUCATION_SLOTS];
+export const RESEARCH_SLOTS = [1, 2, 4];
+export const EDUCATION_SLOTS = [0, 3];
+export const EXPERIENCE_SLOTS = [0, 1, 2, 3, 4];
 export const RESEARCH_STOPS = [.2016, .2856, .3696, .4536, .5376];
-export const SAMPLE_SLOT = 3;
+export const SAMPLE_SLOT = 5;
 export const CAP_TOP = 1.781;
 
 const tau = Math.PI * 2;
@@ -221,5 +221,15 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     // Reveal the pellet through the liquid during the illustrative scale change.
     for (const name of ["liquid-column", "liquid-cone"]) tubeGroups[SAMPLE_SLOT].getObjectByName(name).visible = amount < .95;
   }
-  return { assembly, base, tubeGroups, openSample, dispose };
+  function setLabelTexture(slot, texture) {
+    const material = tubeGroups[slot].getObjectByName("tube-label").material;
+    const previous = material.map;
+    const index = textures.indexOf(previous);
+    if (index >= 0) textures.splice(index, 1);
+    previous?.dispose();
+    if (previous?.image?.getContext) { previous.image.width = 1; previous.image.height = 1; }
+    material.map = texture;
+    textures.push(texture);
+  }
+  return { assembly, base, tubeGroups, openSample, setLabelTexture, dispose };
 }

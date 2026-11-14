@@ -103,23 +103,26 @@ direct links such as `#project-mammoth` bring the relevant card into view.
 
 The page opens directly on the centrifuge at `#research`, above the science
 projects. Its rigid six-position rotor has equal tubes spaced 60° apart.
-The research tubes are adjacent in positions 1, 2, and 3; Harvard and Heidelberg
-education occupy positions 5 and 6. Position 4 holds the project sample.
+Tube order is Heidelberg University, Heidelberg research, UCSF, Harvard,
+Boston Children’s Hospital, and Projects. Position 6 holds the project sample.
 Tube transforms and dimensions remain fixed relative to the rotor throughout.
 
 The camera starts exactly overhead using an orthographic projection, showing
 only the six circular caps. A slow idle rotation runs while this opening view is
-visible; the first scroll settles it with the first research tube aligned before
+visible; the first scroll settles it with the first tube aligned before
 the camera moves along a vertical arc to the side. Subsequent scrolling turns the entire assembly
-around its vertical axis from Boston to UCSF to Heidelberg, then Harvard and
-Heidelberg University. The three research roles remain adjacent. The side view zooms into the
+around its vertical axis through the five research and education entries in
+the same order as the physical tubes. The side view zooms into the
 front tube, with the full institution, dates, role, lab, and research summary
 printed on its curved label. The camera gently pulls back while passing between
 neighboring labels. There is no separate
 description panel. The same source text remains available to screen readers
-and in the automatic static fallback.
+and in the automatic static fallback. Reading labels use 2048 × 3072 textures
+and up to the display’s native 3× pixel density. Only the current reading label
+is upgraded, replacing and disposing its predecessor so texture memory stays
+bounded. The overhead view uses lighter rendering and 512 × 512 cap textures.
 After the fifth research/education label, the camera pulls back and returns overhead before the rotor
-indexes back to the project sample. Tube four, labeled **Projects**, opens: only its
+indexes to the project sample. Tube six, labeled **Projects**, opens: only its
 cap lifts and moves aside. The camera centers over its opening and descends toward
 a modeled pellet in the conical tip. Liquid is hidden during this illustrative
 scale change so the pellet remains visible. Its 100 modeled grains are projected
@@ -176,8 +179,12 @@ holds that frame steady before the camera pulls back to reveal the room.
 
 The desk has the computer on the left, one small clipboard in the middle, and
 a smaller iPhone on the right. All three items fit inside the tabletop edges.
-Scrolling holds the camera on the clipboard and turns its sheets over the top
-clip: Zomba, Great Ormond Street, then UT Southwestern.
+The Clinic overview stays 14% closer to the desk. Scrolling holds the camera on
+the clipboard and turns its sheets over the top clip: Zomba, Great Ormond Street,
+then UT Southwestern. Each opaque sheet lifts with a flexible curl, turns fully
+over, and settles across the tabletop and over its back edge. Turned pages remain
+in the scene with visible backs and shadows; no sheet fades away or is hidden.
+The longer turn is reversible and leaves the next record unobstructed.
 Their text comes directly from the clinical entries in `index.html`, which also
 serve as the accessible static fallback. Clinical experience is no longer repeated
 in a separate background section. Upward scrolling turns the sheets back in order and returns through the monitor

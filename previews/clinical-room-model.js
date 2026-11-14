@@ -6,6 +6,23 @@ export const READING_STOPS = [.56, .74, .92];
 export const CLINICAL_FRACTION = .78;
 export const PHONE_STOP = .96;
 
+// A top-bound sheet lifts, curls over the clip, then settles over the desk edge.
+// Coordinates are in the sheet's unrotated frame, with its top edge at y=.67.
+export function clipboardPagePose(turn, along, across = 0, index = 0) {
+  const lift = smooth(turn / .74), settle = smooth((turn - .74) / .26);
+  const length = along * 1.34, edge = .425, drop = .105 - index * .007;
+  const run = Math.hypot(edge, drop), radius = .06, slope = Math.atan2(drop, edge) * settle;
+  let y = Math.min(length, run) * Math.cos(slope), z = -Math.min(length, run) * Math.sin(slope);
+  if (length > run) {
+    const arc = Math.min((length - run) / radius, (Math.PI / 2 - slope) * settle);
+    const tail = Math.max(0, length - run - radius * arc);
+    y += radius * (Math.sin(slope + arc) - Math.sin(slope)) + tail * Math.cos(slope + arc);
+    z += radius * (Math.cos(slope + arc) - Math.cos(slope)) - tail * Math.sin(slope + arc);
+  }
+  const curl = Math.sin(Math.PI * lift) * (.17 * Math.sin(Math.PI * along) + .035 * across * along ** 2);
+  return { angle: -Math.PI * lift, y: .67 - y, z: curl - z };
+}
+
 export function createClinicalRoom(variant, textureFactory = () => null, options = {}) {
   const group = new THREE.Group();
   const materials = [], textures = [], pages = [], readings = [];
@@ -147,9 +164,12 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     experiences.forEach((item, index) => {
       const hinge = new THREE.Group(); hinge.name = `clinical-page-${index + 1}`;
       hinge.position.set(0, .65, .068 - index * .004); board.add(hinge);
-      const geometry = new THREE.PlaneGeometry(.99, 1.34, 1, 28);
+      const geometry = new THREE.PlaneGeometry(.99, 1.34, 8, 64);
       const paper = mesh(hinge, geometry, textured('experience', index), [0, -.67, 0], 'clinical-page-front');
-      const backMaterial = new THREE.MeshBasicMaterial({ color: '#fdfcf8', side: THREE.BackSide, transparent: true, depthWrite: false, toneMapped: false }); materials.push(backMaterial);
+      // Keep the printed text crisp while receiving the lifting sheet's shadow.
+      const shadowMaterial = new THREE.ShadowMaterial({ color: '#24382a', opacity: .22, depthWrite: false }); materials.push(shadowMaterial);
+      const shadow = mesh(hinge, geometry, shadowMaterial, [0, -.67, .0005], 'clinical-page-shadow'); shadow.castShadow = false; shadow.raycast = () => {};
+      const backMaterial = mat('#f5f2e9', { side: THREE.BackSide, roughness: 1, metalness: 0 });
       const back = mesh(hinge, geometry, backMaterial, [0, -.67, 0], 'clinical-page-back');
       pages.push({ hinge, paper, back, geometry, turn: -1 });
       readings.push({ object: board, paper, width: 1.15, height: 1.55, index });
@@ -190,7 +210,7 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     const source = { position: start.position.clone().addScaledVector(start.normal, sourceDistance), target: start.position, up: start.up };
     const target = new THREE.Vector3(0, 1.25, -.25);
     const factor = Math.max(1, 1.35 / aspect);
-    const overview = { position: target.clone().add(new THREE.Vector3(11, 7.8, 13).multiplyScalar(factor)), target, up: new THREE.Vector3(0, 1, 0) };
+    const overview = { position: target.clone().add(new THREE.Vector3(11, 7.8, 13).multiplyScalar(factor * (clipboard ? .86 : 1))), target, up: new THREE.Vector3(0, 1, 0) };
     const closeups = readings.map(item => {
       const frame = worldFrame(item);
       const distance = (clipboard ? 1.18 : 1.16) * Math.max(item.height / (2 * tangent), item.width / (2 * tangent * aspect));
@@ -216,16 +236,14 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
   function update(progress) {
     const clinical = phone ? Math.min(1, progress / CLINICAL_FRACTION) : progress;
     pages.forEach((page, index) => {
-      const turn = index < 2 ? smooth((clinical - (.63 + index * .18)) / .09) : 0;
-      page.hinge.rotation.x = -Math.PI * turn;
-      page.hinge.visible = turn < .999999;
-      page.back.material.opacity = 1 - smooth((turn - .80) / .20);
-      page.back.castShadow = turn < .80;
+      const turn = index < 2 ? Math.max(0, Math.min(1, (clinical - (.61 + index * .18)) / .12)) : 0;
+      page.hinge.rotation.x = clipboardPagePose(turn, 0).angle;
       if (turn !== page.turn) {
-        const positions = page.geometry.attributes.position;
+        const positions = page.geometry.attributes.position, uv = page.geometry.attributes.uv;
         for (let vertex = 0; vertex < positions.count; vertex++) {
-          const along = .5 - positions.getY(vertex) / 1.34;
-          positions.setZ(vertex, .13 * Math.sin(Math.PI * turn) * Math.sin(Math.PI * along));
+          const point = clipboardPagePose(turn, 1 - uv.getY(vertex), 2 * uv.getX(vertex) - 1, index);
+          positions.setY(vertex, point.y);
+          positions.setZ(vertex, point.z);
         }
         positions.needsUpdate = true; page.geometry.computeVertexNormals(); page.geometry.computeBoundingSphere(); page.geometry.computeBoundingBox();
         page.turn = turn;

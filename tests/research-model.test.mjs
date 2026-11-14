@@ -1,9 +1,26 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "../vendor/three/three.module.js";
-import { createCentrifuge, inspectionPose, openingRotation, molecularPose, molecularOwners, pelletComponent, unfoldPoint, samplePolygon, circleToShape, EXPERIENCE_SLOTS, RESEARCH_STOPS } from "../research-model.js";
+import { createCentrifuge, inspectionPose, openingRotation, molecularPose, molecularOwners, pelletComponent, unfoldPoint, samplePolygon, circleToShape, EXPERIENCE_SLOTS, SAMPLE_SLOT, RESEARCH_STOPS } from "../research-model.js";
 
 const colors = { metal: "#d9ded5", rim: "#586359", paper: "#fdfcf8", accent: "#28694b", balance: "#e7eae3" };
+
+test("replacing a reading label releases its old texture and canvas", () => {
+  const model = createCentrifuge(colors, () => new THREE.Texture());
+  const previous = model.tubeGroups[0].getObjectByName("tube-label").material.map;
+  previous.image = { width: 2048, height: 3072, getContext() {} };
+  let oldDisposals = 0, newDisposals = 0;
+  previous.addEventListener("dispose", () => oldDisposals++);
+  const replacement = new THREE.Texture(); replacement.addEventListener("dispose", () => newDisposals++);
+  model.setLabelTexture(0, replacement);
+  assert.equal(oldDisposals, 1);
+  assert.equal(previous.image.width, 1);
+  assert.equal(previous.image.height, 1);
+  assert.equal(model.tubeGroups[0].getObjectByName("tube-label").material.map, replacement);
+  model.dispose();
+  assert.equal(oldDisposals, 1);
+  assert.equal(newDisposals, 1);
+});
 
 test("every molecular component owns a distinct pellet circle and preserves its shape at both endpoints", () => {
   const owners = molecularOwners(13), ids = Object.values(owners).flat();
@@ -25,7 +42,7 @@ test("every molecular component owns a distinct pellet circle and preserves its 
 test("molecular particles originate at the modeled pellet grains and arrive exactly on their destinations", () => {
   const model = createCentrifuge(colors);
   try {
-    const grains = model.tubeGroups[3].getObjectByName("pellet-granules"), matrix = new THREE.Matrix4();
+    const grains = model.tubeGroups[SAMPLE_SLOT].getObjectByName("pellet-granules"), matrix = new THREE.Matrix4();
     for (let index = 0; index < 100; index++) {
       grains.getMatrixAt(index, matrix);
       const position = new THREE.Vector3().setFromMatrixPosition(matrix), origin = pelletComponent(index);
@@ -44,16 +61,14 @@ test("molecular particles originate at the modeled pellet grains and arrive exac
   } finally { model.dispose(); }
 });
 
-test("three adjacent research tubes, two education tubes, and the project sample occupy six equal slots", () => {
+test("research, education, and projects follow the requested six-tube sequence", () => {
   const model = createCentrifuge(colors);
   try {
     assert.equal(model.tubeGroups.length, 6);
     assert.equal(model.tubeGroups.filter(tube => tube.userData.kind === "research").length, 3);
     assert.equal(model.tubeGroups.filter(tube => tube.userData.kind === "education").length, 2);
     assert.equal(model.tubeGroups.filter(tube => tube.userData.kind === "projects").length, 1);
-    assert.ok(model.tubeGroups.slice(0, 3).every(tube => tube.userData.kind === "research"));
-    assert.equal(model.tubeGroups[3].userData.kind, "projects");
-    assert.ok(model.tubeGroups.slice(4).every(tube => tube.userData.kind === "education"));
+    assert.deepEqual(model.tubeGroups.map(tube => tube.userData.kind), ["education", "research", "research", "education", "research", "projects"]);
     assert.deepEqual(EXPERIENCE_SLOTS.map(slot => model.tubeGroups[slot].userData.researchIndex), [0, 1, 2, 3, 4]);
     for (let index = 0; index < 6; index++) {
       const tube = model.tubeGroups[index];
@@ -143,16 +158,16 @@ test("an overhead ray sees the cap before any wall or label at every tube positi
   } finally { model.dispose(); }
 });
 
-test("the camera returns overhead before tube four opens and the molecular handoff begins", () => {
+test("the camera returns overhead before tube six opens and the molecular handoff begins", () => {
   const model = createCentrifuge(colors);
   try {
     assert.equal(inspectionPose(.68).cameraAngle, 0);
     assert.equal(inspectionPose(.68).opening, 0);
     const aligned = inspectionPose(.74);
-    assert.ok(Math.abs(aligned.rotorAngle + Math.PI) < 1e-9);
+    assert.ok(Math.abs(aligned.rotorAngle + 5 * Math.PI / 3) < 1e-9);
     model.assembly.rotation.y = aligned.rotorAngle;
     model.assembly.updateMatrixWorld(true);
-    const sample = model.tubeGroups[3];
+    const sample = model.tubeGroups[SAMPLE_SLOT];
     const position = sample.getWorldPosition(new THREE.Vector3());
     assert.ok(Math.abs(position.x) < 1e-9 && position.z > 0);
     const fixed = model.tubeGroups.map(tube => tube.position.clone());

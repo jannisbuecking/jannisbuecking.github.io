@@ -1,6 +1,6 @@
 import * as THREE from "./vendor/three/three.module.js";
 import "./projects.js?v=full-clinical";
-import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openingRotation, EXPERIENCE_SLOTS, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=centrifuge-first";
+import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openingRotation, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=sharp-tubes";
 
 (() => {
   const section = document.getElementById("research");
@@ -35,7 +35,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
   let enabled = false, unavailable = false, queued = false, layoutQueued = false, linked = false;
   let width = 0, stableHeight = 0, distance = 0, current = 0;
   let ready = false, lastTime = 0, renderer, world, camera, model;
-  let canvasWidth = 0, canvasHeight = 0, idleAngle = 0, bridgeProgress;
+  let canvasWidth = 0, canvasHeight = 0, idleAngle = 0, bridgeProgress, sharpLabel = -1, labelFactory;
 
   function palette() {
     const style = getComputedStyle(document.documentElement);
@@ -43,11 +43,13 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
     return { accent: value("--accent"), paper: value("--surface"), text: value("--text"), muted: value("--muted"), metal: value("--border"), rim: value("--muted"), balance: value("--level-0"), background: value("--background") };
   }
   function textureFactory(colors) {
-    return (kind, slot, index) => {
+    return (kind, slot, index, labelScale = 1) => {
       const canvas = document.createElement("canvas");
-      canvas.width = kind === "cap" ? 256 : 1024;
-      canvas.height = kind === "cap" ? 256 : 1536;
+      const scale = kind === "cap" ? 2 : labelScale;
+      canvas.width = (kind === "cap" ? 256 : 1024) * scale;
+      canvas.height = (kind === "cap" ? 256 : 1536) * scale;
       const ctx = canvas.getContext("2d");
+      ctx.scale(scale, scale);
       if (kind === "cap") {
         ctx.fillStyle = index >= 0 ? colors.accent : colors.balance;
         ctx.fillRect(0, 0, 256, 256);
@@ -56,7 +58,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
         ctx.font = "600 90px system-ui, sans-serif";
         ctx.fillText(String(slot + 1).padStart(2, "0"), 128, 142);
         ctx.font = "500 31px system-ui, sans-serif";
-        ctx.fillText(index >= 0 ? ["BOS", "UCSF", "HD", "HARVARD", "HD UNI"][index] : slot === 3 ? "PROJECTS" : "BAL", 128, 194);
+        ctx.fillText(index >= 0 ? articles[index].dataset.cap : slot === SAMPLE_SLOT ? "PROJECTS" : "BAL", 128, 194);
       } else {
         ctx.fillStyle = colors.paper;
         ctx.fillRect(0, 0, 1024, 1536);
@@ -86,7 +88,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
           ctx.fillRect(left, y + 20, contentWidth, 4);
           y = wrap(item.topic, y + 106, "400 60px system-ui, sans-serif", 80, colors.text);
           if (y > 1370) throw new Error("Research text exceeds the tube label");
-        } else if (slot === 3) {
+        } else if (slot === SAMPLE_SLOT) {
           wrap("SCIENCE", 220, "600 84px system-ui, sans-serif", 106, colors.accent);
           wrap("PROJECTS", 326, "600 84px system-ui, sans-serif", 106, colors.accent);
           wrap("From sample to discovery", 550, "400 64px system-ui, sans-serif", 84, colors.muted);
@@ -100,14 +102,16 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
       }
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      texture.anisotropy = Math.min(16, renderer.capabilities.getMaxAnisotropy());
       return texture;
     };
   }
   function buildModel() {
     if (model) { world.remove(model.assembly, model.base); model.dispose(); }
     const colors = palette();
-    model = createCentrifuge(colors, textureFactory(colors));
+    labelFactory = textureFactory(colors);
+    sharpLabel = -1;
+    model = createCentrifuge(colors, labelFactory);
     world.add(model.assembly, model.base);
   }
   function initializeRenderer() {
@@ -120,7 +124,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
       renderer.toneMappingExposure = 1.1;
       renderer.setClearColor(0x000000, 0);
       renderer.domElement.setAttribute("role", "img");
-      renderer.domElement.setAttribute("aria-label", "Six upright tubes in a centrifuge rotor. Scroll to read research on tubes 1, 2, and 3 and education on tubes 5 and 6, then return overhead, open tube 4, and descend into its pellet to enter the mRNA science projects.");
+      renderer.domElement.setAttribute("aria-label", "Six upright tubes in a centrifuge rotor. Scroll through Heidelberg University, Heidelberg research, UCSF, Harvard, and Boston Children’s Hospital, then return overhead, open the Projects sample in tube 6, and descend into its pellet to enter the mRNA science projects.");
       renderer.domElement.setAttribute("aria-describedby", articles.map(article => article.id).join(" "));
       visual.append(renderer.domElement);
       world = new THREE.Scene();
@@ -215,6 +219,8 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
     const { tilt, cameraAngle, rotorAngle, closeUp, focus, opening, dive, molecules, handoff } = pose;
     const w = visual.clientWidth, h = visual.clientHeight;
     if (!w || !h) return;
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, closeUp > .5 ? 3 : 1.5);
+    if (renderer.getPixelRatio() !== pixelRatio) { renderer.setPixelRatio(pixelRatio); canvasWidth = 0; }
     if (w !== canvasWidth || h !== canvasHeight) {
       renderer.setSize(w, h, false);
       canvasWidth = w; canvasHeight = h;
@@ -247,7 +253,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
     camera.updateMatrixWorld(true);
     let origins;
     if (linked && pose.progress > .9 && pose.progress < 1) {
-      const granules = model.tubeGroups[3].getObjectByName("pellet-granules");
+      const granules = model.tubeGroups[SAMPLE_SLOT].getObjectByName("pellet-granules");
       const rnaTop = Number(projects.dataset.rnaStageTop);
       origins = Array.from({ length: 100 }, (_, index) => {
         const point = pelletComponent(index);
@@ -257,24 +263,31 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
     }
     syncBridge(pose, origins);
     // The projected particles take over at the same locations as these 3D grains.
-    model.tubeGroups[3].getObjectByName("pellet-granules").material.opacity = 1 - molecularPose(pose.progress).particles;
-    // Tube transforms remain fixed. Only the fourth cap lifts off its tube.
-    renderer.render(world, camera);
-    renderer.domElement.style.opacity = "1";
-    heading.style.opacity = (1 - molecules).toFixed(4);
-    controls.style.opacity = (1 - molecules).toFixed(4);
+    model.tubeGroups[SAMPLE_SLOT].getObjectByName("pellet-granules").material.opacity = 1 - molecularPose(pose.progress).particles;
     let nearest = 0, front = -Infinity;
     for (let index = 0; index < articles.length; index++) {
       const depth = Math.cos(angle + EXPERIENCE_SLOTS[index] * Math.PI / 3);
       if (depth > front) { front = depth; nearest = index; }
     }
+    if (closeUp > .65 && sharpLabel !== nearest) {
+      if (sharpLabel >= 0) model.setLabelTexture(EXPERIENCE_SLOTS[sharpLabel], labelFactory("label", EXPERIENCE_SLOTS[sharpLabel], sharpLabel));
+      model.setLabelTexture(EXPERIENCE_SLOTS[nearest], labelFactory("label", EXPERIENCE_SLOTS[nearest], nearest, 2));
+      sharpLabel = nearest;
+    }
+    // Tube transforms remain fixed. Only the Projects cap lifts off its tube.
+    renderer.render(world, camera);
+    renderer.domElement.style.opacity = "1";
+    heading.style.opacity = (1 - molecules).toFixed(4);
+    controls.style.opacity = (1 - molecules).toFixed(4);
     articles.forEach((article, index) => article.classList.toggle("is-current", nearest === index));
-    const transitionCues = { return: "Scroll to return overhead ↓", sample: "Tube 04 · From sample to discovery ↓", opening: "Scroll to open the tube ↓", diving: "Into the pellet ↓", molecular: "From sample to molecular scale ↓", ribosome: "Science projects · mRNA → ribosome" };
+    const transitionCues = { return: "Scroll to return overhead ↓", sample: "Tube 06 · From sample to discovery ↓", opening: "Scroll to open the tube ↓", diving: "Into the pellet ↓", molecular: "From sample to molecular scale ↓", ribosome: "Science projects · mRNA → ribosome" };
     cue.textContent = transitionCues[pose.phase] || (tilt < .98 ? "Scroll to lower the viewpoint ↓" : `${String(nearest + 1).padStart(2, "0")} / 05 · ${nearest === 4 ? "Scroll to continue" : "Scroll to the next tube"} ↓`);
     progressBar.style.transform = `scaleX(${progress})`;
     section.dataset.phase = pose.phase;
     section.dataset.rotorAngle = angle.toFixed(5);
     section.dataset.activeTube = nearest.toString();
+    section.dataset.sharpLabel = sharpLabel.toString();
+    section.dataset.pixelRatio = pixelRatio.toString();
     section.dataset.tubeCount = model.tubeGroups.length.toString();
     section.dataset.closeup = closeUp.toFixed(3);
     section.dataset.opening = opening.toFixed(3);

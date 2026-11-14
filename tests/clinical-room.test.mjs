@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.js';
-import { createClinicalRoom, READING_STOPS } from '../previews/clinical-room-model.js';
+import { createClinicalRoom, clipboardPagePose, READING_STOPS } from '../previews/clinical-room-model.js';
 
 test('Clinic uses one clipboard that fits the desk, with bound pages that turn in both directions', () => {
   const room = createClinicalRoom('consultation', undefined, { includePhone: true });
@@ -24,10 +24,64 @@ test('Clinic uses one clipboard that fits the desk, with bound pages that turn i
     READING_STOPS.forEach((progress, index) => {
       room.update(progress * .78);
       assert.equal(room.clipboard.activePage, index);
-      assert.equal(room.pages.findIndex(page => page.hinge.visible), index);
+      assert.ok(room.pages.every(page => page.hinge.visible && page.back.material.opacity === 1));
+      assert.equal(room.pages.findIndex(page => page.turn === 0), index);
     });
     room.update(READING_STOPS[0] * .78); assert.equal(room.clipboard.activePage, 0);
     assert.ok(room.pages[0].hinge.visible);
+  } finally { room.dispose(); }
+});
+
+test('turning sheets stay opaque, continuous, and attached, then drape past the desk edge', () => {
+  const room = createClinicalRoom('consultation', undefined, { includePhone: true });
+  try {
+    for (let step = 0; step <= 100; step++) {
+      const turn = step / 100;
+      room.update((.61 + turn * .12) * .78);
+      assert.ok(room.pages.every(page => page.hinge.visible && page.back.visible && page.back.material.opacity === 1));
+      for (const across of [-1, 0, 1]) {
+        const anchor = clipboardPagePose(turn, 0, across);
+        assert.ok(Math.abs(anchor.y - .67) < 1e-9 && Math.abs(anchor.z) < 1e-9);
+        for (const along of [.25, .5, .75, 1]) {
+          const a = clipboardPagePose(turn, along, across), b = clipboardPagePose(Math.min(1, turn + 1e-6), along, across);
+          assert.ok(Math.hypot(a.y - b.y, a.z - b.z, a.angle - b.angle) < .00004, 'no position or angle jumps during the turn');
+        }
+      }
+    }
+    for (const turn of [.74, .8, .9, 1]) {
+      let length = 0, previous = clipboardPagePose(turn, 0);
+      for (let sample = 1; sample <= 1000; sample++) {
+        const point = clipboardPagePose(turn, sample / 1000);
+        length += Math.hypot(point.y - previous.y, point.z - previous.z); previous = point;
+      }
+      assert.ok(Math.abs(length - 1.34) < .0003, 'settling bends the sheet without shrinking it');
+    }
+    room.update(.74 * .78); room.group.updateMatrixWorld(true);
+    const page = room.pages[0], positions = page.geometry.attributes.position;
+    for (let vertex = 0; vertex < positions.count; vertex++) {
+      const point = page.paper.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, vertex));
+      assert.ok(point.y >= 1.365 || point.z < -2.525, 'the resting sheet hangs outside the desk instead of passing through its surface');
+    }
+    const folded = positions.array.slice();
+    room.update(.56 * .78); room.update(.74 * .78);
+    assert.deepEqual(positions.array, folded, 'reversing and repeating the turn gives the same sheet shape');
+  } finally { room.dispose(); }
+});
+
+test('the Clinic overview stays fourteen percent closer while keeping the desktop items in frame', () => {
+  const room = createClinicalRoom('consultation', undefined, { includePhone: true });
+  try {
+    for (const aspect of [1.104, 342 / 844]) {
+      const view = room.pose(.36 * .78, aspect);
+      const previousDistance = new THREE.Vector3(11, 7.8, 13).length() * Math.max(1, 1.35 / aspect);
+      assert.ok(Math.abs(view.position.distanceTo(view.target) / previousDistance - .86) < 1e-9);
+      const camera = new THREE.PerspectiveCamera(42, aspect, .003, 180);
+      camera.position.copy(view.position); camera.up.copy(view.up); camera.lookAt(view.target); camera.updateMatrixWorld(true);
+      for (const object of [room.entrance.object, room.clipboard.object, room.phone.object]) {
+        const point = object.getWorldPosition(new THREE.Vector3()).project(camera);
+        assert.ok(Math.abs(point.x) < .9 && Math.abs(point.y) < .9 && point.z > -1 && point.z < 1);
+      }
+    }
   } finally { room.dispose(); }
 });
 

@@ -1,5 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { createClinicalRoom, READING_STOPS } from './clinical-room-model.js?v=clinic-pages';
+import { createClinicalRoom, READING_STOPS } from './clinical-room-model.js?v=paper-turn';
 import { experiences } from './clinical-data.js';
 import { createClinicalTextures } from './clinical-textures.js?v=clinic-pages';
 
