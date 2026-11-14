@@ -1,0 +1,42 @@
+.desk-contact { margin: 3rem auto; width: min(100%, 376px); }
+.desk-phone { position: relative; width: 360px; height: 780px; max-width: 100%; margin: auto; padding: 70px 22px 30px; border-radius: 43px; background: radial-gradient(ellipse at 90% 10%, #ffffffc9, transparent 55%), radial-gradient(ellipse at 10% 90%, #b4d4b4, transparent 55%), #dce9d7; color: #183b2b; overflow: hidden; box-shadow: 0 0 0 10px #28342e, 0 18px 55px -20px #0005; transform-origin: 0 0; font-family: system-ui, -apple-system, sans-serif; }
+.phone-status { position: absolute; top: 18px; inset-inline: 27px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 650; }
+.phone-status svg { width: 40px; height: 18px; display: block; fill: currentColor; }
+.phone-island { position: absolute; top: 13px; left: 50%; transform: translateX(-50%); width: 100px; height: 28px; border-radius: 20px; background: #111b16; }
+.phone-island::after { content: ''; position: absolute; right: 9px; top: 9px; width: 9px; height: 9px; border: 2px solid #293b33; border-radius: 50%; background: #142029; }
+.phone-intro { margin: 0 0 22px; }
+.phone-intro .phone-kicker { margin: 0 0 7px; color: #4b705b; font-size: 10px; font-weight: 650; letter-spacing: .17em; text-transform: uppercase; }
+.phone-intro h2 { margin: 0; font-size: 34px; line-height: 1; font-weight: 650; letter-spacing: -.04em; color: #173a29; }
+.phone-intro > p:last-child { margin: 10px 0 0; font-size: 12px; line-height: 1.4; color: #4b705b; }
+.phone-apps { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 20px; margin-bottom: 24px; }
+.phone-apps a { display: flex; flex-direction: column; align-items: center; gap: 7px; color: #244832; font-size: 12px; line-height: 18px; font-weight: 500; text-decoration: none; }
+.phone-app-icon { display: grid; place-items: center; width: 65px; height: 65px; border-radius: 17px; color: #fff; box-shadow: inset 0 1px 1px #fff4, 0 3px 6px #173a2914; }
+.phone-app-icon svg { display: block; width: 35px; height: 35px; fill: currentColor; }
+.phone-github { background: #25352e; }
+.phone-scholar { background: linear-gradient(150deg,#5b9cf8,#3476d4); }
+.phone-mail { background: linear-gradient(150deg,#56b7fc,#1687e4); }
+.phone-linkedin { background: #0a66c2; font: 750 44px Arial, sans-serif; letter-spacing: -3px; padding-right: 3px; }
+.phone-apps a:hover .phone-app-icon { filter: brightness(1.08); }
+.desk-phone a:focus-visible { outline: 3px solid #28694b; outline-offset: 4px; border-radius: 8px; }
+.phone-activity { padding: 17px 16px 15px; border: 1px solid #fff8; border-radius: 22px; background: #fdfcf8d9; box-shadow: 0 5px 20px #325d3510; }
+.phone-activity-heading { display: flex; align-items: center; justify-content: space-between; }
+.phone-activity-heading h3 { margin: 0; color: #244832; font-size: 12px; font-weight: 650; letter-spacing: 0; }
+.phone-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #3d8958; box-shadow: 0 0 0 3px #3d895812; }
+.phone-activity .phone-contribution-total { margin: 9px 0 0; color: #173a29; font-size: 32px; line-height: 1.2; font-weight: 650; letter-spacing: -.04em; }
+.phone-activity .phone-calendar-period { margin: 1px 0 12px; color: #58715e; font-size: 10px; line-height: 1.4; }
+.phone-calendar-months { display: grid; height: 14px; color: #66806c; font-size: 7px; }
+.phone-calendar-grid { display: grid; grid-template-rows: repeat(7,minmax(0,1fr)); gap: 1px; width: 100%; height: 37px; }
+.phone-calendar-grid span { display: block; border-radius: 1px; background: var(--day-color); }
+.phone-calendar-message { margin: 8px 0; font-size: 11px; color: #58715e; }
+.phone-activity-footer { display: flex; justify-content: space-between; gap: 5px; margin-top: 12px; color: #66806c; font-size: 8px; }
+.phone-activity-footer a { color: #28694b; text-decoration: none; }
+.phone-note { margin: 19px 0 0; text-align: center; font-size: 10px; color: #5f7a65; }
+.phone-home-indicator { position: absolute; bottom: 11px; left: 50%; transform: translateX(-50%); width: 105px; height: 4px; border-radius: 10px; background: #173a29; }
+.clinical-experience.is-enhanced .desk-contact { position: absolute; inset: 0; width: 100%; margin: 0; pointer-events: none; }
+.clinical-experience.is-enhanced .desk-phone { position: absolute; top: 0; left: 0; width: 360px; max-width: none; margin: 0; border-radius: 42px; box-shadow: none; pointer-events: none; opacity: 0; will-change: transform; }
+.clinical-experience.is-enhanced .desk-phone.is-phone-visible { opacity: 1; }
+.clinical-experience.is-enhanced .desk-phone.is-phone-interactive { pointer-events: auto; }
+@media(max-width: 420px) {
+  .desk-contact { width: 100%; }
+  .clinical-experience:not(.is-enhanced) .desk-phone { width: 100%; max-width: 340px; }
+}

@@ -1,9 +1,10 @@
 import * as THREE from './vendor/three/three.module.js';
 import './projects.js?v=full-clinical';
-import { createClinicalRoom, READING_STOPS, smooth } from './previews/clinical-room-model.js?v=full-clinical';
+import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=desk-phone';
 import { createClinicalTextures } from './previews/clinical-textures.js?v=full-clinical';
 import { captureRNAScene } from './clinical-snapshot.js?v=full-clinical';
 import { experiences } from './previews/clinical-data.js';
+import { createDeskPhone } from './desk-phone.js?v=desk-phone';
 
 const section = document.getElementById('clinical');
 const projects = document.getElementById('projects');
@@ -17,6 +18,7 @@ const counter = section.querySelector('.clinical-counter');
 const cue = section.querySelector('.clinical-cue');
 const bar = section.querySelector('.clinical-progress span');
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
+const phone = createDeskPhone(document.getElementById('contact'));
 const entries = [...section.querySelectorAll('.clinical-records .experience-list > li')].map((item, index) => {
   const [role, location] = item.querySelector('.entry-role').textContent.trim().split(' · ');
   return { ...experiences[index], year: item.querySelector('.entry-year').textContent.trim(), institution: item.querySelector('h4').textContent.trim(), role, location, topic: item.querySelector('p:last-child').textContent.trim() };
@@ -48,7 +50,7 @@ function initialize() {
     const fill = new THREE.DirectionalLight('#dbe8ee', 1.1); fill.position.set(7, 6, -2); world.add(fill);
     camera = new THREE.PerspectiveCamera(42, 1, .01, 180);
     textures = createClinicalTextures(renderer, entries);
-    room = createClinicalRoom('consultation', textures.texture, { matchEntrance: true }); world.add(room.group);
+    room = createClinicalRoom('consultation', textures.texture, { matchEntrance: true, includePhone: true }); world.add(room.group);
     renderer.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); unavailable = true; refresh(); });
     return true;
   } catch {
@@ -62,6 +64,7 @@ function reset() {
   section.classList.remove('is-enhanced'); projects.classList.remove('has-clinical-link', 'is-clinical-handoff');
   journey.style.removeProperty('height'); heading.style.removeProperty('opacity'); caption.style.removeProperty('opacity');
   projects.style.removeProperty('--clinical-viewport');
+  phone.reset(section.querySelector('.clinical-records'));
   snapshotReady = false; section.dataset.snapshot = 'pending'; ready = false;
 }
 function layout() {
@@ -72,8 +75,9 @@ function layout() {
   reset(); width = section.clientWidth; height = sizeReference.getBoundingClientRect().height;
   if (motion.matches || height < 520 || !projects.classList.contains('is-enhanced') || unavailable || !initialize()) return;
   enabled = true; section.classList.add('is-enhanced'); projects.classList.add('has-clinical-link');
+  phone.mount(scene);
   projects.style.setProperty('--clinical-viewport', `${height}px`);
-  distance = Math.max(3600, height * 6.4); journey.style.height = `${height + distance}px`;
+  distance = Math.max(3600, height * 6.4) / CLINICAL_FRACTION; journey.style.height = `${height + distance}px`;
   renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix();
   const background = getComputedStyle(document.documentElement).getPropertyValue('--background').trim(); renderer.setClearColor(background);
   if (wasPinned) scrollTo({ top: scrollY + journey.getBoundingClientRect().top + previous * distance, behavior: 'instant' });
@@ -119,25 +123,27 @@ function frame(time) {
   queued = false; if (!enabled) return;
   const bounds = journey.getBoundingClientRect(), target = progress();
   const dt = lastTime ? Math.min(200, time - lastTime) : 16; lastTime = time;
-  if (bounds.top > 1) { current = 0; ready = false; handoff(0, bounds.top); return; }
+  if (bounds.top > 1) { current = 0; ready = false; handoff(0, bounds.top); phone.hide(); return; }
   freeze(true);
   if (!ready || target === 0 || target === 1) current = target;
   else current += (target - current) * (1 - Math.exp(-dt / 65));
   ready = true;
-  ensureSnapshot(); handoff(current, bounds.top);
+  const clinicalProgress = Math.min(1, current / CLINICAL_FRACTION);
+  ensureSnapshot(); handoff(clinicalProgress, bounds.top);
   const visible = bounds.bottom > 0 && !document.hidden;
-  if (!visible) { current = target; ready = false; return; }
+  if (!visible) { current = target; ready = false; phone.hide(); return; }
   if (snapshotReady) {
     const pose = room.pose(current, camera.aspect); camera.position.copy(pose.position); camera.up.copy(pose.up); camera.lookAt(pose.target);
     room.update(current); renderer.render(world, camera);
+    phone.update(room, camera, width, height, current, visible);
   }
-  const phase = current < .035 ? 'handoff' : current < .34 ? 'zoomout' : current < .42 ? 'room' : 'experience';
-  const index = current < .66 ? 0 : current < .83 ? 1 : 2;
-  heading.style.opacity = String(smooth((current - .10) / .15) * (1 - smooth((current - .40) / .04)));
-  caption.style.opacity = String(smooth((current - .07) / .12));
-  bar.parentElement.style.opacity = String(smooth((current - .035) / .065));
-  counter.textContent = phase === 'experience' ? `0${index + 1} / 03 · CLINICAL EXPERIENCE` : 'THE CONSULTATION ROOM';
-  cue.textContent = phase === 'experience' ? (index === 2 ? 'Scroll to continue ↓' : 'Scroll to the next folder ↓') : 'Scroll to reveal the room and open the folders ↓';
+  const phase = current > CLINICAL_FRACTION ? 'phone' : clinicalProgress < .035 ? 'handoff' : clinicalProgress < .34 ? 'zoomout' : clinicalProgress < .42 ? 'room' : 'experience';
+  const index = clinicalProgress < .66 ? 0 : clinicalProgress < .83 ? 1 : 2;
+  heading.style.opacity = String(smooth((clinicalProgress - .10) / .15) * (1 - smooth((clinicalProgress - .40) / .04)));
+  caption.style.opacity = String(smooth((clinicalProgress - .07) / .12));
+  bar.parentElement.style.opacity = String(smooth((clinicalProgress - .035) / .065));
+  counter.textContent = phase === 'phone' ? 'LET’S CONNECT' : phase === 'experience' ? `0${index + 1} / 03 · CLINICAL EXPERIENCE` : 'THE CONSULTATION ROOM';
+  cue.textContent = phase === 'phone' ? 'Tap an app to connect · scroll to continue ↓' : phase === 'experience' ? (index === 2 ? 'Scroll to the iPhone ↓' : 'Scroll to the next folder ↓') : 'Scroll to reveal the room and open the folders ↓';
   bar.style.transform = `scaleX(${current})`;
   section.dataset.phase = phase; section.dataset.progress = current.toFixed(4); section.dataset.activeExperience = String(index);
   if (Math.abs(current - target) > .00002) request();
@@ -154,8 +160,9 @@ function routeHash() {
   if (!enabled) return;
   const index = ['#clinical-zomba', '#clinical-london', '#clinical-dallas'].indexOf(location.hash);
   const overview = ['#clinical', '#clinical-title'].includes(location.hash);
-  if (index < 0 && !overview) return;
-  current = overview ? .36 : READING_STOPS[index]; ready = true;
+  const contact = ['#contact', '#phone-title'].includes(location.hash);
+  if (index < 0 && !overview && !contact) return;
+  current = contact ? PHONE_STOP : (overview ? .36 : READING_STOPS[index]) * CLINICAL_FRACTION; ready = true;
   scrollTo({ top: scrollY + journey.getBoundingClientRect().top + current * distance, behavior: 'instant' }); request();
 }
 window.addEventListener('scroll', request, { passive: true });

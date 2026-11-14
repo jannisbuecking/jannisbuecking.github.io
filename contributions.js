@@ -1,4 +1,5 @@
 "use strict";
+import { getContributionData } from './contribution-data.js?v=desk-phone';
 
 async function loadContributions() {
   const calendar = document.getElementById("contribution-calendar");
@@ -10,10 +11,7 @@ async function loadContributions() {
   const hideTooltip = () => { tooltip.hidden = true; };
 
   try {
-    const response = await fetch("data/contributions.json");
-    if (!response.ok) throw new Error("Contribution data unavailable");
-    const data = await response.json();
-    if (!Array.isArray(data.days) || !data.days.length) throw new Error("Empty contribution calendar");
+    const data = await getContributionData();
 
     const inner = document.createElement("div");
     inner.className = "calendar-inner";

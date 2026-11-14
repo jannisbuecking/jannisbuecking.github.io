@@ -3,6 +3,8 @@ import { experiences } from './clinical-data.js';
 
 export const smooth = value => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
 export const READING_STOPS = [.56, .74, .92];
+export const CLINICAL_FRACTION = .78;
+export const PHONE_STOP = .96;
 
 export function createClinicalRoom(variant, textureFactory = () => null, options = {}) {
   const group = new THREE.Group();
@@ -18,12 +20,16 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
   }
   const box = (parent, w, h, d, material, x, y, z, name) => mesh(parent, new THREE.BoxGeometry(w, h, d), material, [x, y, z], name);
   const cylinder = (parent, top, bottom, h, material, x, y, z) => mesh(parent, new THREE.CylinderGeometry(top, bottom, h, 40), material, [x, y, z]);
-  function rounded(w, h, depth, radius = .08) {
+  function roundShape(w, h, radius = .08) {
     const shape = new THREE.Shape(), x = -w / 2, y = -h / 2, r = Math.min(radius, w / 2, h / 2);
     shape.moveTo(x + r, y); shape.lineTo(x + w - r, y); shape.quadraticCurveTo(x + w, y, x + w, y + r);
     shape.lineTo(x + w, y + h - r); shape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
     shape.lineTo(x + r, y + h); shape.quadraticCurveTo(x, y + h, x, y + h - r);
     shape.lineTo(x, y + r); shape.quadraticCurveTo(x, y, x + r, y);
+    return shape;
+  }
+  function rounded(w, h, depth, radius = .08) {
+    const shape = roundShape(w, h, radius);
     const geometry = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelSize: .015, bevelThickness: .015, bevelSegments: 2, steps: 1, curveSegments: 12 });
     geometry.translate(0, 0, -depth / 2); return geometry;
   }
@@ -74,7 +80,7 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
   const light = box(group, 5, .08, .45, mat('#fffef4', { emissive: '#fff7d4', emissiveIntensity: .55 }), 0, 4.05, -1.4);
   box(group, .025, .5, .025, c.metal, -2, 4.33, -1.4); box(group, .025, .5, .025, c.metal, 2, 4.33, -1.4);
 
-  let entrance;
+  let entrance, phone;
   if (variant === 'laboratory') {
     table(-.5, -2.45, 9.9, 2.3, 1.4);
     for (const x of [-4.5, -.7, 3.1]) {
@@ -145,12 +151,26 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
       folders.push(cover); readings.push({ object: folder, paper, width: 1.47, height: 1.93, index });
     });
     // Small, quiet clinical props: a pen cup, lamp, hygiene dispenser and wall rail.
-    cylinder(group, .11, .11, .25, c.white, -1.35, 1.51, -2.05);
-    for (let n = 0; n < 3; n++) cylinder(group, .012, .012, .42, c.green, -1.4 + n * .05, 1.7, -2.05);
-    cylinder(group, .19, .19, .04, c.metal, -.6, 1.42, -2.2);
-    cylinder(group, .018, .018, .65, c.metal, -.6, 1.74, -2.2);
-    const shade = cylinder(group, .15, .29, .23, c.white, -.6, 2.08, -2.2); shade.rotation.z = -.3;
+    const penZ = options.includePhone ? -2.35 : -2.05, lampX = options.includePhone ? -.3 : -.6;
+    cylinder(group, .11, .11, .25, c.white, -1.35, 1.51, penZ);
+    for (let n = 0; n < 3; n++) cylinder(group, .012, .012, .42, c.green, -1.4 + n * .05, 1.7, penZ);
+    cylinder(group, .19, .19, .04, c.metal, lampX, 1.42, -2.2);
+    cylinder(group, .018, .018, .65, c.metal, lampX, 1.74, -2.2);
+    const shade = cylinder(group, .15, .29, .23, c.white, lampX, 2.08, -2.2); shade.rotation.z = -.3;
     box(group, .3, .5, .18, c.white, -5.83, 2.1, 3);
+    if (options.includePhone) {
+      // The phone lies flat in the desk's left-hand workspace. The folders
+      // close before the camera approaches, leaving its glass unobstructed.
+      const device = new THREE.Group(); device.name = 'desk-iphone';
+      device.position.set(-1.05, 1.4125, -1.3); device.rotation.x = -Math.PI / 2; group.add(device);
+      mesh(device, rounded(.76, 1.61, .065, .13), c.dark, [0, 0, 0], 'phone-body');
+      const screenMaterial = new THREE.MeshBasicMaterial({ color: '#17291f', toneMapped: false }); materials.push(screenMaterial);
+      const glass = mesh(device, new THREE.ShapeGeometry(roundShape(.70, .70 * 780 / 360, .082)), screenMaterial, [0, 0, .054], 'phone-screen');
+      box(device, .015, .22, .035, c.metal, .386, .22, 0, 'phone-power-button');
+      for (const y of [.23, .43]) box(device, .015, .13, .035, c.metal, -.386, y, 0, 'phone-volume-button');
+      box(device, .13, .012, .026, c.dark, 0, -.813, 0, 'phone-port');
+      phone = { group: device, object: glass, width: .70, height: .70 * 780 / 360, bodyWidth: .76, bodyHeight: 1.61 };
+    }
   }
   group.updateMatrixWorld(true);
   const worldFrame = (target, depth = .07) => {
@@ -158,7 +178,7 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     const rotation = target.object.getWorldQuaternion(new THREE.Quaternion());
     return { position, normal: new THREE.Vector3(0, 0, 1).applyQuaternion(rotation), up: new THREE.Vector3(0, 1, 0).applyQuaternion(rotation) };
   };
-  function pose(progress, aspect) {
+  function clinicalPose(progress, aspect) {
     const fov = 42, tangent = Math.tan(fov * Math.PI / 360);
     const start = worldFrame(entrance, 0);
     // Begin inside the optical/screen image; all room objects remain stationary.
@@ -178,14 +198,27 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     const from = keys[index - 1], to = keys[index], t = smooth((progress - from.p) / (to.p - from.p));
     return { position: from.view.position.clone().lerp(to.view.position, t), target: from.view.target.clone().lerp(to.view.target, t), up: from.view.up.clone().lerp(to.view.up, t).normalize(), fov };
   }
+  function pose(progress, aspect) {
+    if (!phone) return clinicalPose(progress, aspect);
+    const clinical = clinicalPose(Math.min(1, progress / CLINICAL_FRACTION), aspect);
+    if (progress <= CLINICAL_FRACTION) return clinical;
+    const frame = worldFrame(phone, .01), tangent = Math.tan(42 * Math.PI / 360);
+    const distance = 1.16 * Math.max(phone.bodyHeight / (2 * tangent), phone.bodyWidth / (2 * tangent * aspect));
+    const direction = frame.normal.clone().addScaledVector(frame.up, -.22).normalize();
+    const position = frame.position.clone().addScaledVector(direction, distance);
+    const amount = smooth((progress - CLINICAL_FRACTION) / .16);
+    return { position: clinical.position.lerp(position, amount), target: clinical.target.lerp(frame.position, amount), up: clinical.up.lerp(frame.up, amount).normalize(), fov: 42 };
+  }
   function update(progress) {
+    const clinical = phone ? Math.min(1, progress / CLINICAL_FRACTION) : progress;
+    const closing = phone ? smooth((progress - .80) / .07) : 0;
     folders.forEach((cover, index) => {
       const start = [.42, .64, .82][index];
-      cover.rotation.y = -Math.PI * .96 * smooth((progress - start) / .1);
+      cover.rotation.y = -Math.PI * .96 * smooth((clinical - start) / .1) * (1 - closing);
     });
   }
   function dispose() {
     group.traverse(object => object.geometry?.dispose()); materials.forEach(material => material.dispose()); textures.forEach(texture => texture.dispose());
   }
-  return { group, entrance, readings, folders, pose, update, dispose, textures };
+  return { group, entrance, readings, folders, phone, pose, update, dispose, textures };
 }

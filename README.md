@@ -18,9 +18,11 @@ GitHub profile links.
 - `projects.css` and `projects.js`: the scroll-driven mRNA and ribosome project explorer.
 - `research.css`, `research.js`, and `research-model.js`: the six-tube 3D rotor, scroll-driven inspection camera, and research descriptions.
 - `clinical.css`, `clinical.js`, and `clinical-snapshot.js`: the live RNA-to-monitor handoff and consultation-room clinical experience.
+- `desk-phone.css`, `desk-phone.js`, and `phone-geometry.js`: the desk iPhone, interactive projected HTML screen, and contact links.
 - `previews/clinical-room-model.js` and `previews/clinical-textures.js`: shared room geometry and document textures for the integrated room and concept previews.
 - `vendor/three/`: Three.js 0.187.0 and its MIT license; served locally with the site.
 - `contributions.js`: interactive contribution calendar with day tooltips and arrow-key navigation.
+- `contribution-data.js`: shared, cached contribution data for the full calendar and iPhone widget.
 - `data/contributions.json`: saved public GitHub contribution data for local preview and fallback.
 - `scripts/update_contributions.py`: refreshes contribution data using Python's standard library.
 - `.github/workflows/deploy.yml`: publishes the site on pushes and refreshes activity daily.
@@ -177,6 +179,19 @@ Their text comes directly from the clinical entries in `index.html`, which also
 serve as the accessible static fallback. Clinical experience is no longer repeated
 in the later education/teaching grid. Upward scrolling closes the folders and
 returns through the monitor into the live RNA sequence.
+
+The final scroll chapter closes the folders and approaches an iPhone lying on
+the same desk. A real HTML screen follows the phone glass through a perspective
+transform; GitHub, Google Scholar, Email, and LinkedIn are native links with
+keyboard focus and mobile tap targets. The email is `jannis.buecking@gmail.com`,
+as listed on the owner's public GitHub profile. The original clinical camera path
+and its scroll distances are preserved before this final phone chapter.
+
+The phone widget and the existing full calendar use the same daily snapshot and
+share one cached browser request. The screen is hidden behind foreground objects,
+and links become interactive when the camera approaches. Reduced-motion, no-JS,
+short-screen, and unavailable-WebGL layouts retain the phone contact links as a
+normal HTML card. `#contact` approaches the phone directly.
 
 `#clinical` opens the room overview. `#clinical-zomba`, `#clinical-london`, and
 `#clinical-dallas` open the respective records. The scene falls back to normal
