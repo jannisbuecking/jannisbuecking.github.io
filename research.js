@@ -1,48 +1,138 @@
+import * as THREE from "./vendor/three/three.module.js";
+import { createCentrifuge, inspectionPose, RESEARCH_SLOTS } from "./research-model.js";
+
 (() => {
-  "use strict";
   const section = document.getElementById("research");
   if (!section) return;
   const journey = section.querySelector(".research-journey");
   const scene = section.querySelector(".research-scene");
   const heading = section.querySelector(".research-heading");
   const stage = section.querySelector(".research-stage");
-  const tubes = [...section.querySelectorAll(".research-tube")];
-  const rotor = section.querySelector(".research-rotor");
-  const disc = section.querySelector(".research-rotor-disc");
-  const machine = section.querySelector(".research-machine");
-  const shadow = section.querySelector(".research-floor-shadow");
-  const progressBar = section.querySelector(".research-progress span");
+  const visual = section.querySelector(".research-visual");
+  const articles = [...section.querySelectorAll(".research-tube")];
   const controls = section.querySelector(".research-controls");
+  const progressBar = section.querySelector(".research-progress span");
   const cue = section.querySelector(".research-scroll-cue");
   const nav = [...section.querySelectorAll("[data-research-index]")];
   const viewSwitch = section.querySelector(".research-view-switch");
   const viewButtons = [...viewSwitch.querySelectorAll("button")];
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const theme = window.matchMedia("(prefers-color-scheme: dark)");
   const sizeReference = document.createElement("div");
   sizeReference.className = "research-size-reference";
   sizeReference.setAttribute("aria-hidden", "true");
   scene.append(sizeReference);
   const stops = [.38, .65, .92];
-  const tau = Math.PI * 2;
+  const names = ["BOSTON", "UCSF", "HEIDELBERG"];
+  const labs = ["Walsh lab", "Kampmann lab", "Schaaf / Laugsch"];
+  const years = ["2026", "2023", "2021–present"];
   const clamp = (value, low = 0, high = 1) => Math.max(low, Math.min(high, value));
-  const mix = (start, end, value) => start + (end - start) * value;
-  const ease = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
-  let enabled = false, queued = false, layoutQueued = false;
+  let enabled = false, unavailable = false, queued = false, layoutQueued = false;
   let width = 0, stableHeight = 0, distance = 0, current = 0, savedProgress = 0;
-  let geometry = null, ready = false, lastTime = 0;
+  let ready = false, lastTime = 0, renderer, world, camera, model;
+  let canvasWidth = 0, canvasHeight = 0;
 
-  function targetProgress() {
-    return distance ? clamp(-journey.getBoundingClientRect().top / distance) : 0;
+  function palette() {
+    const style = getComputedStyle(document.documentElement);
+    const value = name => style.getPropertyValue(name).trim();
+    return { accent: value("--accent"), paper: value("--surface"), text: value("--text"), muted: value("--muted"), metal: value("--border"), rim: value("--muted"), balance: value("--level-0"), background: value("--background") };
   }
-  function request() {
-    if (!queued) { queued = true; requestAnimationFrame(frame); }
+  function textureFactory(colors) {
+    return (kind, slot, index) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = kind === "cap" ? 256 : 768;
+      canvas.height = kind === "cap" ? 256 : 1024;
+      const ctx = canvas.getContext("2d");
+      if (kind === "cap") {
+        ctx.fillStyle = index >= 0 ? colors.accent : colors.balance;
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.fillStyle = index >= 0 ? colors.paper : colors.muted;
+        ctx.textAlign = "center";
+        ctx.font = "600 90px system-ui, sans-serif";
+        ctx.fillText(String(slot + 1).padStart(2, "0"), 128, 142);
+        ctx.font = "500 31px system-ui, sans-serif";
+        ctx.fillText(index >= 0 ? ["BOS", "UCSF", "HD"][index] : "BAL", 128, 194);
+      } else {
+        ctx.fillStyle = colors.paper;
+        ctx.fillRect(0, 0, 768, 1024);
+        ctx.fillStyle = colors.muted;
+        ctx.font = "400 66px system-ui, sans-serif";
+        ctx.fillText(index >= 0 ? years[index] : "BALANCE", 70, 140);
+        ctx.fillStyle = colors.text;
+        const words = index >= 0 ? names[index].split(" ") : ["COUNTER", "BALANCE"];
+        const lines = index === 2 ? ["HEIDEL", "BERG"] : words;
+        ctx.font = "650 110px system-ui, sans-serif";
+        lines.forEach((line, i) => ctx.fillText(line, 70, 330 + i * 135));
+        ctx.fillStyle = colors.muted;
+        ctx.font = "400 59px system-ui, sans-serif";
+        ctx.fillText(index >= 0 ? labs[index] : `Position ${slot + 1}`, 70, 670);
+        ctx.fillStyle = colors.accent;
+        ctx.fillRect(70, 770, 628, 5);
+        ctx.font = "500 56px system-ui, sans-serif";
+        ctx.fillText(`TUBE ${String(slot + 1).padStart(2, "0")}`, 70, 900);
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      return texture;
+    };
   }
+  function buildModel() {
+    if (model) { world.remove(model.assembly, model.base); model.dispose(); }
+    const colors = palette();
+    model = createCentrifuge(colors, textureFactory(colors));
+    world.add(model.assembly, model.base);
+  }
+  function initializeRenderer() {
+    if (renderer) return true;
+    try {
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "low-power" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.1;
+      renderer.setClearColor(0x000000, 0);
+      renderer.domElement.setAttribute("role", "img");
+      renderer.domElement.setAttribute("aria-label", "Six equally spaced, upright tubes in a centrifuge rotor. Research tubes occupy positions 1, 3, and 5; balancing tubes occupy 2, 4, and 6.");
+      visual.append(renderer.domElement);
+      world = new THREE.Scene();
+      world.add(new THREE.HemisphereLight(0xffffff, 0x8d9a90, 2.3));
+      const key = new THREE.DirectionalLight(0xffffff, 3.3);
+      key.position.set(5, 9, 7);
+      world.add(key);
+      const fill = new THREE.DirectionalLight(0xffffff, 1.2);
+      fill.position.set(-6, 4, -3);
+      world.add(fill);
+      camera = new THREE.OrthographicCamera(-5, 5, 5, -5, .1, 100);
+      buildModel();
+      const raycaster = new THREE.Raycaster();
+      renderer.domElement.addEventListener("click", event => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        const pointer = new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
+        raycaster.setFromCamera(pointer, camera);
+        const hits = raycaster.intersectObjects(model.tubeGroups, true);
+        if (!hits.length) return;
+        let object = hits[0].object;
+        while (object && object.userData.researchIndex === undefined) object = object.parent;
+        if (object?.userData.researchIndex >= 0) goToTube(object.userData.researchIndex);
+      });
+      renderer.domElement.addEventListener("webglcontextlost", event => { event.preventDefault(); unavailable = true; setView("list"); });
+      return true;
+    } catch {
+      renderer?.dispose();
+      renderer = null;
+      unavailable = true;
+      return false;
+    }
+  }
+  function targetProgress() { return distance ? clamp(-journey.getBoundingClientRect().top / distance) : 0; }
+  function request() { if (!queued) { queued = true; requestAnimationFrame(frame); } }
   function reset() {
     enabled = false;
     section.classList.remove("is-enhanced");
     journey.style.removeProperty("height");
     scene.style.removeProperty("--research-details");
-    tubes.forEach(tube => { tube.removeAttribute("style"); tube.classList.remove("is-current"); });
+    articles.forEach(article => article.classList.remove("is-current"));
     controls.hidden = true;
   }
   function layout() {
@@ -53,33 +143,17 @@
     reset();
     width = section.clientWidth;
     stableHeight = sizeReference.getBoundingClientRect().height;
-    if (section.dataset.view !== "explore") return;
-    const headingHeight = heading.getBoundingClientRect().height + 28;
+    if (section.dataset.view !== "explore" || unavailable) return;
+    const headingHeight = heading.getBoundingClientRect().height + 24;
     const stageHeight = stableHeight - headingHeight - (width <= 760 ? 98 : 76);
-    const endWidth = Math.min(300, width - 40);
-    if (width < 260 || stageHeight < 440) return;
-    // Measure the longest real tube label before sizing the illustration.
-    tubes.forEach(tube => { tube.style.width = `${endWidth}px`; });
-    const labelHeight = Math.max(...tubes.map(tube => tube.querySelector(".research-paper").getBoundingClientRect().height));
-    const endHeight = Math.max(360, labelHeight + 180);
-    tubes.forEach(tube => tube.removeAttribute("style"));
-    if (endHeight > stageHeight - 55) return;
-    scene.style.setProperty("--research-stage-top", `${headingHeight}px`);
-    const diameter = Math.min(width * .92, stageHeight * .88, 650);
-    const startWidth = Math.min(136, Math.max(92, width * .27));
-    const startHeight = Math.min(240, Math.max(180, width * .54), stageHeight * .42);
-    const radialLimit = Math.sqrt(Math.max(0, (width / 2 - 10) ** 2 - (startWidth / 2) ** 2)) - startHeight / 2;
-    geometry = {
-      height: stageHeight, diameter, startWidth, startHeight, endWidth, endHeight,
-      topRadius: Math.min(diameter * .23, Math.max(20, radialLimit)),
-      sideRadius: Math.min(330, Math.max(155, width * .31)),
-    };
+    if (width < 260 || stageHeight < 440 || !initializeRenderer()) return;
     enabled = true;
     section.classList.add("is-enhanced");
     controls.hidden = false;
-    scene.style.setProperty("--research-diameter", `${diameter}px`);
+    scene.style.setProperty("--research-stage-top", `${headingHeight}px`);
     distance = Math.max(stableHeight * 4.2, 2800);
     journey.style.height = `${stableHeight + distance}px`;
+    canvasWidth = canvasHeight = 0;
     if (wasPinned) window.scrollTo({ top: window.scrollY + journey.getBoundingClientRect().top + previous * distance, behavior: "instant" });
     else if (wasAfter) window.scrollBy({ top: journey.getBoundingClientRect().bottom - before.bottom, behavior: "instant" });
     ready = false;
@@ -94,68 +168,59 @@
       else request();
     });
   }
-  function draw(p) {
-    const g = geometry;
-    const tilt = ease((p - .1) / .22);
-    const rotation = p < .32
-      ? mix(-Math.PI / 2, Math.PI / 2, ease(p / .32))
-      : Math.PI / 2 - tau / 3 * (ease((p - .44) / .14) + ease((p - .7) / .14));
-    const flatness = mix(1, .26, tilt);
-    const centerX = width / 2;
-    const rotorY = g.height * mix(.49, .71, tilt);
-    const tubeWidth = mix(g.startWidth, g.endWidth, tilt);
-    const tubeHeight = mix(g.startHeight, g.endHeight, tilt);
-    scene.style.setProperty("--research-tube-width", `${tubeWidth}px`);
-    scene.style.setProperty("--research-tube-height", `${tubeHeight}px`);
-    scene.style.setProperty("--research-details", ease((tilt - .48) / .45));
-    rotor.style.transform = `translate(${centerX - g.diameter / 2}px, ${rotorY - g.diameter / 2}px) scaleY(${flatness})`;
-    rotor.style.zIndex = tilt > .7 ? "10" : "1";
-    disc.style.transform = `rotate(${rotation * 180 / Math.PI}deg)`;
-    const machineY = rotorY + g.diameter / 2 * flatness - 12;
-    machine.style.width = `${g.diameter * .92}px`;
-    machine.style.transform = `translate(${centerX - g.diameter * .46}px,${machineY}px) scaleY(${tilt})`;
-    machine.style.opacity = tilt;
-    shadow.style.width = `${g.diameter}px`;
-    shadow.style.transform = `translate(${centerX - g.diameter / 2}px,${machineY + 68 * tilt}px)`;
-    shadow.style.opacity = mix(.2, .8, tilt);
-    let nearest = 0, bestDepth = -1;
-    tubes.forEach((tube, index) => {
-      const theta = rotation + index * tau / 3;
-      const depth = (Math.sin(theta) + 1) / 2;
-      if (depth > bestDepth) { bestDepth = depth; nearest = index; }
-      const topX = centerX + Math.cos(theta) * g.topRadius;
-      const topY = rotorY + Math.sin(theta) * g.topRadius;
-      const sideX = centerX + Math.cos(theta) * g.sideRadius;
-      const sideY = rotorY + Math.sin(theta) * g.sideRadius * .26 - tubeHeight * .38 - depth * 46;
-      const x = mix(topX, sideX, tilt);
-      const y = mix(topY, sideY, tilt);
-      const angle = (theta * 180 / Math.PI + 90) * (1 - tilt);
-      const scale = mix(1, .83 + depth * .17, tilt);
-      tube.style.transform = `translate(${x - tubeWidth / 2}px,${y - tubeHeight / 2}px) rotate(${angle}deg) scale(${scale})`;
-      tube.style.zIndex = tilt < .5 ? (index + 3).toString() : (depth > .65 ? 30 : 5).toString();
-      tube.style.opacity = mix(1, .42 + depth * .58, tilt);
-    });
-    tubes.forEach((tube, index) => tube.classList.toggle("is-current", tilt > .8 && nearest === index));
+  function draw(progress) {
+    const { tilt, cameraAngle, rotorAngle } = inspectionPose(progress);
+    const w = visual.clientWidth, h = visual.clientHeight;
+    if (!w || !h) return;
+    if (w !== canvasWidth || h !== canvasHeight) {
+      renderer.setSize(w, h, false);
+      canvasWidth = w; canvasHeight = h;
+    }
+    const aspect = w / h;
+    const viewHeight = Math.max(7.7, 8.55 / aspect);
+    camera.left = -viewHeight * aspect / 2;
+    camera.right = viewHeight * aspect / 2;
+    camera.top = viewHeight / 2;
+    camera.bottom = -viewHeight / 2;
+    camera.zoom = 1 + tilt * .08;
+    const targetY = .1 + tilt * .15;
+    camera.position.set(0, targetY + Math.cos(cameraAngle) * 18, Math.sin(cameraAngle) * 18);
+    // A stable camera basis throughout the vertical orbit: no roll or pole flip.
+    camera.up.set(0, Math.sin(cameraAngle), -Math.cos(cameraAngle));
+    camera.lookAt(0, targetY, 0);
+    camera.updateProjectionMatrix();
+    model.assembly.rotation.y = rotorAngle;
+    // Tube transforms are immutable; only this parent assembly indexes.
+    renderer.render(world, camera);
+    let nearest = 0, front = -Infinity;
+    for (let index = 0; index < 3; index++) {
+      const depth = Math.cos(rotorAngle + RESEARCH_SLOTS[index] * Math.PI / 3);
+      if (depth > front) { front = depth; nearest = index; }
+    }
+    scene.style.setProperty("--research-details", clamp((tilt - .55) / .25));
+    scene.style.setProperty("--research-overview", clamp((.45 - tilt) / .15));
+    articles.forEach((article, index) => article.classList.toggle("is-current", nearest === index));
     nav.forEach((button, index) => button.setAttribute("aria-pressed", String(tilt > .8 && nearest === index)));
-    cue.textContent = tilt < .98 ? "Scroll to change your perspective ↓" : `${String(nearest + 1).padStart(2, "0")} / 03 · ${nearest === 2 ? "Scroll to continue" : "Scroll to the next tube"} ↓`;
-    progressBar.style.transform = `scaleX(${p})`;
+    cue.textContent = tilt < .98 ? "Scroll to lower the viewpoint ↓" : `${String(nearest + 1).padStart(2, "0")} / 03 · ${nearest === 2 ? "Scroll to continue" : "Scroll to the next research tube"} ↓`;
+    progressBar.style.transform = `scaleX(${progress})`;
     section.dataset.phase = tilt < .02 ? "top" : tilt < .98 ? "turning" : "side";
     section.dataset.activeTube = nearest.toString();
+    section.dataset.tubeCount = model.tubeGroups.length.toString();
   }
   function frame(time) {
     queued = false;
     if (!enabled) return;
     const target = targetProgress();
-    const dt = lastTime ? clamp(time - lastTime, 8, 40) : 16;
+    const dt = lastTime ? clamp(time - lastTime, 1, 200) : 16;
     lastTime = time;
     const bounds = scene.getBoundingClientRect();
     const visible = bounds.bottom > 0 && bounds.top < window.innerHeight && !document.hidden;
     if (!visible) { current = target; ready = false; return; }
-    if (!ready || !visible || motion.matches || target === 0 || target === 1) current = target;
+    if (!ready || motion.matches || target < .0005 || target > .9995) current = target;
     else current += (target - current) * (1 - Math.exp(-dt / 65));
     ready = true;
     draw(current);
-    if (visible && Math.abs(current - target) > .00003) request();
+    if (Math.abs(current - target) > .00003) request();
   }
   function goToTube(index, immediate = false) {
     if (!enabled) return;
@@ -171,26 +236,21 @@
     if (enabled) savedProgress = targetProgress();
     section.dataset.view = view;
     viewButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.researchView === view)));
-    reset();
-    layout();
+    reset(); layout();
     if (reading) window.scrollTo({ top: window.scrollY + section.getBoundingClientRect().top + (enabled ? savedProgress * distance : 0), behavior: "instant" });
     else if (before.bottom <= 0) window.scrollBy({ top: section.getBoundingClientRect().bottom - before.bottom, behavior: "instant" });
-    ready = false;
-    request();
+    ready = false; request();
   }
-  viewButtons.forEach(button => button.addEventListener("click", () => setView(button.dataset.researchView)));
   nav.forEach((button, index) => button.addEventListener("click", () => goToTube(index)));
-  tubes.forEach((tube, index) => {
-    tube.querySelector(".research-cap").addEventListener("click", () => goToTube(index));
-    tube.querySelector(".research-cap").addEventListener("focus", () => goToTube(index, true));
-  });
-  const routeHash = () => { const index = tubes.findIndex(tube => `#${tube.id}` === location.hash); if (index >= 0) goToTube(index, true); };
+  viewButtons.forEach(button => button.addEventListener("click", () => setView(button.dataset.researchView)));
+  const routeHash = () => { const index = articles.findIndex(article => `#${article.id}` === location.hash); if (index >= 0) goToTube(index, true); };
   if (motion.matches) {
     section.dataset.view = "list";
     viewButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.researchView === "list")));
   }
   viewSwitch.hidden = false;
   motion.addEventListener("change", () => { if (motion.matches) setView("list"); });
+  theme.addEventListener("change", () => { if (model) { buildModel(); request(); } });
   window.addEventListener("scroll", request, { passive: true });
   window.addEventListener("resize", scheduleLayout, { passive: true });
   window.addEventListener("hashchange", routeHash);
@@ -198,9 +258,7 @@
   document.addEventListener("visibilitychange", request);
   if (window.ResizeObserver) {
     const observer = new ResizeObserver(scheduleLayout);
-    observer.observe(section);
-    observer.observe(sizeReference);
+    observer.observe(section); observer.observe(sizeReference);
   }
-  layout();
-  routeHash();
+  layout(); routeHash();
 })();

@@ -1,0 +1,8 @@
+{
+  "name": "jannisbuecking.github.io",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/research-model.test.mjs"
+  }
+}
