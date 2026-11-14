@@ -14,6 +14,7 @@ GitHub profile links.
 
 - `index.html`: page content and metadata.
 - `styles.css`: layout, colors, and light/dark appearance.
+- `projects.css` and `projects.js`: the scroll-driven mRNA and ribosome project explorer.
 - `contributions.js`: interactive contribution calendar with day tooltips and arrow-key navigation.
 - `data/contributions.json`: saved public GitHub contribution data for local preview and fallback.
 - `scripts/update_contributions.py`: refreshes contribution data using Python's standard library.
@@ -77,3 +78,17 @@ owner's [Google Scholar profile](https://scholar.google.com/citations?hl=en&user
 on 14 November 2026. Each entry links to its DOI or Scholar record, with
 preprints and the conference abstract labeled separately. These entries are
 edited in `index.html`; only the GitHub contribution calendar updates automatically.
+
+## Animated science projects
+
+The project explorer adapts the mRNA strand, sugar-phosphate backbone, and two-part
+ribosome schematic from the owner's
+[Institute of Human Genetics Heidelberg portal](https://github.com/jannisbuecking/human-genetics-heidelberg-tools).
+Native page scrolling moves the three project cards through the ribosome, from
+the AUG start codon to the UAA stop codon. The scene animates only while visible.
+
+The **List** control shows all projects without animation. Visitors who prefer
+reduced motion start in List view; JavaScript-disabled browsers and short windows
+also retain the ordinary project list. In Explore view, focus the display and use
+Left/Right or Home/End to navigate. Project links remain reachable by Tab, and
+direct links such as `#project-mammoth` bring the relevant card into view.

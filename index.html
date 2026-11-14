@@ -7,7 +7,9 @@
     <meta name="color-scheme" content="light dark">
     <title>Jannis Buecking</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="projects.css">
     <script src="contributions.js" defer></script>
+    <script src="projects.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -32,45 +34,78 @@
         </ul>
       </section>
 
-      <section id="projects" class="section" aria-labelledby="projects-title">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Selected work</p>
-            <h2 id="projects-title">Public projects</h2>
+      <section id="projects" class="section rna-projects" data-view="rna" aria-labelledby="projects-title">
+        <div class="rna-journey" id="projects-display">
+          <div class="rna-scene">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Selected work</p>
+                <h2 id="projects-title">Science projects</h2>
+              </div>
+              <div class="project-view-switch" role="group" aria-label="Project view" hidden>
+                <button type="button" data-project-view="rna" aria-pressed="true" aria-controls="projects-display">Explore</button>
+                <button type="button" data-project-view="list" aria-pressed="false" aria-controls="projects-display" aria-label="List view without animation">List</button>
+              </div>
+            </div>
+            <p id="project-navigation-help" class="sr-only">Scroll to move along the mRNA. When the project display is focused, use the left and right arrow keys to browse projects, or Home and End to jump to the first and last project. Choose List for a view without animation.</p>
+            <div class="rna-stage">
+              <svg class="rna-ribosome" aria-hidden="true"><g class="rna-ribosome-shape"><path class="subunit-large" data-subunit="60S" d="M-178 -25 C-204 -54 -202 -111 -168 -142 C-155 -181 -108 -201 -67 -187 C-30 -217 24 -214 62 -188 C108 -204 158 -176 170 -141 C207 -122 212 -78 188 -48 C169 -20 128 -16 91 -25 C48 -32 28 -47 -9 -41 C-52 -35 -70 -17 -109 -16 C-137 -14 -160 -15 -178 -25 Z"/><path class="subunit-small" data-subunit="40S" d="M-164 24 C-183 9 -174 -19 -152 -25 C-129 -45 -96 -29 -91 -7 L-67 13 C-31 -4 10 3 35 13 C66 -3 106 5 119 29 C154 35 173 62 158 86 C143 111 109 117 88 117 C53 142 7 144 -23 126 C-58 141 -104 121 -115 97 C-151 101 -181 79 -177 54 C-176 42 -172 33 -164 24 Z"/></g></svg>
+              <div class="rna-viewport" tabindex="0" role="region" aria-label="Science project explorer" aria-describedby="project-navigation-help">
+                <div class="projects rna-track">
+                  <svg class="rna-backbone" aria-hidden="true"><path class="rna-strand"></path><g class="rna-sugars"></g></svg>
+                <div class="rna-unit rna-letter start-codon" aria-hidden="true"><span class="nucleotide-mark">A</span></div>
+                <div class="rna-unit rna-letter start-codon" aria-hidden="true"><span class="nucleotide-mark">U</span></div>
+                <div class="rna-unit rna-letter start-codon" aria-hidden="true"><span class="nucleotide-mark">G</span></div>
+                <div class="rna-unit rna-project">
+                  <article class="project" id="project-magel2">
+                    <p class="project-category"><span class="project-number">01</span> Multi-omics research</p>
+                    <h3>MAGEL2 multi-omics atlas</h3>
+                    <p class="project-description">An integrated view of transcriptomic, proteomic, and ubiquitinomic changes in human cortical neurons modeling Prader-Willi and Schaaf-Yang syndromes.</p>
+                    <ul class="tags" aria-label="Technologies and topics"><li>R</li><li>Multi-omics</li><li>Neurodevelopment</li></ul>
+                    <div class="project-links">
+                      <a href="https://github.com/jannisbuecking/Buecking_et_al_2026_MAGEL2_multi-omics">Explore the research <span aria-hidden="true">↗</span></a>
+                      <a class="secondary-link" href="https://www.biorxiv.org/content/10.64898/2026.05.01.722223v1">Read the preprint <span aria-hidden="true">↗</span></a>
+                    </div>
+                  </article>
+                </div>
+                <div class="rna-unit rna-letter" aria-hidden="true"><span class="nucleotide-mark">G</span></div>
+                <div class="rna-unit rna-letter" aria-hidden="true"><span class="nucleotide-mark">C</span></div>
+                <div class="rna-unit rna-project">
+                  <article class="project" id="project-mammoth">
+                    <p class="project-category"><span class="project-number">02</span> Interactive exploration</p>
+                    <h3>MAMMOTH</h3>
+                    <p class="project-description">The MAGEL2 Multi-Modal-Omics Tool Hub. A Shiny app for exploring the atlas across transcriptome, proteome, ubiquitome, and multi-omics factor analysis results.</p>
+                    <ul class="tags" aria-label="Technologies and topics"><li>R Shiny</li><li>Data visualization</li><li>MOFA</li></ul>
+                    <div class="project-links">
+                      <a href="https://jannisbuecking-mamoth.share.connect.posit.cloud/">Launch MAMMOTH <span aria-hidden="true">↗</span></a>
+                      <a class="secondary-link" href="https://github.com/jannisbuecking/MAMMOTH">Source code <span aria-hidden="true">↗</span></a>
+                    </div>
+                  </article>
+                </div>
+                <div class="rna-unit rna-letter" aria-hidden="true"><span class="nucleotide-mark">A</span></div>
+                <div class="rna-unit rna-letter" aria-hidden="true"><span class="nucleotide-mark">U</span></div>
+                <div class="rna-unit rna-project">
+                  <article class="project" id="project-institute">
+                    <p class="project-category"><span class="project-number">03</span> Community resource</p>
+                    <h3>Institute of Human Genetics Heidelberg</h3>
+                    <p class="project-description">A database and tool portal for the Institute of Human Genetics Heidelberg, bringing useful resources together in one place. Developed with Tim Schubert.</p>
+                    <ul class="tags" aria-label="Technologies and topics"><li>Human genetics</li><li>Databases</li><li>Web</li></ul>
+                    <div class="project-links">
+                      <a href="https://institute-of-human-genetics-heidelberg.github.io/">Visit the portal <span aria-hidden="true">↗</span></a>
+                      <a class="secondary-link" href="https://github.com/jannisbuecking/human-genetics-heidelberg-tools">Source code <span aria-hidden="true">↗</span></a>
+                    </div>
+                  </article>
+                </div>
+                <div class="rna-unit rna-letter stop-codon" aria-hidden="true"><span class="nucleotide-mark">U</span></div>
+                <div class="rna-unit rna-letter stop-codon" aria-hidden="true"><span class="nucleotide-mark">A</span></div>
+                <div class="rna-unit rna-letter stop-codon" aria-hidden="true"><span class="nucleotide-mark">A</span></div>
+                </div>
+                <span class="rna-prime rna-start" aria-hidden="true">5′</span>
+                <span class="rna-prime rna-end" aria-hidden="true">3′</span>
+              </div>
+            </div>
+            <div class="rna-caption" aria-hidden="true"><span>Scroll to explore ↓</span><span>mRNA · 5′ → 3′</span></div>
           </div>
-          <span class="section-note">Research, tools &amp; resources</span>
-        </div>
-        <div class="projects">
-          <article class="project">
-            <p class="project-category"><span class="project-number">01</span> Multi-omics research</p>
-            <h3>MAGEL2 multi-omics atlas</h3>
-            <p class="project-description">An integrated view of transcriptomic, proteomic, and ubiquitinomic changes in human cortical neurons modeling Prader-Willi and Schaaf-Yang syndromes.</p>
-            <ul class="tags" aria-label="Technologies and topics"><li>R</li><li>Multi-omics</li><li>Neurodevelopment</li></ul>
-            <div class="project-links">
-              <a href="https://github.com/jannisbuecking/Buecking_et_al_2026_MAGEL2_multi-omics">Explore the research <span aria-hidden="true">↗</span></a>
-              <a class="secondary-link" href="https://www.biorxiv.org/content/10.64898/2026.05.01.722223v1">Read the preprint <span aria-hidden="true">↗</span></a>
-            </div>
-          </article>
-          <article class="project">
-            <p class="project-category"><span class="project-number">02</span> Interactive exploration</p>
-            <h3>MAMMOTH</h3>
-            <p class="project-description">The MAGEL2 Multi-Modal-Omics Tool Hub. A Shiny app for exploring the atlas across transcriptome, proteome, ubiquitome, and multi-omics factor analysis results.</p>
-            <ul class="tags" aria-label="Technologies and topics"><li>R Shiny</li><li>Data visualization</li><li>MOFA</li></ul>
-            <div class="project-links">
-              <a href="https://jannisbuecking-mamoth.share.connect.posit.cloud/">Launch MAMMOTH <span aria-hidden="true">↗</span></a>
-              <a class="secondary-link" href="https://github.com/jannisbuecking/MAMMOTH">Source code <span aria-hidden="true">↗</span></a>
-            </div>
-          </article>
-          <article class="project">
-            <p class="project-category"><span class="project-number">03</span> Community resource</p>
-            <h3>Institute of Human Genetics Heidelberg</h3>
-            <p class="project-description">A database and tool portal for the Institute of Human Genetics Heidelberg, bringing useful resources together in one place. Developed with Tim Schubert.</p>
-            <ul class="tags" aria-label="Technologies and topics"><li>Human genetics</li><li>Databases</li><li>Web</li></ul>
-            <div class="project-links">
-              <a href="https://institute-of-human-genetics-heidelberg.github.io/">Visit the portal <span aria-hidden="true">↗</span></a>
-              <a class="secondary-link" href="https://github.com/jannisbuecking/human-genetics-heidelberg-tools">Source code <span aria-hidden="true">↗</span></a>
-            </div>
-          </article>
         </div>
       </section>
 

@@ -1,0 +1,55 @@
+/* RNA project journey, adapted from the owner's Heidelberg institute portal. */
+.rna-projects { position: relative; }
+.rna-scene { position: relative; isolation: isolate; }
+.rna-size-reference { position: absolute; top: 0; left: 0; width: 0; height: 100vh; height: 100svh; visibility: hidden; pointer-events: none; contain: strict; }
+.rna-projects .section-heading { align-items: center; padding-top: 1.5rem; }
+.project-view-switch { display: flex; gap: 3px; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.project-view-switch[hidden] { display: none; }
+.project-view-switch button { min-height: 36px; min-width: 66px; padding: .5rem .8rem; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font: 600 .75rem system-ui, sans-serif; cursor: pointer; }
+.project-view-switch button[aria-pressed="true"] { background: var(--tag); color: var(--accent); }
+.project-view-switch button:hover { color: var(--accent); }
+.project-view-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rna-viewport { position: relative; }
+.rna-viewport:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.rna-track { gap: 1rem; border: 0; }
+.rna-project { display: contents; }
+.rna-projects .project { width: 100%; padding: 1.5rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.rna-projects .project-category { margin-bottom: 1.25rem; }
+.rna-projects .project-links { line-height: 1.5; }
+.rna-ribosome, .rna-backbone, .rna-prime, .rna-letter, .rna-caption { display: none; }
+
+/* Enhancement keeps the page's native scrolling; the project scene is sticky. */
+.rna-projects.is-enhanced .rna-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: clip; background: var(--background); }
+.rna-projects.is-enhanced .section-heading { margin-bottom: 0; }
+.rna-projects.is-enhanced .rna-stage { position: absolute; top: var(--rna-stage-top); bottom: 56px; width: 100%; }
+.rna-projects.is-enhanced .rna-viewport { position: absolute; inset: 0; overflow: clip; }
+.rna-projects.is-enhanced .rna-track { display: block; position: relative; height: 100%; will-change: transform; }
+.rna-projects.is-enhanced .rna-unit { display: block; position: absolute; top: 0; height: 100%; }
+.rna-projects.is-enhanced .project { position: absolute; left: 0; min-height: var(--rna-card-height); box-shadow: 0 8px 24px -20px #0005; }
+.rna-projects.is-enhanced .project.is-current { border-color: var(--accent); }
+.rna-projects.is-enhanced .nucleotide-mark { position: absolute; left: 0; width: 104px; height: 104px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--accent); font: 500 44px ui-monospace, monospace; }
+.rna-projects.is-enhanced .start-codon .nucleotide-mark, .rna-projects.is-enhanced .stop-codon .nucleotide-mark { background: var(--tag); border-color: var(--accent); }
+.rna-projects.is-enhanced .rna-ribosome { display: block; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .58; }
+.rna-ribosome path { vector-effect: non-scaling-stroke; stroke: var(--accent); stroke-width: 1.2; stroke-opacity: .55; stroke-linejoin: round; }
+.rna-ribosome .subunit-large { fill: var(--tag); }
+.rna-ribosome .subunit-small { fill: var(--level-1); }
+.rna-projects.is-enhanced .rna-backbone { display: block; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.rna-strand { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-opacity: .8; }
+.rna-sugars path { fill: var(--background); stroke: var(--accent); stroke-width: 1.3; }
+.rna-sugars .rna-stem { fill: none; stroke-opacity: .55; }
+.rna-sugars circle { fill: var(--accent); }
+.rna-projects.is-enhanced .rna-prime { display: block; position: absolute; color: var(--accent); font: 13px ui-monospace, monospace; pointer-events: none; }
+.rna-projects.is-enhanced .rna-caption { position: absolute; bottom: 18px; left: 0; right: 0; display: flex; justify-content: space-between; gap: 1rem; padding: .75rem 0; border-top: 1px solid var(--border); color: var(--muted); font-size: .7rem; }
+
+@media (max-width: 760px) {
+  .rna-projects .project { padding: 1.25rem; }
+  .rna-projects .project + .project { padding: 1.25rem; border: 1px solid var(--border); }
+  .rna-projects .project-category { margin-bottom: 1rem; }
+  .project-view-switch button { min-height: 40px; min-width: 58px; }
+}
+@media (max-width: 700px) {
+  .rna-projects.is-enhanced .nucleotide-mark { width: 72px; height: 72px; font-size: 34px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rna-projects.is-enhanced .rna-track { will-change: auto; }
+}
