@@ -189,15 +189,21 @@ padding match the outgoing viewport, including portrait screens. A short overlap
 holds that frame steady before the camera pulls back to reveal the room.
 
 The desk has the computer on the left, one small clipboard in the middle, and
-a smaller iPhone on the right. All three items fit inside the tabletop edges.
+a smaller iPhone on the right. Its rear surface provides a landing area for the
+turned sheets while its front edge stays in place. All items and pages fit on it.
 The tabletop and inset wooden apron meet without overlapping faces to prevent
 flickering; the camera also uses a larger near plane for better depth precision.
 The Clinic overview stays 14% closer to the desk. Scrolling holds the camera on
 the clipboard and turns its sheets over the top clip: Zomba, Great Ormond Street,
-then UT Southwestern. Each opaque sheet lifts with a flexible curl, turns fully
-over, and settles across the tabletop and over its back edge. Turned pages remain
-in the scene with visible backs and shadows; no sheet fades away or is hidden.
-The longer turn is reversible and leaves the next record unobstructed.
+then UT Southwestern. Two raised binding rings hold a fixed pivot above the
+clipboard. Each opaque sheet lifts with a gentle curl, clears the top edge, turns
+over, and lands flat on a visible stack behind the board. The sheet follows two
+joined circular arcs that preserve its physical length. It never drapes over the
+desk edge or passes through the board. Subtle outlines and shadows keep its blank
+back visible. The stationary reading camera frames both the active page and rear
+stack, with larger document text for readability. The ceiling fixture sits over
+the examination area, clear of these sight lines. The complete turn is reversible
+and leaves the next record unobstructed.
 Their text comes directly from the clinical entries in `index.html`, which also
 serve as the accessible static fallback. Clinical experience is no longer repeated
 in a separate background section. Upward scrolling turns the sheets back in order and returns through the monitor

@@ -6,21 +6,32 @@ export const READING_STOPS = [.56, .74, .92];
 export const CLINICAL_FRACTION = .78;
 export const PHONE_STOP = .96;
 
-// A top-bound sheet lifts, curls over the clip, then settles over the desk edge.
-// Coordinates are in the sheet's unrotated frame, with its top edge at y=.67.
+export const PAGE_LENGTH = 1.34;
+export const BINDING_HEIGHT = .19;
+export const BINDING_Y = .73;
+
+// Integrate a circular arc by its physical length, including the straight case.
+function paperArc(length, angle, curvature) {
+  const half = curvature * length / 2;
+  const chord = length * (Math.abs(half) < 1e-8 ? 1 : Math.sin(half) / half);
+  return { y: -chord * Math.cos(angle + half), z: chord * Math.sin(angle + half) };
+}
+
+// A raised, fixed binding lets the sheet lift, turn over, and land flat behind it.
+// The two joined arcs preserve sheet length; nothing folds through the board.
 export function clipboardPagePose(turn, along, across = 0, index = 0) {
-  const lift = smooth(turn / .74), settle = smooth((turn - .74) / .26);
-  const length = along * 1.34, edge = .425, drop = .105 - index * .007;
-  const run = Math.hypot(edge, drop), radius = .06, slope = Math.atan2(drop, edge) * settle;
-  let y = Math.min(length, run) * Math.cos(slope), z = -Math.min(length, run) * Math.sin(slope);
+  const phase = smooth(turn), length = along * PAGE_LENGTH;
+  const frontDrop = BINDING_HEIGHT - (.072 - index * .004);
+  const backDrop = BINDING_HEIGHT - (-.032 + index * .006);
+  const run = (frontDrop * (1 - phase) + backDrop * phase) / (1 - Math.cos(1));
+  const angle = Math.PI * phase, bend = 2 * phase - 1;
+  const head = paperArc(Math.min(length, run), angle + bend, -bend / run);
   if (length > run) {
-    const arc = Math.min((length - run) / radius, (Math.PI / 2 - slope) * settle);
-    const tail = Math.max(0, length - run - radius * arc);
-    y += radius * (Math.sin(slope + arc) - Math.sin(slope)) + tail * Math.cos(slope + arc);
-    z += radius * (Math.cos(slope + arc) - Math.cos(slope)) - tail * Math.sin(slope + arc);
+    const curl = (.25 + across * .035) * Math.sin(Math.PI * phase);
+    const tail = paperArc(length - run, angle, curl / (PAGE_LENGTH - run));
+    head.y += tail.y; head.z += tail.z;
   }
-  const curl = Math.sin(Math.PI * lift) * (.17 * Math.sin(Math.PI * along) + .035 * across * along ** 2);
-  return { angle: -Math.PI * lift, y: .67 - y, z: curl - z };
+  return { y: PAGE_LENGTH / 2 + head.y, z: head.z };
 }
 
 export function createClinicalRoom(variant, textureFactory = () => null, options = {}) {
@@ -95,8 +106,9 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
   plaque(group, variant === 'laboratory' ? 'lab-sign' : 'consultation-sign', -1, 2.9, .55, 1.6, 3.45, -3.85);
   // A wall clock and an indirect ceiling light establish the room's scale.
   const clock = cylinder(group, .32, .32, .08, c.white, -5.85, 3.1, 1.6); clock.rotation.z = Math.PI / 2;
-  const light = box(group, 5, .08, .45, mat('#fffef4', { emissive: '#fff7d4', emissiveIntensity: .55 }), 0, 4.05, -1.4);
-  box(group, .025, .5, .025, c.metal, -2, 4.33, -1.4); box(group, .025, .5, .025, c.metal, 2, 4.33, -1.4);
+  const lightX = variant === 'consultation' ? -3 : 0;
+  box(group, variant === 'consultation' ? 4.4 : 5, .08, .45, mat('#fffef4', { emissive: '#fff7d4', emissiveIntensity: .55 }), lightX, 4.05, -1.4, 'ceiling-light');
+  for (const x of [lightX - 1.75, lightX + 1.75]) box(group, .025, .5, .025, c.metal, x, 4.33, -1.4);
 
   let entrance, phone, clipboard;
   if (variant === 'laboratory') {
@@ -143,7 +155,8 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     box(group, .04, .04, .28, c.metal, -5, 1.88, 1.82);
     box(group, .36, .35, .24, c.blue, -5.65, 1.55, 2.1);
   } else {
-    table(1.5, -1.5, 6.2, 2.05, 1.3);
+    // Keep the front edge in place and provide a real landing area for turned pages.
+    table(1.5, -2.05, 6.2, 3.15, 1.3);
     stool(2.4, -2.8, c.dark); stool(.6, .7); stool(2.5, .8);
     // Examination couch and privacy screen, deliberately separate from the desk.
     box(group, 2.8, .23, 1.4, c.white, -3.7, .85, -1.9, 'examination-couch');
@@ -161,18 +174,36 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     const board = new THREE.Group(); board.name = 'clinical-clipboard';
     board.position.set(1.45, 1.405, -1.45); board.rotation.x = -Math.PI / 2; group.add(board);
     mesh(board, rounded(1.15, 1.55, .05, .055), c.sage, [0, 0, 0], 'clipboard-body');
-    box(board, .36, .12, .055, c.metal, 0, .714, .09, 'clipboard-clip');
+    box(board, 1.04, .2, .02, c.metal, 0, .72, .05, 'clipboard-clip');
+    for (const x of [-.46, .46]) {
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(x, .64, .06), new THREE.Vector3(x, .66, .15),
+        new THREE.Vector3(x, BINDING_Y, .205), new THREE.Vector3(x, .80, .15), new THREE.Vector3(x, .82, .06),
+      ]);
+      mesh(board, new THREE.TubeGeometry(curve, 32, .014, 8, false), c.metal, [0, 0, 0], 'raised-binding-ring');
+    }
+    const axle = cylinder(board, .015, .015, .98, c.metal, 0, BINDING_Y, BINDING_HEIGHT); axle.rotation.z = Math.PI / 2; axle.name = 'binding-axle';
     experiences.forEach((item, index) => {
       const hinge = new THREE.Group(); hinge.name = `clinical-page-${index + 1}`;
-      hinge.position.set(0, .65, .068 - index * .004); board.add(hinge);
-      const geometry = new THREE.PlaneGeometry(.99, 1.34, 8, 64);
-      const paper = mesh(hinge, geometry, textured('experience', index), [0, -.67, 0], 'clinical-page-front');
+      hinge.position.set(0, BINDING_Y, BINDING_HEIGHT); board.add(hinge);
+      const columns = 8, rows = 96;
+      const geometry = new THREE.PlaneGeometry(.99, PAGE_LENGTH, columns, rows);
+      const paper = mesh(hinge, geometry, textured('experience', index), [0, -PAGE_LENGTH / 2, 0], 'clinical-page-front');
       // Keep the printed text crisp while receiving the lifting sheet's shadow.
       const shadowMaterial = new THREE.ShadowMaterial({ color: '#24382a', opacity: .22, depthWrite: false }); materials.push(shadowMaterial);
       const shadow = mesh(hinge, geometry, shadowMaterial, [0, -.67, .0005], 'clinical-page-shadow'); shadow.castShadow = false; shadow.raycast = () => {};
-      const backMaterial = mat('#f5f2e9', { side: THREE.BackSide, roughness: 1, metalness: 0 });
+      const backMaterial = mat('#dfe3d5', { side: THREE.BackSide, roughness: 1, metalness: 0 });
       const back = mesh(hinge, geometry, backMaterial, [0, -.67, 0], 'clinical-page-back');
-      pages.push({ hinge, paper, back, geometry, turn: -1 });
+      const perimeter = [
+        ...Array.from({ length: columns + 1 }, (_, i) => i),
+        ...Array.from({ length: rows }, (_, i) => (i + 1) * (columns + 1) + columns),
+        ...Array.from({ length: columns }, (_, i) => rows * (columns + 1) + columns - 1 - i),
+        ...Array.from({ length: rows - 1 }, (_, i) => (rows - 1 - i) * (columns + 1)),
+      ];
+      const edgeGeometry = new THREE.BufferGeometry(); edgeGeometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(perimeter.length * 3), 3));
+      const edgeMaterial = new THREE.LineBasicMaterial({ color: '#a8b09e', transparent: true, opacity: .85, depthWrite: false }); materials.push(edgeMaterial);
+      const edge = new THREE.LineLoop(edgeGeometry, edgeMaterial); edge.name = 'paper-edge'; edge.position.set(0, -.67, .0008); edge.raycast = () => {}; hinge.add(edge);
+      pages.push({ hinge, paper, back, geometry, edge, perimeter, turn: -1 });
       readings.push({ object: board, paper, width: 1.15, height: 1.55, index });
     });
     clipboard = { object: board, pages, width: 1.15, height: 1.55, activePage: 0 };
@@ -214,7 +245,9 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     const overview = { position: target.clone().add(new THREE.Vector3(11, 7.8, 13).multiplyScalar(factor * (clipboard ? .86 : 1))), target, up: new THREE.Vector3(0, 1, 0) };
     const closeups = readings.map(item => {
       const frame = worldFrame(item);
-      const distance = (clipboard ? 1.18 : 1.16) * Math.max(item.height / (2 * tangent), item.width / (2 * tangent * aspect));
+      if (clipboard) frame.position.addScaledVector(frame.up, .59);
+      const height = clipboard ? 3 : item.height, width = clipboard ? 1.3 : item.width;
+      const distance = (clipboard ? 1.22 : 1.16) * Math.max(height / (2 * tangent), width / (2 * tangent * aspect));
       const direction = clipboard ? frame.normal.clone().addScaledVector(frame.up, -.25).normalize() : frame.normal;
       return { position: frame.position.clone().addScaledVector(direction, distance), target: frame.position, up: frame.up };
     });
@@ -238,7 +271,6 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     const clinical = phone ? Math.min(1, progress / CLINICAL_FRACTION) : progress;
     pages.forEach((page, index) => {
       const turn = index < 2 ? Math.max(0, Math.min(1, (clinical - (.61 + index * .18)) / .12)) : 0;
-      page.hinge.rotation.x = clipboardPagePose(turn, 0).angle;
       if (turn !== page.turn) {
         const positions = page.geometry.attributes.position, uv = page.geometry.attributes.uv;
         for (let vertex = 0; vertex < positions.count; vertex++) {
@@ -247,6 +279,9 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
           positions.setZ(vertex, point.z);
         }
         positions.needsUpdate = true; page.geometry.computeVertexNormals(); page.geometry.computeBoundingSphere(); page.geometry.computeBoundingBox();
+        const edgePositions = page.edge.geometry.attributes.position;
+        page.perimeter.forEach((vertex, index) => edgePositions.setXYZ(index, positions.getX(vertex), positions.getY(vertex), positions.getZ(vertex)));
+        edgePositions.needsUpdate = true; page.edge.geometry.computeBoundingSphere();
         page.turn = turn;
       }
     });
@@ -256,5 +291,7 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     const geometries = new Set(); group.traverse(object => { if (object.geometry) geometries.add(object.geometry); });
     geometries.forEach(geometry => geometry.dispose()); materials.forEach(material => material.dispose()); textures.forEach(texture => texture.dispose());
   }
+  update(0);
+  group.updateMatrixWorld(true);
   return { group, entrance, readings, clipboard, pages, phone, pose, update, dispose, textures };
 }

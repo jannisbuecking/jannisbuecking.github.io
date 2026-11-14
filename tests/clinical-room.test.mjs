@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.js';
-import { createClinicalRoom, clipboardPagePose, READING_STOPS } from '../previews/clinical-room-model.js';
+import { createClinicalRoom, clipboardPagePose, PAGE_LENGTH, BINDING_HEIGHT, BINDING_Y, READING_STOPS } from '../previews/clinical-room-model.js';
 
 test('table aprons sit below and inside the worktops without overlapping side faces', () => {
   for (const variant of ['consultation', 'laboratory']) {
@@ -48,39 +48,66 @@ test('Clinic uses one clipboard that fits the desk, with bound pages that turn i
   } finally { room.dispose(); }
 });
 
-test('turning sheets stay opaque, continuous, and attached, then drape past the desk edge', () => {
+test('sheets clear the board, stay bound, and land flat on a visible rear stack', () => {
   const room = createClinicalRoom('consultation', undefined, { includePhone: true });
   try {
+    const board = room.clipboard.object;
+    const desk = new THREE.Box3().setFromObject(room.group.getObjectByName('worktop'));
+    assert.equal(board.getObjectsByProperty('name', 'raised-binding-ring').length, 2);
+    const cameraPose = room.pose(.56 * .78, 1.54);
     for (let step = 0; step <= 100; step++) {
       const turn = step / 100;
-      room.update((.61 + turn * .12) * .78);
+      room.update((.61 + turn * .12) * .78); room.group.updateMatrixWorld(true);
       assert.ok(room.pages.every(page => page.hinge.visible && page.back.visible && page.back.material.opacity === 1));
-      for (const across of [-1, 0, 1]) {
-        const anchor = clipboardPagePose(turn, 0, across);
-        assert.ok(Math.abs(anchor.y - .67) < 1e-9 && Math.abs(anchor.z) < 1e-9);
-        for (const along of [.25, .5, .75, 1]) {
-          const a = clipboardPagePose(turn, along, across), b = clipboardPagePose(Math.min(1, turn + 1e-6), along, across);
-          assert.ok(Math.hypot(a.y - b.y, a.z - b.z, a.angle - b.angle) < .00004, 'no position or angle jumps during the turn');
+      const pose = room.pose((.61 + turn * .12) * .78, 1.54);
+      assert.ok(pose.position.distanceTo(cameraPose.position) < 1e-9 && pose.target.distanceTo(cameraPose.target) < 1e-9, 'the reading camera stays still during the turn');
+      for (const index of [0, 1, 2]) {
+        const anchor = clipboardPagePose(turn, 0, 0, index);
+        assert.ok(Math.abs(anchor.y - PAGE_LENGTH / 2) < 1e-9 && Math.abs(anchor.z) < 1e-9);
+        for (const across of [-1, 0, 1]) for (let sample = 0; sample <= 100; sample++) {
+          const along = sample / 100, point = clipboardPagePose(turn, along, across, index);
+          const local = new THREE.Vector3(across * .495, BINDING_Y + point.y - PAGE_LENGTH / 2, BINDING_HEIGHT + point.z);
+          if (Math.abs(local.y) <= .775) assert.ok(local.z > .055, 'the sheet clears the complete clipboard surface');
+          const world = board.localToWorld(local.clone());
+          assert.ok(world.y > desk.max.y + .005, 'paper never enters or drapes below the tabletop');
+          assert.ok(world.x > desk.min.x && world.x < desk.max.x && world.z > desk.min.z && world.z < desk.max.z, 'the full sheet stays above its landing area');
+          const next = clipboardPagePose(Math.min(1, turn + 1e-6), along, across, index);
+          assert.ok(Math.hypot(point.y - next.y, point.z - next.z) < .00004, 'the sheet has no motion discontinuities');
+        }
+      }
+      for (const aspect of [1512 / 982, 390 / 844]) {
+        const view = room.pose((.61 + turn * .12) * .78, aspect), camera = new THREE.PerspectiveCamera(42, aspect, .05, 180);
+        camera.position.copy(view.position); camera.up.copy(view.up); camera.lookAt(view.target); camera.updateMatrixWorld(true);
+        for (const along of [0, .25, .5, .75, 1]) for (const across of [-1, 1]) {
+          const point = clipboardPagePose(turn, along, across);
+          const projected = board.localToWorld(new THREE.Vector3(across * .495, BINDING_Y + point.y - PAGE_LENGTH / 2, BINDING_HEIGHT + point.z)).project(camera);
+          assert.ok(Math.abs(projected.x) < .98 && Math.abs(projected.y) < .94, 'the moving sheet stays visible in desktop and phone framing');
+        }
+        for (const along of [.08, .2, .5, .8, .98]) for (const across of [-.7, 0, .7]) {
+          const point = clipboardPagePose(turn, along, across);
+          const world = board.localToWorld(new THREE.Vector3(across * .495, BINDING_Y + point.y - PAGE_LENGTH / 2, BINDING_HEIGHT + point.z));
+          const ray = new THREE.Raycaster(view.position, world.clone().sub(view.position).normalize());
+          const hits = ray.intersectObject(room.group, true);
+          assert.ok(hits.length && [room.pages[0].paper, room.pages[0].back].includes(hits[0].object), 'room fixtures cannot obscure the turning sheet or its landing stack');
         }
       }
     }
-    for (const turn of [.74, .8, .9, 1]) {
+    for (const turn of [0, .2, .5, .8, 1]) {
       let length = 0, previous = clipboardPagePose(turn, 0);
       for (let sample = 1; sample <= 1000; sample++) {
         const point = clipboardPagePose(turn, sample / 1000);
         length += Math.hypot(point.y - previous.y, point.z - previous.z); previous = point;
       }
-      assert.ok(Math.abs(length - 1.34) < .0003, 'settling bends the sheet without shrinking it');
+      assert.ok(Math.abs(length - PAGE_LENGTH) < .0003, 'curling preserves the physical sheet length');
     }
-    room.update(.74 * .78); room.group.updateMatrixWorld(true);
-    const page = room.pages[0], positions = page.geometry.attributes.position;
-    for (let vertex = 0; vertex < positions.count; vertex++) {
-      const point = page.paper.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, vertex));
-      assert.ok(point.y >= 1.365 || point.z < -2.525, 'the resting sheet hangs outside the desk instead of passing through its surface');
+    for (const index of [0, 1]) {
+      const a = clipboardPagePose(1, .7, 0, index), b = clipboardPagePose(1, 1, 0, index);
+      assert.ok(Math.abs(a.z - b.z) < 1e-9, 'finished sheets rest flat behind the binding');
+      assert.ok(BINDING_Y + a.y - PAGE_LENGTH / 2 > .775, 'the stack is behind the clipboard');
     }
-    const folded = positions.array.slice();
+    room.update(.74 * .78); const folded = room.pages[0].geometry.attributes.position.array.slice();
     room.update(.56 * .78); room.update(.74 * .78);
-    assert.deepEqual(positions.array, folded, 'reversing and repeating the turn gives the same sheet shape');
+    assert.deepEqual(room.pages[0].geometry.attributes.position.array, folded, 'reversing the turn restores the same geometry');
   } finally { room.dispose(); }
 });
 

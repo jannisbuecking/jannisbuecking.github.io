@@ -1,7 +1,7 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { createClinicalRoom, READING_STOPS } from './clinical-room-model.js?v=stable-desk';
+import { createClinicalRoom, READING_STOPS } from './clinical-room-model.js?v=lift-turn-stack';
 import { experiences } from './clinical-data.js';
-import { createClinicalTextures } from './clinical-textures.js?v=clinic-pages';
+import { createClinicalTextures } from './clinical-textures.js?v=lift-turn-stack';
 
 const variant = document.body.dataset.room;
 const container = document.querySelector('.room-canvas');

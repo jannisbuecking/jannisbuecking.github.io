@@ -27,12 +27,12 @@ function texture(kind, index) {
   } else {
     const item = experiences[index];
     const ink = '#202923', muted = '#586359';
-    let y = wrap(item.year, 135, '650 70px system-ui', item.color, 90);
-    y = wrap(item.institution, y + 55, '650 76px system-ui', ink, 92);
-    y = wrap(item.role, y + 65, '500 53px system-ui', muted, 72);
-    y = wrap(item.location, y + 5, '400 51px system-ui', muted, 72);
+    let y = wrap(item.year, 135, '650 76px system-ui', item.color, 94);
+    y = wrap(item.institution, y + 55, '650 82px system-ui', ink, 98);
+    y = wrap(item.role, y + 65, '500 58px system-ui', muted, 78);
+    y = wrap(item.location, y + 5, '400 56px system-ui', muted, 76);
     ctx.fillStyle = '#d9ded5'; ctx.fillRect(100, y + 30, 824, 3);
-    wrap(item.topic, y + 130, '400 57px system-ui', ink, 80);
+    wrap(item.topic, y + 130, '400 64px system-ui', ink, 88);
     ctx.font = '600 35px system-ui'; ctx.fillStyle = muted; ctx.fillText(`CLINICAL EXPERIENCE  /  0${index + 1}`, 100, 1290);
   }
   return map;

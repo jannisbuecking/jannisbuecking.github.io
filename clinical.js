@@ -1,7 +1,7 @@
 import * as THREE from './vendor/three/three.module.js';
 import './projects.js?v=clean-scenes';
-import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=stable-desk';
-import { createClinicalTextures } from './previews/clinical-textures.js?v=clinic-pages';
+import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=lift-turn-stack';
+import { createClinicalTextures } from './previews/clinical-textures.js?v=lift-turn-stack';
 import { captureRNAScene } from './clinical-snapshot.js?v=full-clinical';
 import { experiences } from './previews/clinical-data.js';
 import { createDeskPhone } from './desk-phone.js?v=desk-phone';
