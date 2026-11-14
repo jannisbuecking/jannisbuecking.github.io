@@ -2,13 +2,18 @@
 
 Website: **https://jannisbuecking.github.io/**
 
-A small static website hosted on GitHub Pages. It uses plain HTML and CSS,
-with no dependencies or build step.
+A small static website hosted on GitHub Pages, showcasing the MAGEL2 multi-omics
+atlas, MAMMOTH, and the Institute of Human Genetics Heidelberg database and tool
+portal. It uses plain HTML, CSS, and JavaScript, with no package dependencies.
 
 ## Edit the site
 
 - `index.html`: page content and metadata.
 - `styles.css`: layout, colors, and light/dark appearance.
+- `contributions.js`: interactive contribution calendar with day tooltips and arrow-key navigation.
+- `data/contributions.json`: saved public GitHub contribution data for local preview and fallback.
+- `scripts/update_contributions.py`: refreshes contribution data using Python's standard library.
+- `.github/workflows/deploy.yml`: publishes the site on pushes and refreshes activity daily.
 - `.nojekyll`: tells GitHub Pages to serve the static files directly.
 
 ## Preview locally
@@ -23,15 +28,39 @@ Open http://localhost:8000. Stop the server with Ctrl+C.
 
 ## Publish updates
 
-Commit and push changes to `main`. GitHub Pages automatically publishes the
-repository root from that branch. Deployment progress is available in the
-repository's **Actions** tab, and hosting settings are in **Settings → Pages**.
+Commit and push changes to `main`. The **Deploy website** GitHub Actions workflow
+refreshes the contribution calendar and publishes the static site. GitHub Pages
+uses **GitHub Actions** as its publishing source. Deployment progress is available
+in **Actions**, and hosting settings are in **Settings → Pages**.
 
 ```sh
-git add index.html styles.css
+git add index.html styles.css contributions.js
 git commit -m "Update website"
 git push origin main
 ```
 
 GitHub Pages setup reference:
 https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site
+
+## Contribution calendar
+
+The workflow also runs daily at 04:23 UTC and can be started manually from
+**Actions → Deploy website → Run workflow**. GitHub can delay scheduled runs and
+disables schedules in public repositories after 60 days without repository activity.
+
+The refresh reads the public contribution calendar at
+https://github.com/users/jannisbuecking/contributions. No personal access token,
+third-party chart service, or browser request to GitHub is needed. Only information
+already visible on the public profile is included. The total and day intensities
+come from GitHub's rolling calendar, including its week boundary dates.
+
+Updated JSON is included in the deployment artifact without automated repository
+commits. If GitHub cannot be reached or changes its calendar markup, the workflow
+reports a warning and deploys the saved snapshot. The page displays the snapshot's
+actual update date and links to GitHub if its local JSON cannot be loaded.
+
+To refresh the saved snapshot locally:
+
+```sh
+python3 scripts/update_contributions.py
+```

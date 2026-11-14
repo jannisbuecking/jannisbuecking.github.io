@@ -1,0 +1,52 @@
+name: Deploy website
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Refresh public GitHub contributions
+        id: contributions
+        continue-on-error: true
+        run: python3 scripts/update_contributions.py
+      - name: Report fallback to the saved calendar
+        if: steps.contributions.outcome == 'failure'
+        run: echo '::warning::GitHub contributions could not be refreshed. Publishing the saved snapshot.'
+      - name: Prepare static website
+        run: |
+          mkdir -p _site/data
+          cp index.html styles.css contributions.js .nojekyll _site/
+          cp data/contributions.json _site/data/
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
