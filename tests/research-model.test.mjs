@@ -221,10 +221,12 @@ test("the camera returns overhead before tube six opens and the molecular handof
     assert.equal(inspectionPose(.94).handoff, 0);
     assert.equal(inspectionPose(1).handoff, 1);
     assert.equal(inspectionPose(1).phase, "ribosome");
-    model.openSample(1);
-    model.assembly.updateMatrixWorld(true);
-    const ray = new THREE.Raycaster(new THREE.Vector3(0, 18, position.z), new THREE.Vector3(0, -1, 0));
-    const visibleHits = ray.intersectObject(model.assembly, true).filter(hit => hit.object.visible);
-    assert.ok(["sample-pellet", "pellet-granules"].includes(visibleHits[0].object.name), "the open tube has a clear view down to its pellet");
+    for (const amount of [.72, .85, .94, .96, 1, .85]) {
+      model.openSample(amount);
+      model.assembly.updateMatrixWorld(true);
+      const ray = new THREE.Raycaster(new THREE.Vector3(0, 18, position.z), new THREE.Vector3(0, -1, 0));
+      const visibleHits = ray.intersectObject(model.assembly, true).filter(hit => hit.object.visible);
+      assert.ok(["sample-pellet", "pellet-granules"].includes(visibleHits[0].object.name), "the pellet is clear throughout opening, without an intermediary layer");
+    }
   } finally { model.dispose(); }
 });

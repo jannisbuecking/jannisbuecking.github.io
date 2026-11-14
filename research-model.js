@@ -180,12 +180,12 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     tubeGroups.push(tube);
     const capMaterial = researchIndex >= 0 ? researchCap : balanceCap;
     const liquidMaterial = researchIndex >= 0 ? researchLiquid : balanceLiquid;
-    // Equal dimensions and fill heights for all six positions.
+    // Equal tube dimensions. The project sample exposes its pellet directly.
     mount(tube, new THREE.CylinderGeometry(.48, .48, 2.5, 48, 1, true), plastic, 0, .25, 0, "tube-wall");
     mount(tube, new THREE.CylinderGeometry(.49, .49, .32, 48, 1, true), standard({ color: colors.metal, roughness: .32, metalness: 0, transparent: true, opacity: .7, depthWrite: false }), 0, 1.35, 0, "tube-neck");
     mount(tube, new THREE.CylinderGeometry(.48, .055, .7, 48, 1, true), plastic, 0, -1.35, 0, "conical-tip");
-    mount(tube, new THREE.CylinderGeometry(.43, .43, .42, 40), liquidMaterial, 0, -.77, 0, "liquid-column");
-    mount(tube, new THREE.CylinderGeometry(.43, .05, .64, 40), liquidMaterial, 0, -1.3, 0, "liquid-cone");
+    mount(tube, new THREE.CylinderGeometry(.43, .43, .42, 40), liquidMaterial, 0, -.77, 0, "liquid-column").visible = slot !== SAMPLE_SLOT;
+    mount(tube, new THREE.CylinderGeometry(.43, .05, .64, 40), liquidMaterial, 0, -1.3, 0, "liquid-cone").visible = slot !== SAMPLE_SLOT;
     const collar = mount(tube, new THREE.TorusGeometry(.59, .06, 12, 48), edge, 0, 1.25, 0, "support-collar");
     collar.rotation.x = Math.PI / 2;
     const cap = new THREE.Group();
@@ -239,8 +239,6 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     const cap = tubeGroups[SAMPLE_SLOT].getObjectByName("removable-cap");
     cap.position.set(smooth((amount - .3) / .7) * 1.4, amount * 1.6, 0);
     cap.rotation.y = amount * Math.PI * .8;
-    // Reveal the pellet through the liquid during the illustrative scale change.
-    for (const name of ["liquid-column", "liquid-cone"]) tubeGroups[SAMPLE_SLOT].getObjectByName(name).visible = amount < .95;
   }
   function setLabelTexture(slot, texture) {
     const material = tubeGroups[slot].getObjectByName("tube-label").material;

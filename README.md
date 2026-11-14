@@ -133,8 +133,8 @@ bounded. The overhead view uses lighter rendering and solid, unlettered caps.
 After the fifth research/education label, the camera pulls back and returns overhead before the rotor
 indexes to the project sample. Tube six, labeled **Projects**, opens: only its
 cap lifts and moves aside. The camera centers over its opening and descends toward
-a modeled pellet in the conical tip. Liquid is hidden during this illustrative
-scale change so the pellet remains visible. Its 100 modeled grains are projected
+a modeled pellet in the conical tip. The project sample has no visible liquid
+overlay, so the pellet is clear as soon as the cap uncovers the opening. Its 100 modeled grains are projected
 through the current camera into the actual RNA renderer. Those same particles
 are assigned one-to-one to 81 visible components: sugars, phosphates, bases/cards,
 stems, backbone segments, both complete ribosome subunits, and the four scene

@@ -1,7 +1,7 @@
 import * as THREE from "./vendor/three/three.module.js";
 import "./projects.js?v=full-clinical";
 import { createResearchBench } from "./research-bench.js?v=bench-spin";
-import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=bench-spin";
+import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=clear-pellet";
 
 (() => {
   const section = document.getElementById("research");
