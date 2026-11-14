@@ -16,7 +16,7 @@ GitHub profile links.
 - `index.html`: page content and metadata.
 - `styles.css`: layout, colors, and light/dark appearance.
 - `projects.css` and `projects.js`: the scroll-driven mRNA and ribosome project explorer.
-- `research.css`, `research.js`, and `research-model.js`: the six-tube 3D rotor, scroll-driven inspection camera, and research/education descriptions.
+- `research.css`, `research.js`, `research-model.js`, and `research-bench.js`: the six-tube 3D rotor, scroll-driven inspection camera, and research/education descriptions.
 - `clinical.css`, `clinical.js`, and `clinical-snapshot.js`: the live RNA-to-monitor handoff and Clinic experience.
 - `desk-phone.css`, `desk-phone.js`, and `phone-geometry.js`: the desk iPhone, interactive projected HTML screen, and contact links.
 - `previews/clinical-room-model.js` and `previews/clinical-textures.js`: shared room geometry and document textures for the integrated room and concept previews.
@@ -111,9 +111,15 @@ Boston Children’s Hospital, and Projects. Position 6 holds the project sample.
 Tube transforms and dimensions remain fixed relative to the rotor throughout.
 
 The camera starts exactly overhead using an orthographic projection, showing
-only the six circular caps. A slow idle rotation runs while this opening view is
-visible; the first scroll settles it with the first tube aligned before
-the camera moves along a vertical arc to the side. Subsequent scrolling turns the entire assembly
+only the six plain circular caps. On the left are three micropipettes, a 96-tip
+rack, a Petri dish, and a reagent bottle; a stethoscope, reflex hammer, and penlight
+are on the right. These tools stay on the stationary work surface and fade as the
+camera lowers. Compact screens place them diagonally left and right to keep all
+six tubes visible.
+The opening rotor spins clockwise at 3 radians per second (about one revolution
+every 2.1 seconds). The first scroll applies constant deceleration, finishing at
+the next aligned revolution without reversing or accelerating. The camera stays
+overhead while it slows, then moves along a vertical arc to the side. Subsequent scrolling turns the entire assembly
 around its vertical axis through the five research and education entries in
 the same order as the physical tubes. The side view zooms into the
 front tube, with the full institution, dates, role, lab, and research summary
@@ -123,7 +129,7 @@ description panel. The same source text remains available to screen readers
 and in the automatic static fallback. Reading labels use 2048 × 3072 textures
 and up to the display’s native 3× pixel density. Only the current reading label
 is upgraded, replacing and disposing its predecessor so texture memory stays
-bounded. The overhead view uses lighter rendering and 512 × 512 cap textures.
+bounded. The overhead view uses lighter rendering and solid, unlettered caps.
 After the fifth research/education label, the camera pulls back and returns overhead before the rotor
 indexes to the project sample. Tube six, labeled **Projects**, opens: only its
 cap lifts and moves aside. The camera centers over its opening and descends toward
@@ -143,11 +149,12 @@ into native project scrolling without an empty screen. Both renderers share one
 scroll-driven morph state; reversing the scroll folds the components back into
 their original pellet positions.
 
-The complete sequence reverses with upward scrolling. Research rendering stops
-while still or offscreen, except for the slow opening rotation. The transition is enabled only when both animated
+The camera and inspection sequence reverse with upward scrolling; the opening
+spinner resumes clockwise on returning to the top. Research rendering stops
+while still or offscreen, except for the opening rotation and braking. The transition is enabled only when both animated
 sections fit the viewport; otherwise the existing independent sections remain.
 
-This is an illustrative inspection view of a loaded rotor, with a slow opening
+This is an illustrative inspection view of a loaded rotor, with a clockwise opening
 rotation and scroll-driven indexing. See the manufacturer's explanation
 of [swinging-bucket rotor positions](https://www.beckman.com/centrifuges/rotors/swinging-bucket).
 

@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "../vendor/three/three.module.js";
-import { createCentrifuge, inspectionPose, openingRotation, molecularPose, molecularOwners, pelletComponent, unfoldPoint, samplePolygon, circleToShape, EXPERIENCE_SLOTS, SAMPLE_SLOT, RESEARCH_STOPS } from "../research-model.js";
+import { createResearchBench } from "../research-bench.js";
+import { createCentrifuge, inspectionPose, createOpeningSpin, OPENING_END, OPENING_SPEED, molecularPose, molecularOwners, pelletComponent, unfoldPoint, samplePolygon, circleToShape, EXPERIENCE_SLOTS, SAMPLE_SLOT, RESEARCH_STOPS } from "../research-model.js";
 
 const colors = { metal: "#d9ded5", rim: "#586359", paper: "#fdfcf8", accent: "#28694b", balance: "#e7eae3" };
 
@@ -69,6 +70,7 @@ test("research, education, and projects follow the requested six-tube sequence",
     assert.equal(model.tubeGroups.filter(tube => tube.userData.kind === "education").length, 2);
     assert.equal(model.tubeGroups.filter(tube => tube.userData.kind === "projects").length, 1);
     assert.deepEqual(model.tubeGroups.map(tube => tube.userData.kind), ["education", "research", "research", "education", "research", "projects"]);
+    assert.ok(model.tubeGroups.every(tube => tube.getObjectByName("cap-top").material.map === null), "caps are plain geometry with no printed labels");
     assert.deepEqual(EXPERIENCE_SLOTS.map(slot => model.tubeGroups[slot].userData.researchIndex), [0, 1, 2, 3, 4]);
     for (let index = 0; index < 6; index++) {
       const tube = model.tubeGroups[index];
@@ -101,18 +103,54 @@ test("continuous scrolling brings all five research and education labels forward
   } finally { model.dispose(); }
 });
 
-test("the opening rotation settles overhead without moving tubes relative to the rotor", () => {
-  for (const angle of [0, .8, -2, Math.PI, Math.PI * 4.2]) {
-    assert.ok(Math.abs(Math.sin(openingRotation(0, angle) - angle)) < 1e-9);
-    assert.ok(Math.abs(openingRotation(.056, angle)) < 1e-9);
-    assert.ok(Math.abs(openingRotation(.5, angle)) < 1e-9);
-    for (let step = 0; step < 56; step++) {
-      const progress = step / 1000;
-      assert.equal(inspectionPose(progress).cameraAngle, 0);
-      assert.ok(Math.abs(openingRotation(progress + .001, angle)) <= Math.abs(openingRotation(progress, angle)) + 1e-9);
-      assert.ok(Math.abs(openingRotation(progress + 1e-7, angle) - openingRotation(progress, angle)) < .00002);
+test("the opening spin is clockwise and brakes continuously without reversing", () => {
+  for (const idleTime of [.01, .3, 1.5, 3, 7]) {
+    const spin = createOpeningSpin();
+    let previous = spin.update(idleTime, 0);
+    assert.equal(previous.angle, -OPENING_SPEED * idleTime);
+    let settled = false;
+    for (let step = 0; step < 400; step++) {
+      const state = spin.update(1 / 60, .03 + step / 1000);
+      assert.ok(state.angle <= previous.angle + 1e-10, "rotation never rewinds during braking");
+      assert.ok(state.speed <= previous.speed + 1e-10 && state.speed >= 0, "angular speed only decreases");
+      assert.ok(previous.angle - state.angle <= OPENING_SPEED / 60 + 1e-9, "braking cannot produce a speed spike");
+      if (state.mode === "braking") assert.equal(inspectionPose(OPENING_END).cameraAngle, 0);
+      previous = state;
+      if (state.mode === "settled") { settled = true; break; }
     }
+    assert.ok(settled);
+    assert.ok(Math.abs(Math.sin(previous.angle)) < 1e-9 && Math.cos(previous.angle) > .9999999);
+    const resumed = spin.update(.1, 0);
+    assert.ok(resumed.angle < previous.angle && resumed.speed === OPENING_SPEED);
   }
+  // Through the overhead camera, clockwise carries the bottom tube to the left.
+  const point = new THREE.Vector3(0, 0, 2.8).applyAxisAngle(new THREE.Vector3(0, 1, 0), -.1);
+  assert.ok(point.x < 0 && point.z > 0);
+});
+
+test("the top-view tools stay stationary, on the correct sides, and clear of the tubes", () => {
+  const bench = createResearchBench(colors);
+  try {
+    for (const aspect of [1512 / 820, 390 / 670]) {
+      bench.update(1, aspect); bench.group.updateMatrixWorld(true);
+      assert.ok(bench.lab.position.x < 0 && bench.clinic.position.x > 0);
+      assert.equal(bench.lab.getObjectsByProperty("name", "micropipette").length, 3);
+      assert.ok(bench.clinic.getObjectByName("stethoscope-chestpiece"));
+      const matrices = [bench.lab.matrix.clone(), bench.clinic.matrix.clone()];
+      const height = Math.max(8.6, (aspect < 1.1 ? 11.4 : 17.5) / aspect);
+      bench.group.traverse(object => {
+        if (!object.geometry || object.geometry.type === "CircleGeometry") return;
+        const positions = object.geometry.attributes.position;
+        for (let vertex = 0; vertex < positions.count; vertex++) {
+          const point = new THREE.Vector3().fromBufferAttribute(positions, vertex).applyMatrix4(object.matrixWorld);
+          assert.ok(Math.abs(point.x) < height * aspect / 2 && Math.abs(point.z) < height / 2, "tools fit the overhead framing");
+          assert.ok(Math.hypot(point.x, point.z) > 3.92, "equipment does not overlap the rotor");
+        }
+      });
+      bench.update(.2, aspect); bench.group.updateMatrixWorld(true);
+      assert.ok(bench.lab.matrix.equals(matrices[0]) && bench.clinic.matrix.equals(matrices[1]));
+    }
+  } finally { bench.dispose(); }
 });
 
 test("camera tilt never rotates the rotor and subsequent indexing preserves all tube poses", () => {

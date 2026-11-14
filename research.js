@@ -1,6 +1,7 @@
 import * as THREE from "./vendor/three/three.module.js";
 import "./projects.js?v=full-clinical";
-import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openingRotation, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=sharp-tubes";
+import { createResearchBench } from "./research-bench.js?v=bench-spin";
+import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=bench-spin";
 
 (() => {
   const section = document.getElementById("research");
@@ -35,7 +36,10 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
   let enabled = false, unavailable = false, queued = false, layoutQueued = false, linked = false;
   let width = 0, stableHeight = 0, distance = 0, current = 0;
   let ready = false, lastTime = 0, renderer, world, camera, model;
-  let canvasWidth = 0, canvasHeight = 0, idleAngle = 0, bridgeProgress, sharpLabel = -1, labelFactory;
+  let canvasWidth = 0, canvasHeight = 0, bridgeProgress, sharpLabel = -1, labelFactory, bench;
+  const spin = createOpeningSpin();
+  let spinState = spin.snapshot(), hasOpened = false;
+  const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
 
   function palette() {
     const style = getComputedStyle(document.documentElement);
@@ -45,61 +49,50 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
   function textureFactory(colors) {
     return (kind, slot, index, labelScale = 1) => {
       const canvas = document.createElement("canvas");
-      const scale = kind === "cap" ? 2 : labelScale;
-      canvas.width = (kind === "cap" ? 256 : 1024) * scale;
-      canvas.height = (kind === "cap" ? 256 : 1536) * scale;
+      if (kind !== "label") return null;
+      canvas.width = 1024 * labelScale;
+      canvas.height = 1536 * labelScale;
       const ctx = canvas.getContext("2d");
-      ctx.scale(scale, scale);
-      if (kind === "cap") {
-        ctx.fillStyle = index >= 0 ? colors.accent : colors.balance;
-        ctx.fillRect(0, 0, 256, 256);
-        ctx.fillStyle = index >= 0 ? colors.paper : colors.muted;
-        ctx.textAlign = "center";
-        ctx.font = "600 90px system-ui, sans-serif";
-        ctx.fillText(String(slot + 1).padStart(2, "0"), 128, 142);
-        ctx.font = "500 31px system-ui, sans-serif";
-        ctx.fillText(index >= 0 ? articles[index].dataset.cap : slot === SAMPLE_SLOT ? "PROJECTS" : "BAL", 128, 194);
-      } else {
-        ctx.fillStyle = colors.paper;
-        ctx.fillRect(0, 0, 1024, 1536);
-        const left = 192, contentWidth = 640;
-        const wrap = (text, y, font, lineHeight, color) => {
-          ctx.font = font;
-          ctx.fillStyle = color;
-          let line = "";
-          for (const word of text.split(/\s+/)) {
-            const candidate = line ? `${line} ${word}` : word;
-            if (line && ctx.measureText(candidate).width > contentWidth) {
-              ctx.fillText(line, left, y);
-              y += lineHeight;
-              line = word;
-            } else line = candidate;
-          }
-          if (line) { ctx.fillText(line, left, y); y += lineHeight; }
-          return y;
-        };
-        if (index >= 0) {
-          const item = experiences[index];
-          let y = wrap(item.year, 114, "600 72px system-ui, sans-serif", 80, colors.accent);
-          y = wrap(item.institution, y + 56, "650 76px system-ui, sans-serif", 90, colors.text);
-          y = wrap(item.role, y + 42, "400 60px system-ui, sans-serif", 76, colors.muted);
-          y = wrap(item.lab, y + 16, "500 60px system-ui, sans-serif", 76, colors.text);
-          ctx.fillStyle = colors.accent;
-          ctx.fillRect(left, y + 20, contentWidth, 4);
-          y = wrap(item.topic, y + 106, "400 60px system-ui, sans-serif", 80, colors.text);
-          if (y > 1370) throw new Error("Research text exceeds the tube label");
-        } else if (slot === SAMPLE_SLOT) {
-          wrap("SCIENCE", 220, "600 84px system-ui, sans-serif", 106, colors.accent);
-          wrap("PROJECTS", 326, "600 84px system-ui, sans-serif", 106, colors.accent);
-          wrap("From sample to discovery", 550, "400 64px system-ui, sans-serif", 84, colors.muted);
-        } else {
-          wrap("BALANCE", 220, "600 84px system-ui, sans-serif", 106, colors.muted);
-          wrap(`Position ${slot + 1}`, 430, "400 64px system-ui, sans-serif", 84, colors.muted);
+      ctx.scale(labelScale, labelScale);
+      ctx.fillStyle = colors.paper;
+      ctx.fillRect(0, 0, 1024, 1536);
+      const left = 192, contentWidth = 640;
+      const wrap = (text, y, font, lineHeight, color) => {
+        ctx.font = font;
+        ctx.fillStyle = color;
+        let line = "";
+        for (const word of text.split(/\s+/)) {
+          const candidate = line ? `${line} ${word}` : word;
+          if (line && ctx.measureText(candidate).width > contentWidth) {
+            ctx.fillText(line, left, y);
+            y += lineHeight;
+            line = word;
+          } else line = candidate;
         }
-        ctx.fillStyle = colors.muted;
-        ctx.font = "600 56px system-ui, sans-serif";
-        ctx.fillText(`TUBE ${String(slot + 1).padStart(2, "0")}`, left, 1450);
+        if (line) { ctx.fillText(line, left, y); y += lineHeight; }
+        return y;
+      };
+      if (index >= 0) {
+        const item = experiences[index];
+        let y = wrap(item.year, 114, "600 72px system-ui, sans-serif", 80, colors.accent);
+        y = wrap(item.institution, y + 56, "650 76px system-ui, sans-serif", 90, colors.text);
+        y = wrap(item.role, y + 42, "400 60px system-ui, sans-serif", 76, colors.muted);
+        y = wrap(item.lab, y + 16, "500 60px system-ui, sans-serif", 76, colors.text);
+        ctx.fillStyle = colors.accent;
+        ctx.fillRect(left, y + 20, contentWidth, 4);
+        y = wrap(item.topic, y + 106, "400 60px system-ui, sans-serif", 80, colors.text);
+        if (y > 1370) throw new Error("Research text exceeds the tube label");
+      } else if (slot === SAMPLE_SLOT) {
+        wrap("SCIENCE", 220, "600 84px system-ui, sans-serif", 106, colors.accent);
+        wrap("PROJECTS", 326, "600 84px system-ui, sans-serif", 106, colors.accent);
+        wrap("From sample to discovery", 550, "400 64px system-ui, sans-serif", 84, colors.muted);
+      } else {
+        wrap("BALANCE", 220, "600 84px system-ui, sans-serif", 106, colors.muted);
+        wrap(`Position ${slot + 1}`, 430, "400 64px system-ui, sans-serif", 84, colors.muted);
       }
+      ctx.fillStyle = colors.muted;
+      ctx.font = "600 56px system-ui, sans-serif";
+      ctx.fillText(`TUBE ${String(slot + 1).padStart(2, "0")}`, left, 1450);
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.anisotropy = Math.min(16, renderer.capabilities.getMaxAnisotropy());
@@ -108,7 +101,10 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
   }
   function buildModel() {
     if (model) { world.remove(model.assembly, model.base); model.dispose(); }
+    if (bench) { world.remove(bench.group); bench.dispose(); }
     const colors = palette();
+    bench = createResearchBench(colors);
+    world.add(bench.group);
     labelFactory = textureFactory(colors);
     sharpLabel = -1;
     model = createCentrifuge(colors, labelFactory);
@@ -124,7 +120,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
       renderer.toneMappingExposure = 1.1;
       renderer.setClearColor(0x000000, 0);
       renderer.domElement.setAttribute("role", "img");
-      renderer.domElement.setAttribute("aria-label", "Six upright tubes in a centrifuge rotor. Scroll through Heidelberg University, Heidelberg research, UCSF, Harvard, and Boston Children’s Hospital, then return overhead, open the Projects sample in tube 6, and descend into its pellet to enter the mRNA science projects.");
+      renderer.domElement.setAttribute("aria-label", "Six upright tubes in a clockwise centrifuge rotor, with laboratory pipettes on the left and a stethoscope and clinical instruments on the right. Scroll through Heidelberg University, Heidelberg research, UCSF, Harvard, and Boston Children’s Hospital, then return overhead, open the Projects sample in tube 6, and descend into its pellet to enter the mRNA science projects.");
       renderer.domElement.setAttribute("aria-describedby", articles.map(article => article.id).join(" "));
       visual.append(renderer.domElement);
       world = new THREE.Scene();
@@ -226,7 +222,11 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
       canvasWidth = w; canvasHeight = h;
     }
     const aspect = w / h;
-    const overviewHeight = Math.max(8.4, 8.55 / aspect);
+    const context = (1 - smooth(tilt / .72)) * (1 - smooth(focus / .2));
+    bench.update(context, aspect);
+    const rotorHeight = Math.max(8.4, 8.55 / aspect);
+    const benchHeight = Math.max(8.6, (aspect < 1.1 ? 11.4 : 17.5) / aspect);
+    const overviewHeight = rotorHeight + (benchHeight - rotorHeight) * context;
     const labelHeight = Math.max(2.55, 1.28 / aspect);
     const readingHeight = overviewHeight + (labelHeight - overviewHeight) * closeUp;
     const tubeHeight = Math.max(1.35, 1.35 / aspect);
@@ -246,7 +246,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
     camera.up.set(0, Math.sin(cameraAngle), -Math.cos(cameraAngle));
     camera.lookAt(0, targetY, targetZ);
     camera.updateProjectionMatrix();
-    const angle = rotorAngle + openingRotation(pose.progress, idleAngle);
+    const angle = rotorAngle + spinState.angle;
     model.assembly.rotation.y = angle;
     model.openSample(opening);
     world.updateMatrixWorld(true);
@@ -285,6 +285,9 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
     progressBar.style.transform = `scaleX(${progress})`;
     section.dataset.phase = pose.phase;
     section.dataset.rotorAngle = angle.toFixed(5);
+    section.dataset.spinSpeed = spinState.speed.toFixed(3);
+    section.dataset.spinMode = spinState.mode;
+    section.dataset.benchVisible = context.toFixed(3);
     section.dataset.activeTube = nearest.toString();
     section.dataset.sharpLabel = sharpLabel.toString();
     section.dataset.pixelRatio = pixelRatio.toString();
@@ -302,17 +305,20 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, openi
     lastTime = time;
     const bounds = scene.getBoundingClientRect();
     const visible = bounds.bottom > 0 && bounds.top < window.innerHeight && !document.hidden;
-    if (!visible) { current = target; ready = false; syncBridge(inspectionPose(linked ? target : target * .56)); return; }
+    if (!visible) { spinState = spin.align(); current = target; ready = false; syncBridge(inspectionPose(linked ? target : target * .56)); return; }
+    if (!hasOpened && target > .001) spinState = spin.align();
+    hasOpened = true;
+    spinState = spin.update(dt / 1000, target);
     if (!ready || motion.matches || target < .0005 || target > .9995) current = target;
     else current += (target - current) * (1 - Math.exp(-dt / 65));
     ready = true;
-    const idle = target < .0005 && current < .0005;
-    if (idle) idleAngle += dt * .000055;
+    if (spinState.mode === "braking") current = Math.min(current, OPENING_END / (linked ? 1 : .56));
     draw(current);
-    if (idle || Math.abs(current - target) > .00003) request();
+    if (spinState.mode !== "settled" || Math.abs(current - target) > .00003) request();
   }
   function goToTube(index, immediate = false) {
     if (!enabled) return;
+    spinState = spin.align();
     const progress = stops[index] / (linked ? 1 : .56);
     if (immediate || motion.matches) { current = progress; ready = true; }
     window.scrollTo({ top: window.scrollY + journey.getBoundingClientRect().top + progress * distance, behavior: immediate || motion.matches ? "instant" : "smooth" });

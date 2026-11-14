@@ -10,15 +10,42 @@ export const EXPERIENCE_SLOTS = [0, 1, 2, 3, 4];
 export const RESEARCH_STOPS = [.2016, .2856, .3696, .4536, .5376];
 export const SAMPLE_SLOT = 5;
 export const CAP_TOP = 1.781;
+export const OPENING_END = .08;
+export const OPENING_SPEED = 3;
 
 const tau = Math.PI * 2;
 const clamp = value => Math.max(0, Math.min(1, value));
 const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
 
-// Settle a slow opening rotation before the camera leaves its overhead view.
-export function openingRotation(progress, angle) {
-  const shortest = Math.atan2(Math.sin(angle), Math.cos(angle));
-  return shortest * (1 - smooth(progress / .056));
+// Negative rotation about +Y is clockwise through the overhead camera.
+// Brake with constant deceleration to the next complete revolution, never rewind.
+export function createOpeningSpin() {
+  let angle = 0, speed = OPENING_SPEED, mode = "idle", start = 0, elapsed = 0, duration = 0, destination = 0;
+  const snapshot = () => ({ angle, speed, mode });
+  function align() {
+    angle = Math.floor(angle / tau) * tau; speed = 0; mode = "settled";
+    return snapshot();
+  }
+  function update(seconds, progress) {
+    if (progress < .0005) {
+      mode = "idle"; speed = OPENING_SPEED; angle -= speed * seconds;
+    } else {
+      if (mode === "idle") {
+        start = angle; elapsed = 0;
+        destination = Math.floor((angle - OPENING_SPEED * .18) / tau) * tau;
+        duration = 2 * (start - destination) / OPENING_SPEED;
+        mode = "braking";
+      }
+      if (mode === "braking") {
+        elapsed = Math.min(duration, elapsed + seconds);
+        angle = start - OPENING_SPEED * elapsed + OPENING_SPEED * elapsed ** 2 / (2 * duration);
+        speed = OPENING_SPEED * (1 - elapsed / duration);
+        if (elapsed >= duration) { angle = destination; speed = 0; mode = "settled"; }
+      }
+    }
+    return snapshot();
+  }
+  return { update, align, snapshot };
 }
 
 export function molecularPose(progress) {
@@ -86,7 +113,7 @@ export function inspectionPose(progress) {
   const dive = smooth((progress - .80) / .12);
   const molecules = smooth((progress - .89) / .07);
   const handoff = smooth((progress - .94) / .06);
-  const tilt = smooth((reading - .1) / .22) * (1 - rise);
+  const tilt = smooth((progress - OPENING_END) / (.1792 - OPENING_END)) * (1 - rise);
   let index = 0;
   while (index < RESEARCH_STOPS.length - 2 && progress > RESEARCH_STOPS[index + 1]) index++;
   const between = smooth((progress - RESEARCH_STOPS[index]) / (RESEARCH_STOPS[index + 1] - RESEARCH_STOPS[index]));
@@ -170,14 +197,8 @@ export function createCentrifuge(colors, textureFactory = () => null) {
       const rib = mount(cap, new THREE.BoxGeometry(.035, .22, .025), capMaterial, Math.sin(phi) * .627, 1.645, Math.cos(phi) * .627, "cap-rib");
       rib.rotation.y = phi;
     }
-    const capTexture = textureFactory("cap", slot, researchIndex);
-    if (capTexture) {
-      textures.push(capTexture);
-      const topMaterial = new THREE.MeshBasicMaterial({ map: capTexture, toneMapped: false });
-      materials.push(topMaterial);
-      const top = mount(cap, new THREE.CircleGeometry(.605, 64), topMaterial, 0, CAP_TOP, 0, "cap-top");
-      top.rotation.x = -Math.PI / 2;
-    }
+    const top = mount(cap, new THREE.CircleGeometry(.605, 64), capMaterial, 0, CAP_TOP, 0, "cap-top");
+    top.rotation.x = -Math.PI / 2;
     if (slot === SAMPLE_SLOT) {
       const pelletMaterial = standard({ color: colors.accent, roughness: .9, metalness: 0 });
       const pellet = mount(tube, new THREE.SphereGeometry(1, 40, 24), pelletMaterial, 0, -1.57, 0, "sample-pellet");
