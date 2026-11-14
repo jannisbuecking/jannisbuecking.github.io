@@ -7,7 +7,7 @@ atlas, MAMMOTH, and the Institute of Human Genetics Heidelberg database and tool
 portal. It uses static HTML, CSS, and JavaScript, with no installation or build
 step. The research and clinical-room illustrations use a locally vendored Three.js renderer.
 
-The page also includes publications, concise research and education entries,
+The page also includes concise research and education entries,
 clinical electives, and Google Scholar, LinkedIn, and
 GitHub profile links.
 
@@ -76,17 +76,16 @@ To refresh the saved snapshot locally:
 python3 scripts/update_contributions.py
 ```
 
-## Background and publication details
+## Background details
 
 Research, education, and clinical entries are condensed from the
-owner-provided CV screenshots. The publication list was checked against the
-owner's [Google Scholar profile](https://scholar.google.com/citations?hl=en&user=bZB3VLoAAAAJ)
-on 14 November 2026. Each entry links to its DOI or Scholar record, with
-preprints labeled separately. These entries are
-edited in `index.html`; only the GitHub contribution calendar updates automatically.
+owner-provided CV screenshots. Edit these entries in `index.html`; only the
+GitHub contribution calendar updates automatically. The publication list is
+available through the Google Scholar app on the contact phone.
 
 ## Animated science projects
 
+The section is titled **Selected work**, with a centered scroll cue.
 The project explorer adapts the mRNA strand, sugar-phosphate backbone, and two-part
 ribosome schematic from the owner's
 [Institute of Human Genetics Heidelberg portal](https://github.com/jannisbuecking/human-genetics-heidelberg-tools).
@@ -103,12 +102,14 @@ direct links such as `#project-mammoth` bring the relevant card into view.
 
 The page opens directly on the centrifuge at `#research`, above the science
 projects. The centrifuge, RNA, and Clinic scenes fill the browser window width
-and height; headings and scroll cues retain a responsive inset. Publications
-and static fallback content keep a readable centered column.
+and height; headings and centered scroll cues retain a responsive inset.
+Static fallback content keeps a readable centered column.
 The rigid six-position rotor has equal tubes spaced 60° apart.
 Tube order is Heidelberg University, Heidelberg research, UCSF, Harvard,
 Boston Children’s Hospital, and Projects. Position 6 holds the project sample.
 Tube transforms and dimensions remain fixed relative to the rotor throughout.
+“Education and Research Experiences” fades in after scrolling begins; the
+opening view shows the instruments and rotor without its heading.
 
 The camera starts exactly overhead using an orthographic projection, showing
 only the six plain circular caps. On the left are three micropipettes, a 96-tip
@@ -189,6 +190,8 @@ holds that frame steady before the camera pulls back to reveal the room.
 
 The desk has the computer on the left, one small clipboard in the middle, and
 a smaller iPhone on the right. All three items fit inside the tabletop edges.
+The tabletop and inset wooden apron meet without overlapping faces to prevent
+flickering; the camera also uses a larger near plane for better depth precision.
 The Clinic overview stays 14% closer to the desk. Scrolling holds the camera on
 the clipboard and turns its sheets over the top clip: Zomba, Great Ormond Street,
 then UT Southwestern. Each opaque sheet lifts with a flexible curl, turns fully

@@ -1,5 +1,5 @@
 import * as THREE from "./vendor/three/three.module.js";
-import "./projects.js?v=full-clinical";
+import "./projects.js?v=clean-scenes";
 import { createResearchBench } from "./research-bench.js?v=bench-spin";
 import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=clear-pellet";
 
@@ -166,10 +166,10 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
     reset();
     width = section.clientWidth;
     stableHeight = sizeReference.getBoundingClientRect().height;
-    if (motion.matches || unavailable) return;
+    if (motion.matches || unavailable) { heading.style.opacity = "1"; return; }
     const headingHeight = heading.getBoundingClientRect().height + 24;
     const stageHeight = stableHeight - headingHeight - (width <= 760 ? 98 : 76);
-    if (width < 260 || stageHeight < 440 || !initializeRenderer()) return;
+    if (width < 260 || stageHeight < 440 || !initializeRenderer()) { heading.style.opacity = "1"; return; }
     enabled = true;
     linked = Boolean(projects?.classList.contains("is-enhanced"));
     section.classList.add("is-enhanced");
@@ -277,7 +277,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
     // Tube transforms remain fixed. Only the Projects cap lifts off its tube.
     renderer.render(world, camera);
     renderer.domElement.style.opacity = "1";
-    heading.style.opacity = (1 - molecules).toFixed(4);
+    heading.style.opacity = (smooth((pose.progress - .012) / .055) * (1 - molecules)).toFixed(4);
     controls.style.opacity = (1 - molecules).toFixed(4);
     articles.forEach((article, index) => article.classList.toggle("is-current", nearest === index));
     const transitionCues = { return: "Scroll to return overhead ↓", sample: "Tube 06 · From sample to discovery ↓", opening: "Scroll to open the tube ↓", diving: "Into the pellet ↓", molecular: "From sample to molecular scale ↓", ribosome: "Science projects · mRNA → ribosome" };

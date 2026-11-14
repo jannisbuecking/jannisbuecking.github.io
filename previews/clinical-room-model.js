@@ -61,7 +61,8 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
   }
   function table(x, z, width, depth, height = 1.35) {
     const top = box(group, width, .13, depth, c.white, x, height, z, 'worktop');
-    box(group, width, .12, depth, c.wood, x, height - .1, z);
+    // An inset apron meets the underside without overlapping the top's side faces.
+    box(group, width - .08, .1, depth - .08, c.wood, x, height - .115, z, 'table-apron');
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(group, .1, height - .15, .1, c.metal, x + sx * (width / 2 - .15), height / 2 - .1, z + sz * (depth / 2 - .15));
     return top;
   }

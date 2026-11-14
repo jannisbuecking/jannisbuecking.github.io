@@ -3,6 +3,22 @@ import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.js';
 import { createClinicalRoom, clipboardPagePose, READING_STOPS } from '../previews/clinical-room-model.js';
 
+test('table aprons sit below and inside the worktops without overlapping side faces', () => {
+  for (const variant of ['consultation', 'laboratory']) {
+    const room = createClinicalRoom(variant);
+    try {
+      const tops = room.group.getObjectsByProperty('name', 'worktop');
+      const aprons = room.group.getObjectsByProperty('name', 'table-apron');
+      assert.equal(aprons.length, tops.length);
+      tops.forEach((top, index) => {
+        const surface = new THREE.Box3().setFromObject(top), apron = new THREE.Box3().setFromObject(aprons[index]);
+        assert.ok(apron.max.y <= surface.min.y + 1e-9, 'the table layers do not intersect');
+        assert.ok(apron.min.x > surface.min.x && apron.max.x < surface.max.x && apron.min.z > surface.min.z && apron.max.z < surface.max.z, 'the side faces cannot occupy the same planes');
+      });
+    } finally { room.dispose(); }
+  }
+});
+
 test('Clinic uses one clipboard that fits the desk, with bound pages that turn in both directions', () => {
   const room = createClinicalRoom('consultation', undefined, { includePhone: true });
   try {

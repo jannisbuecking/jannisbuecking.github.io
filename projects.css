@@ -40,7 +40,7 @@
 .rna-sugars .rna-morph-bond { stroke: none; }
 .rna-sugars circle { fill: var(--accent); }
 .rna-projects.is-enhanced .rna-prime { display: block; position: absolute; color: var(--accent); font: 13px ui-monospace, monospace; pointer-events: none; }
-.rna-projects.is-enhanced .rna-caption { position: absolute; bottom: 18px; left: var(--scene-gutter); right: var(--scene-gutter); display: flex; justify-content: space-between; gap: 1rem; padding: .75rem 0; border-top: 1px solid var(--border); color: var(--muted); font-size: .7rem; }
+.rna-projects.is-enhanced .rna-caption { position: absolute; bottom: 18px; left: var(--scene-gutter); right: var(--scene-gutter); display: flex; justify-content: center; text-align: center; gap: 1rem; padding: .75rem 0; border-top: 1px solid var(--border); color: var(--muted); font-size: .7rem; }
 
 @media (max-width: 760px) {
   .rna-projects .project { padding: 1.25rem; }

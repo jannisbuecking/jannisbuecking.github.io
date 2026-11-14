@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three/three.module.js';
-import './projects.js?v=full-clinical';
-import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=straight-phone';
+import './projects.js?v=clean-scenes';
+import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=stable-desk';
 import { createClinicalTextures } from './previews/clinical-textures.js?v=clinic-pages';
 import { captureRNAScene } from './clinical-snapshot.js?v=full-clinical';
 import { experiences } from './previews/clinical-data.js';
@@ -48,7 +48,7 @@ function initialize() {
     Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 10, bottom: -10, near: .1, far: 35 });
     sun.shadow.mapSize.set(1024, 1024); sun.shadow.normalBias = .035; sun.shadow.bias = -.00015; world.add(sun);
     const fill = new THREE.DirectionalLight('#dbe8ee', 1.1); fill.position.set(7, 6, -2); world.add(fill);
-    camera = new THREE.PerspectiveCamera(42, 1, .01, 180);
+    camera = new THREE.PerspectiveCamera(42, 1, .05, 180);
     textures = createClinicalTextures(renderer, entries);
     room = createClinicalRoom('consultation', textures.texture, { matchEntrance: true, includePhone: true }); world.add(room.group);
     renderer.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); unavailable = true; refresh(); });

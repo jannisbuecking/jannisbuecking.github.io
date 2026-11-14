@@ -14,17 +14,20 @@
 .clinical-experience.is-enhanced .clinical-canvas { display: block; position: absolute; inset: 0; }
 .clinical-canvas canvas { display: block; width: 100%; height: 100%; }
 .clinical-experience.is-enhanced .clinical-heading { position: absolute; top: 0; left: var(--scene-gutter); z-index: 2; margin: 0; pointer-events: none; }
-.clinical-experience.is-enhanced .clinical-caption { position: absolute; bottom: 22px; inset-inline: var(--scene-gutter); display: flex; justify-content: space-between; align-items: end; gap: 1.5rem; pointer-events: none; }
+.clinical-experience.is-enhanced .clinical-caption { position: absolute; bottom: 22px; inset-inline: var(--scene-gutter); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 1.5rem; pointer-events: none; }
 .clinical-counter { color: var(--accent); font-size: .6rem; font-weight: 600; letter-spacing: .15em; }
 .clinical-cue { margin: 5px 0 0; color: var(--muted); font-size: .7rem; }
-.clinical-scroll { color: var(--muted); font-size: .7rem; text-align: right; }
+.clinical-scroll { grid-column: 2; color: var(--muted); font-size: .7rem; text-align: center; white-space: nowrap; }
 .clinical-experience.is-enhanced .clinical-progress { display: block; position: absolute; inset-inline: 0; bottom: 0; height: 2px; background: var(--border); }
 .clinical-progress span { display: block; height: 100%; background: var(--accent); transform: scaleX(0); transform-origin: left; }
 .clinical-experience.is-enhanced .clinical-records { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); }
 .rna-projects.has-clinical-link { margin-bottom: calc(-1 * var(--clinical-viewport)); }
 .rna-projects.is-clinical-handoff .rna-scene { position: fixed; top: 0; left: var(--clinical-left); width: var(--clinical-width); opacity: var(--clinical-source-opacity, 1); pointer-events: none; }
+.clinical-experience[data-phase="phone"] .clinical-caption > div { visibility: hidden; }
 @media(max-width: 760px) {
   .clinical-records .experience-list { grid-template-columns: 1fr; gap: 1rem; }
-  .clinical-experience.is-enhanced .clinical-caption { bottom: 20px; }
+  .clinical-experience.is-enhanced .clinical-caption { bottom: 20px; grid-template-columns: 1fr; gap: .6rem; text-align: center; }
+  .clinical-scroll { grid-column: 1; }
+  .clinical-experience[data-phase="phone"] .clinical-caption > div { display: none; }
   .clinical-cue, .clinical-scroll { font-size: .65rem; }
 }

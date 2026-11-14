@@ -1,7 +1,7 @@
 .research-experience { position: relative; margin-bottom: clamp(3.5rem, 7vw, 6rem); }
 .research-scene { position: relative; isolation: isolate; }
 .research-experience:not(.is-enhanced) .research-scene { width: min(100% - 3rem, 69rem); margin-inline: auto; }
-.research-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; padding-top: 1.5rem; }
+.research-heading { opacity: 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; padding-top: 1.5rem; }
 .research-heading h1 { margin: 0; line-height: 1.2; font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 600; letter-spacing: -.035em; }
 .research-stage { position: relative; }
 .research-visual, .research-progress { display: none; }
@@ -11,7 +11,7 @@
 .research-institution { margin: 0 0 .5rem; font-size: .95rem; line-height: 1.5; font-weight: 600; }
 .research-paper p { margin: .5rem 0 0; color: var(--muted); font-size: .8rem; line-height: 1.65; }
 .research-paper .entry-role { font-size: .75rem; }
-.research-controls { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: .75rem; }
+.research-controls { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: .75rem; }
 .research-controls[hidden] { display: none; }
 .research-scroll-cue { color: var(--muted); font-size: .7rem; }
 .research-size-reference { position: absolute; top: 0; width: 0; height: 100vh; height: 100svh; visibility: hidden; pointer-events: none; contain: strict; }
