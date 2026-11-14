@@ -39,7 +39,7 @@ test("continuous scrolling brings each adjacent research tube forward without in
       assert.ok(position.z > 0);
       assert.ok(Math.abs(pose.closeUp - 1) < 1e-9);
     });
-    for (let progress = .37; progress < .95; progress += .01) {
+    for (let progress = RESEARCH_STOPS[0] + .01; progress < RESEARCH_STOPS[2] - .01; progress += .01) {
       assert.ok(inspectionPose(progress + .005).rotorAngle < inspectionPose(progress).rotorAngle);
     }
   } finally { model.dispose(); }
@@ -52,7 +52,7 @@ test("camera tilt never rotates the rotor and subsequent indexing preserves all 
     const local = model.tubeGroups.map(tube => tube.matrix.clone());
     for (let step = 0; step <= 100; step++) {
       const pose = inspectionPose(step / 100);
-      if (step <= 32) assert.ok(Math.abs(pose.rotorAngle) < 1e-12);
+      if (step <= 17) assert.ok(Math.abs(pose.rotorAngle) < 1e-12);
       assert.ok(pose.cameraAngle >= 0 && pose.cameraAngle <= Math.PI / 2);
       assert.ok(pose.closeUp >= 0 && pose.closeUp <= 1);
       model.assembly.rotation.y = pose.rotorAngle;
@@ -81,9 +81,42 @@ test("an overhead ray sees the cap before any wall or label at every tube positi
           // Rays exactly on a triangle seam may hit the closed cap beneath
           // its texture disc; both are the same opaque physical cap surface.
           assert.ok(["cap-top", "cap"].includes(hits[0].object.name));
-          assert.equal(hits[0].object.parent, tube);
+          assert.equal(hits[0].object.parent.parent, tube);
         }
       }
     }
+  } finally { model.dispose(); }
+});
+
+test("the camera returns overhead before tube four opens and the molecular handoff begins", () => {
+  const model = createCentrifuge(colors);
+  try {
+    assert.equal(inspectionPose(.68).cameraAngle, 0);
+    assert.equal(inspectionPose(.68).opening, 0);
+    const aligned = inspectionPose(.74);
+    assert.ok(Math.abs(aligned.rotorAngle + Math.PI) < 1e-9);
+    model.assembly.rotation.y = aligned.rotorAngle;
+    model.assembly.updateMatrixWorld(true);
+    const sample = model.tubeGroups[3];
+    const position = sample.getWorldPosition(new THREE.Vector3());
+    assert.ok(Math.abs(position.x) < 1e-9 && position.z > 0);
+    const fixed = model.tubeGroups.map(tube => tube.position.clone());
+    for (const amount of [0, .25, .5, 1, .5, 0]) {
+      model.openSample(amount);
+      model.tubeGroups.forEach((tube, index) => assert.ok(tube.position.equals(fixed[index])));
+      assert.equal(sample.getObjectByName("removable-cap").position.y, amount * 1.6);
+      assert.equal(model.tubeGroups[0].getObjectByName("removable-cap").position.y, 0);
+    }
+    assert.equal(inspectionPose(.8).opening, 1);
+    assert.equal(inspectionPose(.8).dive, 0);
+    assert.equal(inspectionPose(.94).dive, 1);
+    assert.equal(inspectionPose(.94).handoff, 0);
+    assert.equal(inspectionPose(1).handoff, 1);
+    assert.equal(inspectionPose(1).phase, "ribosome");
+    model.openSample(1);
+    model.assembly.updateMatrixWorld(true);
+    const ray = new THREE.Raycaster(new THREE.Vector3(0, 18, position.z), new THREE.Vector3(0, -1, 0));
+    const visibleHits = ray.intersectObject(model.assembly, true).filter(hit => hit.object.visible);
+    assert.ok(["sample-pellet", "pellet-granules"].includes(visibleHits[0].object.name), "the open tube has a clear view down to its pellet");
   } finally { model.dispose(); }
 });

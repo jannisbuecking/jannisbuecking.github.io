@@ -5,7 +5,8 @@ import * as THREE from "./vendor/three/three.module.js";
 export const SLOT_COUNT = 6;
 export const SLOT_RADIUS = 2.8;
 export const RESEARCH_SLOTS = [0, 1, 2];
-export const RESEARCH_STOPS = [.36, .66, .96];
+export const RESEARCH_STOPS = [.2016, .3696, .5376];
+export const SAMPLE_SLOT = 3;
 export const CAP_TOP = 1.781;
 
 const tau = Math.PI * 2;
@@ -13,11 +14,22 @@ const clamp = value => Math.max(0, Math.min(1, value));
 const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
 
 export function inspectionPose(progress) {
-  const tilt = smooth((progress - .1) / .22);
+  const reading = progress / .56;
+  const rise = smooth((progress - .56) / .12);
+  const select = smooth((progress - .68) / .06);
+  const opening = smooth((progress - .74) / .06);
+  const dive = smooth((progress - .80) / .12);
+  const molecules = smooth((progress - .89) / .07);
+  const handoff = smooth((progress - .94) / .06);
+  const tilt = smooth((reading - .1) / .22) * (1 - rise);
   const sweep = smooth((progress - RESEARCH_STOPS[0]) / (RESEARCH_STOPS[2] - RESEARCH_STOPS[0]));
-  const rotorAngle = -tau / 3 * sweep;
-  const closeUp = smooth((progress - .26) / .1) * (1 - .35 * Math.sin(Math.PI * 2 * sweep) ** 2);
-  return { tilt, cameraAngle: tilt * Math.PI / 2, rotorAngle, closeUp };
+  const rotorAngle = -tau / 3 * sweep - tau / 6 * select;
+  const closeUp = smooth((reading - .26) / .1) * (1 - .35 * Math.sin(Math.PI * 2 * sweep) ** 2) * (1 - rise);
+  const focus = smooth((progress - .72) / .08);
+  const phase = progress < .56 ? (tilt < .02 ? "top" : tilt < .98 ? "turning" : "side")
+    : progress < .68 ? "return" : progress < .74 ? "sample" : progress < .80 ? "opening"
+    : progress < .92 ? "diving" : progress < .96 ? "molecular" : "ribosome";
+  return { tilt, cameraAngle: tilt * Math.PI / 2, rotorAngle, closeUp, focus, opening, dive, molecules, handoff, phase };
 }
 
 export function createCentrifuge(colors, textureFactory = () => null) {
@@ -33,7 +45,7 @@ export function createCentrifuge(colors, textureFactory = () => null) {
   };
   const metal = standard({ color: colors.metal, metalness: .55, roughness: .38 });
   const edge = standard({ color: colors.rim, metalness: .45, roughness: .3 });
-  const plastic = standard({ color: colors.paper, metalness: 0, roughness: .32, transparent: true, opacity: .42, depthWrite: false });
+  const plastic = standard({ color: colors.paper, metalness: 0, roughness: .32, transparent: true, opacity: .42, depthWrite: false, side: THREE.DoubleSide });
   const researchCap = standard({ color: colors.accent, roughness: .7, metalness: 0 });
   const balanceCap = standard({ color: colors.balance, roughness: .7, metalness: 0 });
   const researchLiquid = standard({ color: colors.accent, transparent: true, opacity: .45, metalness: 0, depthWrite: false });
@@ -80,10 +92,13 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     mount(tube, new THREE.CylinderGeometry(.43, .05, .64, 40), liquidMaterial, 0, -1.3, 0, "liquid-cone");
     const collar = mount(tube, new THREE.TorusGeometry(.59, .06, 12, 48), edge, 0, 1.25, 0, "support-collar");
     collar.rotation.x = Math.PI / 2;
-    mount(tube, new THREE.CylinderGeometry(.625, .625, .27, 64), capMaterial, 0, 1.645, 0, "cap");
+    const cap = new THREE.Group();
+    cap.name = "removable-cap";
+    tube.add(cap);
+    mount(cap, new THREE.CylinderGeometry(.625, .625, .27, 64), capMaterial, 0, 1.645, 0, "cap");
     for (let ridge = 0; ridge < 32; ridge++) {
       const phi = ridge * tau / 32;
-      const rib = mount(tube, new THREE.BoxGeometry(.035, .22, .025), capMaterial, Math.sin(phi) * .627, 1.645, Math.cos(phi) * .627, "cap-rib");
+      const rib = mount(cap, new THREE.BoxGeometry(.035, .22, .025), capMaterial, Math.sin(phi) * .627, 1.645, Math.cos(phi) * .627, "cap-rib");
       rib.rotation.y = phi;
     }
     const capTexture = textureFactory("cap", slot, researchIndex);
@@ -91,8 +106,23 @@ export function createCentrifuge(colors, textureFactory = () => null) {
       textures.push(capTexture);
       const topMaterial = new THREE.MeshBasicMaterial({ map: capTexture, toneMapped: false });
       materials.push(topMaterial);
-      const top = mount(tube, new THREE.CircleGeometry(.605, 64), topMaterial, 0, CAP_TOP, 0, "cap-top");
+      const top = mount(cap, new THREE.CircleGeometry(.605, 64), topMaterial, 0, CAP_TOP, 0, "cap-top");
       top.rotation.x = -Math.PI / 2;
+    }
+    if (slot === SAMPLE_SLOT) {
+      const pelletMaterial = standard({ color: colors.accent, roughness: .9, metalness: 0 });
+      const pellet = mount(tube, new THREE.SphereGeometry(1, 40, 24), pelletMaterial, 0, -1.57, 0, "sample-pellet");
+      pellet.scale.set(.13, .055, .13);
+      // Deterministic surface detail becomes visible as the camera approaches.
+      const granules = new THREE.InstancedMesh(new THREE.SphereGeometry(.008, 8, 6), pelletMaterial, 100);
+      granules.name = "pellet-granules";
+      const matrix = new THREE.Matrix4();
+      for (let n = 0; n < 100; n++) {
+        const radius = .12 * Math.sqrt((n + .5) / 100), angle = n * 2.39996323;
+        matrix.makeTranslation(Math.cos(angle) * radius, -1.567 + .055 * Math.sqrt(1 - (radius / .13) ** 2), Math.sin(angle) * radius);
+        granules.setMatrixAt(n, matrix);
+      }
+      tube.add(granules);
     }
     const labelTexture = textureFactory("label", slot, researchIndex);
     if (labelTexture) {
@@ -114,5 +144,12 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     materials.forEach(material => material.dispose());
     textures.forEach(texture => texture.dispose());
   }
-  return { assembly, base, tubeGroups, dispose };
+  function openSample(amount) {
+    const cap = tubeGroups[SAMPLE_SLOT].getObjectByName("removable-cap");
+    cap.position.set(smooth((amount - .3) / .7) * 1.4, amount * 1.6, 0);
+    cap.rotation.y = amount * Math.PI * .8;
+    // Reveal the pellet through the liquid during the illustrative scale change.
+    for (const name of ["liquid-column", "liquid-cone"]) tubeGroups[SAMPLE_SLOT].getObjectByName(name).visible = amount < .95;
+  }
+  return { assembly, base, tubeGroups, openSample, dispose };
 }

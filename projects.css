@@ -14,6 +14,9 @@
 
 /* Enhancement keeps the page's native scrolling; the project scene is sticky. */
 .rna-projects.is-enhanced .rna-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: clip; background: var(--background); }
+.rna-projects.has-lab-link { z-index: 2; }
+.rna-projects.has-lab-link .rna-scene { opacity: var(--lab-reveal, 0); }
+.rna-projects.has-lab-link.is-bridging .rna-scene { position: fixed; top: 0; left: var(--lab-left); width: var(--lab-width); z-index: 8; pointer-events: none; }
 .rna-projects.is-enhanced .section-heading { margin-bottom: 0; }
 .rna-projects.is-enhanced .rna-stage { position: absolute; top: var(--rna-stage-top); bottom: 56px; width: 100%; }
 .rna-projects.is-enhanced .rna-viewport { position: absolute; inset: 0; overflow: clip; }

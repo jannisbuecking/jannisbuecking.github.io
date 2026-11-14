@@ -1,5 +1,5 @@
 import * as THREE from "./vendor/three/three.module.js";
-import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=continuous-scroll";
+import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=pellet-journey";
 
 (() => {
   const section = document.getElementById("research");
@@ -13,6 +13,19 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
   const controls = section.querySelector(".research-controls");
   const progressBar = section.querySelector(".research-progress span");
   const cue = section.querySelector(".research-scroll-cue");
+  const projects = document.getElementById("projects");
+  const molecular = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  molecular.classList.add("research-molecular");
+  molecular.setAttribute("viewBox", "0 0 1000 1000");
+  molecular.setAttribute("preserveAspectRatio", "none");
+  molecular.setAttribute("aria-hidden", "true");
+  const strands = Array.from({ length: 13 }, (_, index) => {
+    const path = document.createElementNS(molecular.namespaceURI, "path");
+    if (index === 6) path.classList.add("molecular-guide");
+    molecular.append(path);
+    return path;
+  });
+  stage.append(molecular);
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const theme = window.matchMedia("(prefers-color-scheme: dark)");
   const sizeReference = document.createElement("div");
@@ -30,7 +43,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
     };
   });
   const clamp = (value, low = 0, high = 1) => Math.max(low, Math.min(high, value));
-  let enabled = false, unavailable = false, queued = false, layoutQueued = false;
+  let enabled = false, unavailable = false, queued = false, layoutQueued = false, linked = false;
   let width = 0, stableHeight = 0, distance = 0, current = 0;
   let ready = false, lastTime = 0, renderer, world, camera, model;
   let canvasWidth = 0, canvasHeight = 0;
@@ -54,7 +67,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
         ctx.font = "600 90px system-ui, sans-serif";
         ctx.fillText(String(slot + 1).padStart(2, "0"), 128, 142);
         ctx.font = "500 31px system-ui, sans-serif";
-        ctx.fillText(index >= 0 ? ["BOS", "UCSF", "HD"][index] : "BAL", 128, 194);
+        ctx.fillText(index >= 0 ? ["BOS", "UCSF", "HD"][index] : slot === 3 ? "PROJECTS" : "BAL", 128, 194);
       } else {
         ctx.fillStyle = colors.paper;
         ctx.fillRect(0, 0, 1024, 1536);
@@ -84,6 +97,10 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
           ctx.fillRect(left, y + 20, contentWidth, 4);
           y = wrap(item.topic, y + 106, "400 60px system-ui, sans-serif", 80, colors.text);
           if (y > 1370) throw new Error("Research text exceeds the tube label");
+        } else if (slot === 3) {
+          wrap("SCIENCE", 220, "600 84px system-ui, sans-serif", 106, colors.accent);
+          wrap("PROJECTS", 326, "600 84px system-ui, sans-serif", 106, colors.accent);
+          wrap("From sample to discovery", 550, "400 64px system-ui, sans-serif", 84, colors.muted);
         } else {
           wrap("BALANCE", 220, "600 84px system-ui, sans-serif", 106, colors.muted);
           wrap(`Position ${slot + 1}`, 430, "400 64px system-ui, sans-serif", 84, colors.muted);
@@ -114,7 +131,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
       renderer.toneMappingExposure = 1.1;
       renderer.setClearColor(0x000000, 0);
       renderer.domElement.setAttribute("role", "img");
-      renderer.domElement.setAttribute("aria-label", "Six equally spaced, upright tubes in a centrifuge rotor. Scroll to zoom in and read the full research details on adjacent tubes 1, 2, and 3.");
+      renderer.domElement.setAttribute("aria-label", "Six upright tubes in a centrifuge rotor. Scroll to read research on tubes 1, 2, and 3, then return overhead, open tube 4, and descend into its pellet to enter the mRNA science projects.");
       renderer.domElement.setAttribute("aria-describedby", articles.map(article => article.id).join(" "));
       visual.append(renderer.domElement);
       world = new THREE.Scene();
@@ -125,7 +142,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
       const fill = new THREE.DirectionalLight(0xffffff, 1.2);
       fill.position.set(-6, 4, -3);
       world.add(fill);
-      camera = new THREE.OrthographicCamera(-5, 5, 5, -5, .1, 100);
+      camera = new THREE.OrthographicCamera(-5, 5, 5, -5, .005, 100);
       buildModel();
       renderer.domElement.addEventListener("webglcontextlost", event => { event.preventDefault(); unavailable = true; refreshAnimation(); });
       return true;
@@ -145,6 +162,11 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
     scene.style.removeProperty("--research-details");
     articles.forEach(article => article.classList.remove("is-current"));
     controls.hidden = true;
+    heading.style.removeProperty("opacity");
+    controls.style.removeProperty("opacity");
+    section.classList.remove("has-project-transition");
+    projects?.classList.remove("has-lab-link", "is-bridging");
+    section.style.removeProperty("--lab-viewport");
   }
   function layout() {
     const before = journey.getBoundingClientRect();
@@ -159,10 +181,14 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
     const stageHeight = stableHeight - headingHeight - (width <= 760 ? 98 : 76);
     if (width < 260 || stageHeight < 440 || !initializeRenderer()) return;
     enabled = true;
+    linked = Boolean(projects?.classList.contains("is-enhanced"));
     section.classList.add("is-enhanced");
+    section.classList.toggle("has-project-transition", linked);
+    projects?.classList.toggle("has-lab-link", linked);
+    section.style.setProperty("--lab-viewport", `${stableHeight}px`);
     controls.hidden = false;
     scene.style.setProperty("--research-stage-top", `${headingHeight}px`);
-    distance = Math.max(stableHeight * 4.2, 2800);
+    distance = Math.max(stableHeight * 4.2, 2800) / (linked ? .56 : 1);
     journey.style.height = `${stableHeight + distance}px`;
     canvasWidth = canvasHeight = 0;
     if (wasPinned) window.scrollTo({ top: window.scrollY + journey.getBoundingClientRect().top + previous * distance, behavior: "instant" });
@@ -179,8 +205,20 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
       else request();
     });
   }
+  function syncBridge(pose) {
+    if (!linked) return;
+    const rect = projects.getBoundingClientRect();
+    const bridging = pose.handoff > 0 && rect.top > .5;
+    projects.classList.toggle("is-bridging", bridging);
+    projects.style.setProperty("--lab-reveal", pose.handoff.toFixed(4));
+    projects.style.setProperty("--lab-left", `${rect.left}px`);
+    projects.style.setProperty("--lab-width", `${rect.width}px`);
+    projects.dispatchEvent(new Event("labtransition"));
+  }
   function draw(progress) {
-    const { tilt, cameraAngle, rotorAngle, closeUp } = inspectionPose(progress);
+    const pose = inspectionPose(linked ? progress : progress * .56);
+    const { tilt, cameraAngle, rotorAngle, closeUp, focus, opening, dive, molecules, handoff } = pose;
+    syncBridge(pose);
     const w = visual.clientWidth, h = visual.clientHeight;
     if (!w || !h) return;
     if (w !== canvasWidth || h !== canvasHeight) {
@@ -190,34 +228,61 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
     const aspect = w / h;
     const overviewHeight = Math.max(8.4, 8.55 / aspect);
     const labelHeight = Math.max(2.55, 1.28 / aspect);
-    const viewHeight = overviewHeight + (labelHeight - overviewHeight) * closeUp;
+    const readingHeight = overviewHeight + (labelHeight - overviewHeight) * closeUp;
+    const tubeHeight = Math.max(1.35, 1.35 / aspect);
+    const focusedHeight = readingHeight + (tubeHeight - readingHeight) * focus;
+    const viewHeight = focusedHeight * (1 - dive) + .22 * dive;
     camera.left = -viewHeight * aspect / 2;
     camera.right = viewHeight * aspect / 2;
     camera.top = viewHeight / 2;
     camera.bottom = -viewHeight / 2;
     camera.zoom = 1;
-    const targetY = .1 + (.02 - .1) * closeUp;
-    const targetZ = (SLOT_RADIUS + .487) * closeUp;
-    camera.position.set(0, targetY + Math.cos(cameraAngle) * 18, targetZ + Math.sin(cameraAngle) * 18);
+    const targetY = (.1 + (.02 - .1) * closeUp) * (1 - dive) - 1.57 * dive;
+    const targetZ = (SLOT_RADIUS + .487) * closeUp * (1 - focus) + SLOT_RADIUS * focus;
+    // Overhead descent stays on the open tube's axis and ends just above its pellet.
+    const cameraDistance = 18 * (1 - dive) + .24 * dive;
+    camera.position.set(0, targetY + Math.cos(cameraAngle) * cameraDistance, targetZ + Math.sin(cameraAngle) * cameraDistance);
     // A stable camera basis throughout the vertical orbit: no roll or pole flip.
     camera.up.set(0, Math.sin(cameraAngle), -Math.cos(cameraAngle));
     camera.lookAt(0, targetY, targetZ);
     camera.updateProjectionMatrix();
     model.assembly.rotation.y = rotorAngle;
-    // Tube transforms are immutable; only this parent assembly indexes.
+    model.openSample(opening);
+    // Tube transforms remain fixed. Only the fourth cap lifts off its tube.
     renderer.render(world, camera);
+    renderer.domElement.style.opacity = (1 - molecules).toFixed(4);
+    molecular.style.opacity = (molecules * (1 - handoff)).toFixed(4);
+    heading.style.opacity = (1 - molecules).toFixed(4);
+    controls.style.opacity = (1 - molecules).toFixed(4);
+    const rnaTop = Number(projects?.dataset.rnaStageTop || 0);
+    const baseline = Number(projects?.dataset.rnaBaseline || h * .72);
+    const guideY = (rnaTop + baseline - stage.offsetTop) / h * 1000;
+    strands.forEach((path, index) => {
+      const spread = 1 + molecules * 3;
+      const offset = (index - 6) * 55 * spread;
+      const y = 500 + offset;
+      const settle = index === 6 ? molecules : 0;
+      const endY = y * (1 - settle) + guideY * settle;
+      const wave = (1 - settle) * (80 + index * 9);
+      path.setAttribute("d", `M-100 ${endY} C150 ${endY-wave} 220 ${endY+wave} 450 ${endY} S780 ${endY-wave} 1100 ${endY}`);
+      path.style.opacity = index === 6 ? "1" : String(.35 * (1 - handoff));
+    });
     let nearest = 0, front = -Infinity;
     for (let index = 0; index < 3; index++) {
       const depth = Math.cos(rotorAngle + RESEARCH_SLOTS[index] * Math.PI / 3);
       if (depth > front) { front = depth; nearest = index; }
     }
     articles.forEach((article, index) => article.classList.toggle("is-current", nearest === index));
-    cue.textContent = tilt < .98 ? "Scroll to lower the viewpoint ↓" : `${String(nearest + 1).padStart(2, "0")} / 03 · ${nearest === 2 ? "Scroll to continue" : "Scroll to the next research tube"} ↓`;
+    const transitionCues = { return: "Scroll to return overhead ↓", sample: "Tube 04 · From sample to discovery ↓", opening: "Scroll to open the tube ↓", diving: "Into the pellet ↓", molecular: "From sample to molecular scale ↓", ribosome: "Science projects · mRNA → ribosome" };
+    cue.textContent = transitionCues[pose.phase] || (tilt < .98 ? "Scroll to lower the viewpoint ↓" : `${String(nearest + 1).padStart(2, "0")} / 03 · ${nearest === 2 ? "Scroll to continue" : "Scroll to the next research tube"} ↓`);
     progressBar.style.transform = `scaleX(${progress})`;
-    section.dataset.phase = tilt < .02 ? "top" : tilt < .98 ? "turning" : "side";
+    section.dataset.phase = pose.phase;
     section.dataset.activeTube = nearest.toString();
     section.dataset.tubeCount = model.tubeGroups.length.toString();
     section.dataset.closeup = closeUp.toFixed(3);
+    section.dataset.opening = opening.toFixed(3);
+    section.dataset.dive = dive.toFixed(3);
+    section.dataset.handoff = handoff.toFixed(3);
   }
   function frame(time) {
     queued = false;
@@ -227,7 +292,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
     lastTime = time;
     const bounds = scene.getBoundingClientRect();
     const visible = bounds.bottom > 0 && bounds.top < window.innerHeight && !document.hidden;
-    if (!visible) { current = target; ready = false; return; }
+    if (!visible) { current = target; ready = false; syncBridge(inspectionPose(linked ? target : target * .56)); return; }
     if (!ready || motion.matches || target < .0005 || target > .9995) current = target;
     else current += (target - current) * (1 - Math.exp(-dt / 65));
     ready = true;
@@ -236,7 +301,7 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
   }
   function goToTube(index, immediate = false) {
     if (!enabled) return;
-    const progress = stops[index];
+    const progress = stops[index] / (linked ? 1 : .56);
     if (immediate || motion.matches) { current = progress; ready = true; }
     window.scrollTo({ top: window.scrollY + journey.getBoundingClientRect().top + progress * distance, behavior: immediate || motion.matches ? "instant" : "smooth" });
     request();

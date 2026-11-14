@@ -101,8 +101,8 @@ direct links such as `#project-mammoth` bring the relevant card into view.
 The research section at `#research`, immediately after the introduction and
 above the science projects, uses a rigid six-position rotor with equal
 tubes spaced 60° apart. The research tubes are adjacent in positions 1, 2, and 3;
-balancing tubes occupy positions 4, 5, and 6, giving three opposed pairs. Tube transforms,
-dimensions, and fill levels remain fixed relative to the rotor throughout.
+the other three tubes occupy positions 4, 5, and 6, giving three opposed pairs.
+Tube transforms and dimensions remain fixed relative to the rotor throughout.
 
 The camera starts exactly overhead using an orthographic projection, showing
 only the six circular caps. It moves along a vertical arc to the side while the
@@ -114,7 +114,18 @@ printed on its curved label. The camera gently pulls back while passing between
 neighboring labels. There is no separate
 description panel. The same source text remains available to screen readers
 and in the automatic static fallback.
-Upward scrolling reverses this sequence. Rendering stops while still or offscreen.
+After the third role, the camera pulls back and returns overhead before the rotor
+indexes one additional position. Tube four, labeled **Projects**, opens: only its
+cap lifts and moves aside. The camera centers over its opening and descends toward
+a modeled pellet in the conical tip. Liquid is hidden during this illustrative
+scale change so the pellet remains visible. Surface detail gives way to an SVG
+field of strands; one guide strand aligns with the existing mRNA backbone as the
+actual ribosome/project scene fades in. The two sections overlap by one viewport,
+so the handoff continues into native project scrolling without an empty screen.
+
+The complete sequence reverses with upward scrolling. Research rendering stops
+while still or offscreen. The transition is enabled only when both animated
+sections fit the viewport; otherwise the existing independent sections remain.
 
 This is an inspection view of a loaded rotor with the tubes at rest, not a
 simulation of operating-speed centrifugation. See the manufacturer's explanation
@@ -134,5 +145,6 @@ node --test tests/research-model.test.mjs
 ```
 
 The checks cover the six-slot geometry and opposing pairs, rigid tube poses
-throughout camera movement and indexing, and overhead ray occlusion by the caps.
+throughout camera movement and indexing, overhead ray occlusion by the caps,
+and the ordering of overhead alignment, cap opening, descent, and scene handoff.
 They also run before each deployment.

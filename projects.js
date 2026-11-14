@@ -80,6 +80,8 @@
     const gap = mobile ? 24 : 32;
     const stemHeight = 44;
     baseline = Math.max(cardHeight + stemHeight + 28, stageHeight - Math.min(mobile ? 180 : 240, stageHeight * .32));
+    section.dataset.rnaBaseline = String(baseline);
+    section.dataset.rnaStageTop = String(stageTop);
     center = width / 2;
     const cardTop = baseline - stemHeight - cardHeight;
     const markerTop = cardTop + (cardHeight - markerSize) / 2;
@@ -211,6 +213,7 @@
   });
   const routeHash = () => { if (location.hash.startsWith("#project-")) goToCard(location.hash.slice(1), true); };
   window.addEventListener("scroll", request, { passive: true });
+  section.addEventListener("labtransition", request);
   window.addEventListener("resize", scheduleLayout, { passive: true });
   window.addEventListener("hashchange", routeHash);
   // Run after the browser's initial fragment scroll, which otherwise shifts
