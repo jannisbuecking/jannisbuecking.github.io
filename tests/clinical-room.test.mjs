@@ -55,3 +55,18 @@ for (const variant of ['laboratory', 'consultation']) {
     } finally { room.dispose(); }
   });
 }
+
+test('integrated monitor matches the exact outgoing viewport with its image contained on the screen', () => {
+  const room = createClinicalRoom('consultation', undefined, { matchEntrance: true });
+  try {
+    for (const aspect of [1.104, 342 / 844, 1.8]) {
+      const view = room.pose(0, aspect), camera = new THREE.PerspectiveCamera(42, aspect, .01, 180);
+      camera.position.copy(view.position); camera.up.copy(view.up); camera.lookAt(view.target); camera.updateMatrixWorld(true);
+      const w = Math.min(room.entrance.width, room.entrance.height * aspect), h = w / aspect;
+      for (const x of [-w / 2, w / 2]) for (const y of [-h / 2, h / 2]) {
+        const point = room.entrance.object.localToWorld(new THREE.Vector3(x, y, 0)).project(camera);
+        assert.ok(Math.abs(Math.abs(point.x) - 1) < 1e-9 && Math.abs(Math.abs(point.y) - 1) < 1e-9, 'the captured RNA image fills the viewport without shifting or stretching');
+      }
+    }
+  } finally { room.dispose(); }
+});

@@ -5,7 +5,7 @@ Website: **https://jannisbuecking.github.io/**
 A small static website hosted on GitHub Pages, showcasing the MAGEL2 multi-omics
 atlas, MAMMOTH, and the Institute of Human Genetics Heidelberg database and tool
 portal. It uses static HTML, CSS, and JavaScript, with no installation or build
-step. The research illustration uses a locally vendored Three.js renderer.
+step. The research and clinical-room illustrations use a locally vendored Three.js renderer.
 
 The page also includes publications, concise research and education entries,
 clinical electives, teaching experience, and Google Scholar, LinkedIn, and
@@ -17,6 +17,8 @@ GitHub profile links.
 - `styles.css`: layout, colors, and light/dark appearance.
 - `projects.css` and `projects.js`: the scroll-driven mRNA and ribosome project explorer.
 - `research.css`, `research.js`, and `research-model.js`: the six-tube 3D rotor, scroll-driven inspection camera, and research descriptions.
+- `clinical.css`, `clinical.js`, and `clinical-snapshot.js`: the live RNA-to-monitor handoff and consultation-room clinical experience.
+- `previews/clinical-room-model.js` and `previews/clinical-textures.js`: shared room geometry and document textures for the integrated room and concept previews.
 - `vendor/three/`: Three.js 0.187.0 and its MIT license; served locally with the site.
 - `contributions.js`: interactive contribution calendar with day tooltips and arrow-key navigation.
 - `data/contributions.json`: saved public GitHub contribution data for local preview and fallback.
@@ -161,6 +163,27 @@ consistency between pellet grain coordinates and the molecular morph endpoints,
 unique ownership for all 81 components, and continuous circle-to-contour geometry.
 They also run before each deployment.
 
+## Clinical consultation room
+
+The selected consultation-room concept is integrated immediately after the science
+projects. The RNA renderer settles at its stop codon and freezes its current
+geometry. `clinical-snapshot.js` paints the actual SVG, bases, project card, and
+scene text into a canvas used by the room's monitor. The monitor camera and image
+padding match the outgoing viewport, including portrait screens. A short overlap
+holds that frame steady before the camera pulls back to reveal the room.
+
+Subsequent scrolling opens three physical folders and approaches their documents.
+Their text comes directly from the clinical entries in `index.html`, which also
+serve as the accessible static fallback. Clinical experience is no longer repeated
+in the later education/teaching grid. Upward scrolling closes the folders and
+returns through the monitor into the live RNA sequence.
+
+`#clinical` opens the room overview. `#clinical-zomba`, `#clinical-london`, and
+`#clinical-dallas` open the respective records. The scene falls back to normal
+clinical entries for reduced motion, short windows, disabled JavaScript, unavailable
+WebGL, or when the RNA layout cannot be enhanced. Geometry checks include exact
+monitor-to-viewport projection and unobstructed document views on desktop/mobile.
+
 ## Clinical room concept previews
 
 Two separate scrollable prototypes are published alongside the main website:
@@ -170,8 +193,9 @@ Two separate scrollable prototypes are published alongside the main website:
 
 Both use the site's existing Zomba, Great Ormond Street, and UT Southwestern
 clinical entries. The facts are in `previews/clinical-data.js`; each page also
-contains an accessible static copy. The main homepage remains the existing site
-while these concepts are compared. Scroll upward to reverse either sequence.
+contains an accessible static copy. These independent concept pages remain
+available for comparison alongside the integrated consultation room. Scroll upward
+to reverse either sequence.
 Direct links `#zomba`, `#london`, and `#dallas` approach the respective records.
 Reduced motion, disabled JavaScript, short windows, and unavailable WebGL use the
 static entries. The room checks verify optical visibility, legible camera framing,

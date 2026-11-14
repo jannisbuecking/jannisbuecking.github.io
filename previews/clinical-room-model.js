@@ -4,7 +4,7 @@ import { experiences } from './clinical-data.js';
 export const smooth = value => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
 export const READING_STOPS = [.56, .74, .92];
 
-export function createClinicalRoom(variant, textureFactory = () => null) {
+export function createClinicalRoom(variant, textureFactory = () => null, options = {}) {
   const group = new THREE.Group();
   const materials = [], textures = [], folders = [], readings = [];
   const mat = (color, options = {}) => {
@@ -162,7 +162,8 @@ export function createClinicalRoom(variant, textureFactory = () => null) {
     const fov = 42, tangent = Math.tan(fov * Math.PI / 360);
     const start = worldFrame(entrance, 0);
     // Begin inside the optical/screen image; all room objects remain stationary.
-    const sourceDistance = variant === 'laboratory' ? entrance.width * .85 / (2 * tangent * Math.sqrt(1 + aspect * aspect)) : entrance.height * .78 / (2 * tangent);
+    const sourceDistance = options.matchEntrance ? Math.min(entrance.height / (2 * tangent), entrance.width / (2 * tangent * aspect))
+      : variant === 'laboratory' ? entrance.width * .85 / (2 * tangent * Math.sqrt(1 + aspect * aspect)) : entrance.height * .78 / (2 * tangent);
     const source = { position: start.position.clone().addScaledVector(start.normal, sourceDistance), target: start.position, up: start.up };
     const target = new THREE.Vector3(0, 1.25, -.25);
     const factor = Math.max(1, 1.35 / aspect);

@@ -28,6 +28,7 @@ import { molecularPose, molecularOwners, unfoldPoint, samplePolygon, circleToSha
   let width = 0, sceneHeight = 0, baseline = 0, center = 0, scale = 1;
   let startCamera = 0, travel = 0, distance = 0, camera = 0;
   let cameraReady = false, lastTime = 0, phase = 0;
+  let clinicalFrozen = false;
   let nodes = [], phosphates = [], projectNodes = [], firstX = 0, lastX = 0;
   let bridge = molecularPose(1), origins = [];
   let grains = [];
@@ -200,11 +201,11 @@ import { molecularPose, molecularOwners, unfoldPoint, samplePolygon, circleToSha
     const visible = bounds.bottom > 0 && bounds.top < window.innerHeight && !document.hidden;
     const dt = lastTime ? clamp(time - lastTime, 8, 40) : 16;
     lastTime = time;
-    const target = startCamera + p * travel;
-    if (!cameraReady || motion.matches || !visible || p === 0 || p === 1) camera = target;
+    const target = startCamera + (clinicalFrozen ? 1 : p) * travel;
+    if (clinicalFrozen || !cameraReady || motion.matches || !visible || p === 0 || p === 1) camera = target;
     else camera += (target - camera) * (1 - Math.exp(-dt / 65));
     cameraReady = true;
-    phase = time / 1900;
+    if (!clinicalFrozen) phase = time / 1900;
     const morph = section.classList.contains("has-lab-link") ? bridge : molecularPose(1);
     const { particles, unfold, bases, ribosome: forming, labels } = morph;
     section.dataset.unfold = unfold.toFixed(4);
@@ -339,6 +340,7 @@ import { molecularPose, molecularOwners, unfoldPoint, samplePolygon, circleToSha
     if (event.detail.origins) origins = event.detail.origins;
     request();
   });
+  section.addEventListener("clinicalfreeze", event => { clinicalFrozen = event.detail; request(); });
   window.addEventListener("resize", scheduleLayout, { passive: true });
   window.addEventListener("hashchange", routeHash);
   // Run after the browser's initial fragment scroll, which otherwise shifts

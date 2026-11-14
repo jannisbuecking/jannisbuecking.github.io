@@ -1,0 +1,29 @@
+.clinical-experience { position: relative; }
+.clinical-scene { position: relative; }
+.clinical-heading { padding-top: 1.5rem; margin-bottom: 1.75rem; }
+.clinical-heading h2 { margin: 0; }
+.clinical-canvas, .clinical-caption, .clinical-progress { display: none; }
+.clinical-records .experience-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
+.clinical-records .experience-list > li { display: block; padding: 1.5rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.clinical-records h4 { margin: .75rem 0; font-size: 1.1rem; line-height: 1.4; }
+.clinical-records p { color: var(--muted); font-size: .8rem; }
+.clinical-size-reference { position: absolute; top: 0; height: 100vh; height: 100svh; width: 0; visibility: hidden; pointer-events: none; contain: strict; }
+.clinical-experience.is-enhanced { z-index: 3; }
+.clinical-experience.is-enhanced .clinical-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: clip; background: var(--background); opacity: var(--clinical-reveal, 0); }
+.clinical-experience.is-enhanced .clinical-canvas { display: block; position: absolute; inset: 0; }
+.clinical-canvas canvas { display: block; width: 100%; height: 100%; }
+.clinical-experience.is-enhanced .clinical-heading { position: absolute; top: 0; left: 0; z-index: 2; margin: 0; pointer-events: none; }
+.clinical-experience.is-enhanced .clinical-caption { position: absolute; bottom: 22px; inset-inline: 0; display: flex; justify-content: space-between; align-items: end; gap: 1.5rem; pointer-events: none; }
+.clinical-counter { color: var(--accent); font-size: .6rem; font-weight: 600; letter-spacing: .15em; }
+.clinical-cue { margin: 5px 0 0; color: var(--muted); font-size: .7rem; }
+.clinical-scroll { color: var(--muted); font-size: .7rem; text-align: right; }
+.clinical-experience.is-enhanced .clinical-progress { display: block; position: absolute; inset-inline: 0; bottom: 0; height: 2px; background: var(--border); }
+.clinical-progress span { display: block; height: 100%; background: var(--accent); transform: scaleX(0); transform-origin: left; }
+.clinical-experience.is-enhanced .clinical-records { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); }
+.rna-projects.has-clinical-link { margin-bottom: calc(-1 * var(--clinical-viewport)); }
+.rna-projects.is-clinical-handoff .rna-scene { position: fixed; top: 0; left: var(--clinical-left); width: var(--clinical-width); opacity: var(--clinical-source-opacity, 1); pointer-events: none; }
+@media(max-width: 760px) {
+  .clinical-records .experience-list { grid-template-columns: 1fr; gap: 1rem; }
+  .clinical-experience.is-enhanced .clinical-caption { bottom: 20px; }
+  .clinical-cue, .clinical-scroll { font-size: .65rem; }
+}
