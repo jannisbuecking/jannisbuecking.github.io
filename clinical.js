@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three/three.module.js';
 import './projects.js?v=full-clinical';
-import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=paper-turn';
+import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=straight-phone';
 import { createClinicalTextures } from './previews/clinical-textures.js?v=clinic-pages';
 import { captureRNAScene } from './clinical-snapshot.js?v=full-clinical';
 import { experiences } from './previews/clinical-data.js';

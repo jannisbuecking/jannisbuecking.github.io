@@ -228,8 +228,8 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     if (progress <= CLINICAL_FRACTION) return clinical;
     const frame = worldFrame(phone, .01), tangent = Math.tan(42 * Math.PI / 360);
     const distance = 1.10 * Math.max(phone.bodyHeight / (2 * tangent), phone.bodyWidth / (2 * tangent * aspect));
-    const direction = frame.normal.clone().addScaledVector(frame.up, -.22).normalize();
-    const position = frame.position.clone().addScaledVector(direction, distance);
+    // Finish directly above the glass: an upright rectangle without perspective tilt.
+    const position = frame.position.clone().addScaledVector(frame.normal, distance);
     const amount = smooth((progress - CLINICAL_FRACTION) / .16);
     return { position: clinical.position.lerp(position, amount), target: clinical.target.lerp(frame.position, amount), up: clinical.up.lerp(frame.up, amount).normalize(), fov: 42 };
   }

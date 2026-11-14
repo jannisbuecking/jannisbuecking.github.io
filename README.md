@@ -102,7 +102,10 @@ direct links such as `#project-mammoth` bring the relevant card into view.
 ## Research centrifuge
 
 The page opens directly on the centrifuge at `#research`, above the science
-projects. Its rigid six-position rotor has equal tubes spaced 60° apart.
+projects. The centrifuge, RNA, and Clinic scenes fill the browser window width
+and height; headings and scroll cues retain a responsive inset. Publications
+and static fallback content keep a readable centered column.
+The rigid six-position rotor has equal tubes spaced 60° apart.
 Tube order is Heidelberg University, Heidelberg research, UCSF, Harvard,
 Boston Children’s Hospital, and Projects. Position 6 holds the project sample.
 Tube transforms and dimensions remain fixed relative to the rotor throughout.
@@ -194,7 +197,8 @@ The final scroll chapter approaches the smaller iPhone lying on
 the same desk. A real HTML screen follows the phone glass through a perspective
 transform; GitHub, Google Scholar, Email, and LinkedIn are native links with
 keyboard focus and mobile tap targets. The email is `jannis.buecking@gmail.com`,
-as listed on the owner's public GitHub profile. The closer final camera view keeps the screen and app links legible.
+as listed on the owner's public GitHub profile. The closer final camera view looks directly down onto the glass, with an upright
+rectangular screen and level edges. The phone stays fixed on the table throughout.
 
 Contributions appear only in the phone widget, using the daily snapshot through
 one cached browser request. Its detail link opens the public GitHub profile. The screen is hidden behind foreground objects,

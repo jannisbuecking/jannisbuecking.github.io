@@ -1,4 +1,4 @@
-.desk-contact { margin: 3rem auto; width: min(100%, 376px); }
+.desk-contact { margin: 3rem auto; width: min(100% - 3rem, 376px); }
 .desk-phone { position: relative; width: 360px; height: 780px; max-width: 100%; margin: auto; padding: 70px 22px 30px; border-radius: 43px; background: radial-gradient(ellipse at 90% 10%, #ffffffc9, transparent 55%), radial-gradient(ellipse at 10% 90%, #b4d4b4, transparent 55%), #dce9d7; color: #183b2b; overflow: hidden; box-shadow: 0 0 0 10px #28342e, 0 18px 55px -20px #0005; transform-origin: 0 0; font-family: system-ui, -apple-system, sans-serif; }
 .phone-status { position: absolute; top: 18px; inset-inline: 27px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 650; }
 .phone-status svg { width: 40px; height: 18px; display: block; fill: currentColor; }

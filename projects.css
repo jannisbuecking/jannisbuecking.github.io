@@ -1,6 +1,7 @@
 /* RNA project journey, adapted from the owner's Heidelberg institute portal. */
 .rna-projects { position: relative; }
 .rna-scene { position: relative; isolation: isolate; }
+.rna-projects:not(.is-enhanced) .rna-scene { width: min(100% - 3rem, 69rem); margin-inline: auto; }
 .rna-size-reference { position: absolute; top: 0; left: 0; width: 0; height: 100vh; height: 100svh; visibility: hidden; pointer-events: none; contain: strict; }
 .rna-projects .section-heading { align-items: center; padding-top: 1.5rem; }
 .rna-viewport { position: relative; }
@@ -18,7 +19,7 @@
 .rna-projects.has-lab-link .rna-scene { opacity: var(--lab-visible, 0); background: transparent; }
 .rna-projects.has-lab-link .rna-scene::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--background); opacity: var(--lab-background, 0); pointer-events: none; }
 .rna-projects.has-lab-link.is-bridging .rna-scene { position: fixed; top: 0; left: var(--lab-left); width: var(--lab-width); z-index: 8; pointer-events: none; }
-.rna-projects.is-enhanced .section-heading { margin-bottom: 0; }
+.rna-projects.is-enhanced .section-heading { margin-bottom: 0; padding-inline: var(--scene-gutter); }
 .rna-projects.is-enhanced .rna-stage { position: absolute; top: var(--rna-stage-top); bottom: 56px; width: 100%; }
 .rna-projects.is-enhanced .rna-viewport { position: absolute; inset: 0; overflow: clip; }
 .rna-projects.is-enhanced .rna-track { display: block; position: relative; height: 100%; will-change: transform; }
@@ -39,7 +40,7 @@
 .rna-sugars .rna-morph-bond { stroke: none; }
 .rna-sugars circle { fill: var(--accent); }
 .rna-projects.is-enhanced .rna-prime { display: block; position: absolute; color: var(--accent); font: 13px ui-monospace, monospace; pointer-events: none; }
-.rna-projects.is-enhanced .rna-caption { position: absolute; bottom: 18px; left: 0; right: 0; display: flex; justify-content: space-between; gap: 1rem; padding: .75rem 0; border-top: 1px solid var(--border); color: var(--muted); font-size: .7rem; }
+.rna-projects.is-enhanced .rna-caption { position: absolute; bottom: 18px; left: var(--scene-gutter); right: var(--scene-gutter); display: flex; justify-content: space-between; gap: 1rem; padding: .75rem 0; border-top: 1px solid var(--border); color: var(--muted); font-size: .7rem; }
 
 @media (max-width: 760px) {
   .rna-projects .project { padding: 1.25rem; }

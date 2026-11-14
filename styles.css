@@ -12,18 +12,20 @@
   --level-2: #72ad7d;
   --level-3: #3d8958;
   --level-4: #1f623f;
+  --scene-gutter: clamp(1.5rem, 3vw, 3rem);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
 }
 
 * { box-sizing: border-box; }
 html { scroll-padding-top: 2rem; }
-body { margin: 0; background: var(--background); color: var(--text); border-top: 5px solid var(--accent); }
+body { margin: 0; background: var(--background); color: var(--text); }
 a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: .25em; }
 a:hover { text-decoration-thickness: 2px; }
 a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
 p { line-height: 1.65; }
-.site-header, main, .site-footer { width: min(100% - 3rem, 69rem); margin-inline: auto; }
+.site-header, .site-footer, #publications { width: min(100% - 3rem, 69rem); margin-inline: auto; }
+main { width: 100%; }
 .site-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-block: 1.75rem; }
 .wordmark { color: var(--text); font-size: 1.4rem; font-weight: 750; letter-spacing: -.06em; text-decoration: none; }
 .wordmark span { color: var(--accent); }

@@ -38,7 +38,7 @@ test('the phone is unobstructed and its real HTML screen matches the projected g
   try {
     room.update(PHONE_STOP); room.group.updateMatrixWorld(true);
     const phone = room.phone, ray = new THREE.Raycaster();
-    for (const aspect of [1.104, 342 / 844]) {
+    for (const aspect of [1.104, 1440 / 900, 1512 / 982, 1728 / 1117, 390 / 844, 342 / 844]) {
       const view = room.pose(PHONE_STOP, aspect), camera = new THREE.PerspectiveCamera(42, aspect, .01, 180);
       camera.position.copy(view.position); camera.up.copy(view.up); camera.lookAt(view.target); camera.updateMatrixWorld(true);
       const project = (x,y) => phone.object.localToWorld(new THREE.Vector3(x * phone.width, y * phone.height, 0)).project(camera);
@@ -52,6 +52,9 @@ test('the phone is unobstructed and its real HTML screen matches the projected g
         const p = project(x,y); assert.ok(Math.abs(p.x) < .98 && Math.abs(p.y) < .98);
         return { x: (p.x + 1) * size.w / 2, y: (1 - p.y) * size.h / 2 };
       });
+      assert.ok(Math.abs(quad[0].y - quad[1].y) < 1e-7 && Math.abs(quad[2].y - quad[3].y) < 1e-7, 'the phone has level horizontal edges');
+      assert.ok(Math.abs(quad[0].x - quad[3].x) < 1e-7 && Math.abs(quad[1].x - quad[2].x) < 1e-7, 'the phone has straight vertical edges without perspective taper');
+      assert.ok(quad[0].y < quad[3].y && quad[0].x < quad[1].x, 'the screen stays upright');
       const matrix = phoneTransform(quad, 360, 780);
       for (const [x,y] of [[0,0],[360,0],[360,780],[0,780],[180,390]]) {
         const divisor = matrix[3] * x + matrix[7] * y + 1;

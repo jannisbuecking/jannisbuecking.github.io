@@ -1,5 +1,6 @@
 .clinical-experience { position: relative; }
 .clinical-scene { position: relative; }
+.clinical-experience:not(.is-enhanced) .clinical-heading, .clinical-records { width: min(100% - 3rem, 69rem); margin-inline: auto; }
 .clinical-heading { padding-top: 1.5rem; margin-bottom: 1.75rem; }
 .clinical-heading h2 { margin: 0; }
 .clinical-canvas, .clinical-caption, .clinical-progress { display: none; }
@@ -12,8 +13,8 @@
 .clinical-experience.is-enhanced .clinical-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: clip; background: var(--background); opacity: var(--clinical-reveal, 0); }
 .clinical-experience.is-enhanced .clinical-canvas { display: block; position: absolute; inset: 0; }
 .clinical-canvas canvas { display: block; width: 100%; height: 100%; }
-.clinical-experience.is-enhanced .clinical-heading { position: absolute; top: 0; left: 0; z-index: 2; margin: 0; pointer-events: none; }
-.clinical-experience.is-enhanced .clinical-caption { position: absolute; bottom: 22px; inset-inline: 0; display: flex; justify-content: space-between; align-items: end; gap: 1.5rem; pointer-events: none; }
+.clinical-experience.is-enhanced .clinical-heading { position: absolute; top: 0; left: var(--scene-gutter); z-index: 2; margin: 0; pointer-events: none; }
+.clinical-experience.is-enhanced .clinical-caption { position: absolute; bottom: 22px; inset-inline: var(--scene-gutter); display: flex; justify-content: space-between; align-items: end; gap: 1.5rem; pointer-events: none; }
 .clinical-counter { color: var(--accent); font-size: .6rem; font-weight: 600; letter-spacing: .15em; }
 .clinical-cue { margin: 5px 0 0; color: var(--muted); font-size: .7rem; }
 .clinical-scroll { color: var(--muted); font-size: .7rem; text-align: right; }
