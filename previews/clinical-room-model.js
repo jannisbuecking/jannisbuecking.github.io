@@ -8,7 +8,7 @@ export const PHONE_STOP = .96;
 
 export function createClinicalRoom(variant, textureFactory = () => null, options = {}) {
   const group = new THREE.Group();
-  const materials = [], textures = [], folders = [], readings = [];
+  const materials = [], textures = [], pages = [], readings = [];
   const mat = (color, options = {}) => {
     const material = new THREE.MeshStandardMaterial({ color, roughness: .68, metalness: .03, ...options });
     materials.push(material); return material;
@@ -80,7 +80,7 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
   const light = box(group, 5, .08, .45, mat('#fffef4', { emissive: '#fff7d4', emissiveIntensity: .55 }), 0, 4.05, -1.4);
   box(group, .025, .5, .025, c.metal, -2, 4.33, -1.4); box(group, .025, .5, .025, c.metal, 2, 4.33, -1.4);
 
-  let entrance, phone;
+  let entrance, phone, clipboard;
   if (variant === 'laboratory') {
     table(-.5, -2.45, 9.9, 2.3, 1.4);
     for (const x of [-4.5, -.7, 3.1]) {
@@ -134,42 +134,45 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     for (const x of [-4.75, -2.65]) for (const z of [-2.4, -1.4]) box(group, .1, .75, .1, c.metal, x, .4, z);
     for (let n = 0; n < 17; n++) box(group, .14, 2.5, .1, n % 2 ? c.sage : c.trim, -5.45, 1.5, -.7 + n * .17);
     box(group, .04, 2.9, .04, c.metal, -5.45, 1.5, -.8); box(group, .04, 2.9, .04, c.metal, -5.45, 1.5, 2.15);
-    box(group, .65, .06, .4, c.dark, 3.5, 1.4, -2.2);
-    box(group, .09, .38, .09, c.metal, 3.5, 1.6, -2.2);
-    mesh(group, rounded(2.02, 1.35, .12, .065), c.dark, [3.5, 2.25, -2.2]);
-    const screen = plaque(group, 'molecular', -1, 1.86, 1.18, 3.5, 2.25, -2.1);
+    box(group, .65, .06, .4, c.dark, -.35, 1.4, -2.2);
+    box(group, .09, .38, .09, c.metal, -.35, 1.6, -2.2);
+    mesh(group, rounded(2.02, 1.35, .12, .065), c.dark, [-.35, 2.25, -2.2]);
+    const screen = plaque(group, 'molecular', -1, 1.86, 1.18, -.35, 2.25, -2.1);
     entrance = { object: screen, width: 1.86, height: 1.18 };
-    box(group, 1.2, .035, .3, c.trim, 3.4, 1.41, -1.8, 'keyboard');
+    box(group, 1.2, .035, .3, c.trim, -.35, 1.41, -1.3, 'keyboard');
+    const board = new THREE.Group(); board.name = 'clinical-clipboard';
+    board.position.set(1.45, 1.405, -1.45); board.rotation.x = -Math.PI / 2; group.add(board);
+    mesh(board, rounded(1.15, 1.55, .05, .055), c.sage, [0, 0, 0], 'clipboard-body');
+    box(board, .36, .12, .055, c.metal, 0, .714, .09, 'clipboard-clip');
     experiences.forEach((item, index) => {
-      const folder = new THREE.Group(); folder.position.set(.7 + index * 1.55, 1.43, -.68); folder.rotation.x = -Math.PI / 2; group.add(folder);
-      mesh(folder, rounded(1.47, 1.93, .055), mat(item.color));
-      const paper = plaque(folder, 'experience', index, 1.31, 1.78, 0, -.015, .06);
-      const cover = new THREE.Group(); cover.position.set(-.735, 0, .08); folder.add(cover);
-      mesh(cover, rounded(1.47, 1.93, .045), mat(item.color), [.735, 0, 0]);
-      plaque(cover, 'cover', index, 1.31, 1.77, .735, 0, .06).name = 'folder-cover-label';
-      box(cover, .38, .13, .045, mat(item.color), 1.02, 1.01, 0);
-      folders.push(cover); readings.push({ object: folder, paper, width: 1.47, height: 1.93, index });
+      const hinge = new THREE.Group(); hinge.name = `clinical-page-${index + 1}`;
+      hinge.position.set(0, .65, .068 - index * .004); board.add(hinge);
+      const geometry = new THREE.PlaneGeometry(.99, 1.34, 1, 28);
+      const paper = mesh(hinge, geometry, textured('experience', index), [0, -.67, 0], 'clinical-page-front');
+      const backMaterial = new THREE.MeshBasicMaterial({ color: '#fdfcf8', side: THREE.BackSide, transparent: true, depthWrite: false, toneMapped: false }); materials.push(backMaterial);
+      const back = mesh(hinge, geometry, backMaterial, [0, -.67, 0], 'clinical-page-back');
+      pages.push({ hinge, paper, back, geometry, turn: -1 });
+      readings.push({ object: board, paper, width: 1.15, height: 1.55, index });
     });
-    // Small, quiet clinical props: a pen cup, lamp, hygiene dispenser and wall rail.
-    const penZ = options.includePhone ? -2.35 : -2.05, lampX = options.includePhone ? -.3 : -.6;
-    cylinder(group, .11, .11, .25, c.white, -1.35, 1.51, penZ);
-    for (let n = 0; n < 3; n++) cylinder(group, .012, .012, .42, c.green, -1.4 + n * .05, 1.7, penZ);
-    cylinder(group, .19, .19, .04, c.metal, lampX, 1.42, -2.2);
-    cylinder(group, .018, .018, .65, c.metal, lampX, 1.74, -2.2);
-    const shade = cylinder(group, .15, .29, .23, c.white, lampX, 2.08, -2.2); shade.rotation.z = -.3;
+    clipboard = { object: board, pages, width: 1.15, height: 1.55, activePage: 0 };
+    // Accessories occupy the spaces between the computer, clipboard, and phone.
+    cylinder(group, .11, .11, .25, c.white, 4.15, 1.51, -2.25);
+    for (let n = 0; n < 3; n++) cylinder(group, .012, .012, .42, c.green, 4.10 + n * .05, 1.7, -2.25);
+    cylinder(group, .19, .19, .04, c.metal, 2.65, 1.42, -2.25);
+    cylinder(group, .018, .018, .65, c.metal, 2.65, 1.74, -2.25);
+    const shade = cylinder(group, .15, .29, .23, c.white, 2.65, 2.08, -2.25); shade.rotation.z = -.3;
     box(group, .3, .5, .18, c.white, -5.83, 2.1, 3);
     if (options.includePhone) {
-      // The phone lies flat in the desk's left-hand workspace. The folders
-      // close before the camera approaches, leaving its glass unobstructed.
+      // A smaller phone rests in the right-hand workspace, beside the clipboard.
       const device = new THREE.Group(); device.name = 'desk-iphone';
-      device.position.set(-1.05, 1.4125, -1.3); device.rotation.x = -Math.PI / 2; group.add(device);
+      device.position.set(3.65, 1.365 + .0475 * .68, -1.45); device.scale.setScalar(.68); device.rotation.x = -Math.PI / 2; group.add(device);
       mesh(device, rounded(.76, 1.61, .065, .13), c.dark, [0, 0, 0], 'phone-body');
       const screenMaterial = new THREE.MeshBasicMaterial({ color: '#17291f', toneMapped: false }); materials.push(screenMaterial);
       const glass = mesh(device, new THREE.ShapeGeometry(roundShape(.70, .70 * 780 / 360, .082)), screenMaterial, [0, 0, .054], 'phone-screen');
       box(device, .015, .22, .035, c.metal, .386, .22, 0, 'phone-power-button');
       for (const y of [.23, .43]) box(device, .015, .13, .035, c.metal, -.386, y, 0, 'phone-volume-button');
       box(device, .13, .012, .026, c.dark, 0, -.813, 0, 'phone-port');
-      phone = { group: device, object: glass, width: .70, height: .70 * 780 / 360, bodyWidth: .76, bodyHeight: 1.61 };
+      phone = { group: device, object: glass, width: .70, height: .70 * 780 / 360, bodyWidth: .76 * .68, bodyHeight: 1.61 * .68 };
     }
   }
   group.updateMatrixWorld(true);
@@ -190,8 +193,9 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     const overview = { position: target.clone().add(new THREE.Vector3(11, 7.8, 13).multiplyScalar(factor)), target, up: new THREE.Vector3(0, 1, 0) };
     const closeups = readings.map(item => {
       const frame = worldFrame(item);
-      const distance = 1.16 * Math.max(item.height / (2 * tangent), item.width / (2 * tangent * aspect));
-      return { position: frame.position.clone().addScaledVector(frame.normal, distance), target: frame.position, up: frame.up };
+      const distance = (clipboard ? 1.18 : 1.16) * Math.max(item.height / (2 * tangent), item.width / (2 * tangent * aspect));
+      const direction = clipboard ? frame.normal.clone().addScaledVector(frame.up, -.25).normalize() : frame.normal;
+      return { position: frame.position.clone().addScaledVector(direction, distance), target: frame.position, up: frame.up };
     });
     const keys = [{ p: 0, view: source }, { p: .035, view: source }, { p: .34, view: overview }, { p: .4, view: overview }, { p: .56, view: closeups[0] }, { p: .61, view: closeups[0] }, { p: .74, view: closeups[1] }, { p: .79, view: closeups[1] }, { p: .92, view: closeups[2] }, { p: 1, view: closeups[2] }];
     let index = keys.findIndex(key => key.p >= progress); if (index < 1) index = 1;
@@ -203,7 +207,7 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     const clinical = clinicalPose(Math.min(1, progress / CLINICAL_FRACTION), aspect);
     if (progress <= CLINICAL_FRACTION) return clinical;
     const frame = worldFrame(phone, .01), tangent = Math.tan(42 * Math.PI / 360);
-    const distance = 1.16 * Math.max(phone.bodyHeight / (2 * tangent), phone.bodyWidth / (2 * tangent * aspect));
+    const distance = 1.10 * Math.max(phone.bodyHeight / (2 * tangent), phone.bodyWidth / (2 * tangent * aspect));
     const direction = frame.normal.clone().addScaledVector(frame.up, -.22).normalize();
     const position = frame.position.clone().addScaledVector(direction, distance);
     const amount = smooth((progress - CLINICAL_FRACTION) / .16);
@@ -211,14 +215,27 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
   }
   function update(progress) {
     const clinical = phone ? Math.min(1, progress / CLINICAL_FRACTION) : progress;
-    const closing = phone ? smooth((progress - .80) / .07) : 0;
-    folders.forEach((cover, index) => {
-      const start = [.42, .64, .82][index];
-      cover.rotation.y = -Math.PI * .96 * smooth((clinical - start) / .1) * (1 - closing);
+    pages.forEach((page, index) => {
+      const turn = index < 2 ? smooth((clinical - (.63 + index * .18)) / .09) : 0;
+      page.hinge.rotation.x = -Math.PI * turn;
+      page.hinge.visible = turn < .999999;
+      page.back.material.opacity = 1 - smooth((turn - .80) / .20);
+      page.back.castShadow = turn < .80;
+      if (turn !== page.turn) {
+        const positions = page.geometry.attributes.position;
+        for (let vertex = 0; vertex < positions.count; vertex++) {
+          const along = .5 - positions.getY(vertex) / 1.34;
+          positions.setZ(vertex, .13 * Math.sin(Math.PI * turn) * Math.sin(Math.PI * along));
+        }
+        positions.needsUpdate = true; page.geometry.computeVertexNormals(); page.geometry.computeBoundingSphere(); page.geometry.computeBoundingBox();
+        page.turn = turn;
+      }
     });
+    if (clipboard) clipboard.activePage = pages[1].turn >= .5 ? 2 : pages[0].turn >= .5 ? 1 : 0;
   }
   function dispose() {
-    group.traverse(object => object.geometry?.dispose()); materials.forEach(material => material.dispose()); textures.forEach(texture => texture.dispose());
+    const geometries = new Set(); group.traverse(object => { if (object.geometry) geometries.add(object.geometry); });
+    geometries.forEach(geometry => geometry.dispose()); materials.forEach(material => material.dispose()); textures.forEach(texture => texture.dispose());
   }
-  return { group, entrance, readings, folders, phone, pose, update, dispose, textures };
+  return { group, entrance, readings, clipboard, pages, phone, pose, update, dispose, textures };
 }

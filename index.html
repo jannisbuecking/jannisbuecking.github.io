@@ -6,15 +6,14 @@
     <meta name="description" content="Jannis Buecking — medical student at Heidelberg University. Neurogenetics research, publications, public projects, clinical experience, and teaching.">
     <meta name="color-scheme" content="light dark">
     <title>Jannis Buecking</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=clinic-pages">
     <link rel="stylesheet" href="projects.css?v=full-clinical">
     <link rel="stylesheet" href="research.css?v=pellet-shapes">
-    <link rel="stylesheet" href="clinical.css?v=desk-phone">
-    <link rel="stylesheet" href="desk-phone.css?v=desk-phone">
-    <script type="module" src="contributions.js?v=desk-phone"></script>
+    <link rel="stylesheet" href="clinical.css?v=clinic-pages">
+    <link rel="stylesheet" href="desk-phone.css?v=clinic-pages">
     <script type="module" src="projects.js?v=full-clinical"></script>
     <script type="module" src="research.js?v=full-clinical"></script>
-    <script type="module" src="clinical.js?v=desk-phone"></script>
+    <script type="module" src="clinical.js?v=clinic-pages"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -23,10 +22,9 @@
       <nav aria-label="Main navigation">
         <a href="#research">Research</a>
         <a href="#projects">Projects</a>
-        <a href="#clinical">Clinical</a>
+        <a href="#clinical">Clinic</a>
         <a href="#publications">Publications</a>
         <a href="#experience">Experience</a>
-        <a href="#github">GitHub activity</a>
         <a href="#contact">Contact</a>
       </nav>
     </header>
@@ -159,9 +157,9 @@
       <section id="clinical" class="section clinical-experience" aria-labelledby="clinical-title">
         <div class="clinical-journey">
           <div class="clinical-scene">
-            <div class="clinical-canvas" role="img" aria-label="Scroll from the mRNA monitor into a consultation room, then open three folders to read clinical experience."></div>
-            <div class="clinical-heading"><p class="eyebrow">From molecules to medicine</p><h2 id="clinical-title">Clinical experience</h2></div>
-            <div class="clinical-caption" aria-hidden="true"><div><span class="clinical-counter">THE CONSULTATION ROOM</span><p class="clinical-cue">Scroll to reveal the room ↓</p></div><span class="clinical-scroll">Scroll to explore ↓</span></div>
+            <div class="clinical-canvas" role="img" aria-label="Scroll from the mRNA monitor into the Clinic, turn through three pages on a clipboard, and approach the contact phone."></div>
+            <div class="clinical-heading"><p class="eyebrow">From molecules to medicine</p><h2 id="clinical-title">Clinic</h2></div>
+            <div class="clinical-caption" aria-hidden="true"><div><span class="clinical-counter">CLINIC</span><p class="clinical-cue">Scroll to reveal the room ↓</p></div><span class="clinical-scroll">Scroll to explore ↓</span></div>
             <div class="clinical-progress" aria-hidden="true"><span></span></div>
           </div>
         </div>
@@ -208,7 +206,7 @@
               <div class="phone-activity-heading"><h3 id="phone-activity-title">GitHub activity</h3><span class="phone-live-dot" aria-hidden="true"></span></div>
               <p class="phone-contribution-total">A year of building</p><p class="phone-calendar-period">Contributions in the last 12 months</p>
               <div class="phone-calendar" role="img" aria-label="GitHub contribution calendar"><p class="phone-calendar-message">See my activity on GitHub.</p></div>
-              <div class="phone-activity-footer"><span class="phone-contribution-updated">Updated daily</span><a href="#github">Full calendar ↗</a></div>
+              <div class="phone-activity-footer"><span class="phone-contribution-updated">Updated daily</span><a href="https://github.com/jannisbuecking?tab=overview" target="_blank" rel="noopener noreferrer">On GitHub ↗</a></div>
             </section>
             <p class="phone-note">jannis.buecking@gmail.com</p>
             <span class="phone-home-indicator" aria-hidden="true"></span>
@@ -318,39 +316,10 @@
         </div>
       </section>
 
-      <section id="github" class="section" aria-labelledby="github-title">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Building in public</p>
-            <h2 id="github-title">GitHub contributions</h2>
-          </div>
-          <a class="text-link" href="https://github.com/jannisbuecking?tab=overview">View profile <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="contribution-panel">
-          <div class="contribution-heading">
-            <p id="contribution-summary" aria-live="polite">Activity over the last year</p>
-            <span class="period-label">Last 12 months</span>
-          </div>
-          <p id="calendar-help" class="sr-only">Daily GitHub contributions. Focus the calendar and use the arrow keys to explore days.</p>
-          <div class="calendar-scroll" id="contribution-calendar" aria-busy="true">
-            <p class="calendar-message">Loading contribution calendar…</p>
-          </div>
-          <noscript><p>Enable JavaScript to view the calendar, or <a href="https://github.com/jannisbuecking">view contributions on GitHub</a>.</p></noscript>
-          <div class="contribution-footer">
-            <span id="contribution-updated">Public activity from GitHub · refreshed daily</span>
-            <div class="legend" aria-label="Contribution intensity, from less to more">
-              <span>Less</span>
-              <span class="legend-cell level-0"></span><span class="legend-cell level-1"></span><span class="legend-cell level-2"></span><span class="legend-cell level-3"></span><span class="legend-cell level-4"></span>
-              <span>More</span>
-            </div>
-          </div>
-        </div>
-      </section>
     </main>
     <footer class="site-footer">
       <span>Jannis Buecking</span>
       <a href="https://github.com/jannisbuecking/jannisbuecking.github.io">Website source <span aria-hidden="true">↗</span></a>
     </footer>
-    <div id="contribution-tooltip" class="calendar-tooltip" role="tooltip" hidden></div>
   </body>
 </html>

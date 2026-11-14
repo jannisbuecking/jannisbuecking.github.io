@@ -17,12 +17,11 @@ GitHub profile links.
 - `styles.css`: layout, colors, and light/dark appearance.
 - `projects.css` and `projects.js`: the scroll-driven mRNA and ribosome project explorer.
 - `research.css`, `research.js`, and `research-model.js`: the six-tube 3D rotor, scroll-driven inspection camera, and research descriptions.
-- `clinical.css`, `clinical.js`, and `clinical-snapshot.js`: the live RNA-to-monitor handoff and consultation-room clinical experience.
+- `clinical.css`, `clinical.js`, and `clinical-snapshot.js`: the live RNA-to-monitor handoff and Clinic experience.
 - `desk-phone.css`, `desk-phone.js`, and `phone-geometry.js`: the desk iPhone, interactive projected HTML screen, and contact links.
 - `previews/clinical-room-model.js` and `previews/clinical-textures.js`: shared room geometry and document textures for the integrated room and concept previews.
 - `vendor/three/`: Three.js 0.187.0 and its MIT license; served locally with the site.
-- `contributions.js`: interactive contribution calendar with day tooltips and arrow-key navigation.
-- `contribution-data.js`: shared, cached contribution data for the full calendar and iPhone widget.
+- `contribution-data.js`: cached daily contribution data for the iPhone widget.
 - `data/contributions.json`: saved public GitHub contribution data for local preview and fallback.
 - `scripts/update_contributions.py`: refreshes contribution data using Python's standard library.
 - `.github/workflows/deploy.yml`: publishes the site on pushes and refreshes activity daily.
@@ -46,7 +45,7 @@ uses **GitHub Actions** as its publishing source. Deployment progress is availab
 in **Actions**, and hosting settings are in **Settings → Pages**.
 
 ```sh
-git add index.html styles.css contributions.js
+git add index.html styles.css clinical.js
 git commit -m "Update website"
 git push origin main
 ```
@@ -165,30 +164,32 @@ consistency between pellet grain coordinates and the molecular morph endpoints,
 unique ownership for all 81 components, and continuous circle-to-contour geometry.
 They also run before each deployment.
 
-## Clinical consultation room
+## Clinic
 
-The selected consultation-room concept is integrated immediately after the science
+The Clinic is integrated immediately after the science
 projects. The RNA renderer settles at its stop codon and freezes its current
 geometry. `clinical-snapshot.js` paints the actual SVG, bases, project card, and
 scene text into a canvas used by the room's monitor. The monitor camera and image
 padding match the outgoing viewport, including portrait screens. A short overlap
 holds that frame steady before the camera pulls back to reveal the room.
 
-Subsequent scrolling opens three physical folders and approaches their documents.
+The desk has the computer on the left, one small clipboard in the middle, and
+a smaller iPhone on the right. All three items fit inside the tabletop edges.
+Scrolling holds the camera on the clipboard and turns its sheets over the top
+clip: Zomba, Great Ormond Street, then UT Southwestern.
 Their text comes directly from the clinical entries in `index.html`, which also
 serve as the accessible static fallback. Clinical experience is no longer repeated
-in the later education/teaching grid. Upward scrolling closes the folders and
-returns through the monitor into the live RNA sequence.
+in the later education/teaching grid. Upward scrolling turns the sheets back in order and returns through the monitor
+into the live RNA sequence.
 
-The final scroll chapter closes the folders and approaches an iPhone lying on
+The final scroll chapter approaches the smaller iPhone lying on
 the same desk. A real HTML screen follows the phone glass through a perspective
 transform; GitHub, Google Scholar, Email, and LinkedIn are native links with
 keyboard focus and mobile tap targets. The email is `jannis.buecking@gmail.com`,
-as listed on the owner's public GitHub profile. The original clinical camera path
-and its scroll distances are preserved before this final phone chapter.
+as listed on the owner's public GitHub profile. The closer final camera view keeps the screen and app links legible.
 
-The phone widget and the existing full calendar use the same daily snapshot and
-share one cached browser request. The screen is hidden behind foreground objects,
+Contributions appear only in the phone widget, using the daily snapshot through
+one cached browser request. Its detail link opens the public GitHub profile. The screen is hidden behind foreground objects,
 and links become interactive when the camera approaches. Reduced-motion, no-JS,
 short-screen, and unavailable-WebGL layouts retain the phone contact links as a
 normal HTML card. `#contact` approaches the phone directly.
@@ -204,12 +205,12 @@ monitor-to-viewport projection and unobstructed document views on desktop/mobile
 Two separate scrollable prototypes are published alongside the main website:
 
 - [Microscope → clinical laboratory](https://jannisbuecking.github.io/previews/clinical-laboratory.html): pull back from the optical field into a cutaway laboratory, then approach three workstation clipboards.
-- [Monitor → consultation room](https://jannisbuecking.github.io/previews/clinical-consultation.html): pull back from the molecular image on a monitor, then open and inspect three folders on the desk.
+- [Monitor → Clinic](https://jannisbuecking.github.io/previews/clinical-consultation.html): pull back from the molecular image on a monitor, then turn through three pages on one clipboard.
 
 Both use the site's existing Zomba, Great Ormond Street, and UT Southwestern
 clinical entries. The facts are in `previews/clinical-data.js`; each page also
 contains an accessible static copy. These independent concept pages remain
-available for comparison alongside the integrated consultation room. Scroll upward
+available for comparison alongside the integrated Clinic. Scroll upward
 to reverse either sequence.
 Direct links `#zomba`, `#london`, and `#dallas` approach the respective records.
 Reduced motion, disabled JavaScript, short windows, and unavailable WebGL use the

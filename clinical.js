@@ -1,7 +1,7 @@
 import * as THREE from './vendor/three/three.module.js';
 import './projects.js?v=full-clinical';
-import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=desk-phone';
-import { createClinicalTextures } from './previews/clinical-textures.js?v=full-clinical';
+import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=clinic-pages';
+import { createClinicalTextures } from './previews/clinical-textures.js?v=clinic-pages';
 import { captureRNAScene } from './clinical-snapshot.js?v=full-clinical';
 import { experiences } from './previews/clinical-data.js';
 import { createDeskPhone } from './desk-phone.js?v=desk-phone';
@@ -138,12 +138,12 @@ function frame(time) {
     phone.update(room, camera, width, height, current, visible);
   }
   const phase = current > CLINICAL_FRACTION ? 'phone' : clinicalProgress < .035 ? 'handoff' : clinicalProgress < .34 ? 'zoomout' : clinicalProgress < .42 ? 'room' : 'experience';
-  const index = clinicalProgress < .66 ? 0 : clinicalProgress < .83 ? 1 : 2;
+  const index = room?.clipboard?.activePage ?? (clinicalProgress < .675 ? 0 : clinicalProgress < .855 ? 1 : 2);
   heading.style.opacity = String(smooth((clinicalProgress - .10) / .15) * (1 - smooth((clinicalProgress - .40) / .04)));
   caption.style.opacity = String(smooth((clinicalProgress - .07) / .12));
   bar.parentElement.style.opacity = String(smooth((clinicalProgress - .035) / .065));
-  counter.textContent = phase === 'phone' ? 'LET’S CONNECT' : phase === 'experience' ? `0${index + 1} / 03 · CLINICAL EXPERIENCE` : 'THE CONSULTATION ROOM';
-  cue.textContent = phase === 'phone' ? 'Tap an app to connect · scroll to continue ↓' : phase === 'experience' ? (index === 2 ? 'Scroll to the iPhone ↓' : 'Scroll to the next folder ↓') : 'Scroll to reveal the room and open the folders ↓';
+  counter.textContent = phase === 'phone' ? 'LET’S CONNECT' : phase === 'experience' ? `PAGE 0${index + 1} / 03 · CLINICAL EXPERIENCE` : 'CLINIC';
+  cue.textContent = phase === 'phone' ? 'Tap an app to connect · scroll to continue ↓' : phase === 'experience' ? (index === 2 ? 'Scroll to the iPhone ↓' : 'Scroll to turn the page ↓') : 'Scroll to reveal the Clinic and approach the clipboard ↓';
   bar.style.transform = `scaleX(${current})`;
   section.dataset.phase = phase; section.dataset.progress = current.toFixed(4); section.dataset.activeExperience = String(index);
   if (Math.abs(current - target) > .00002) request();

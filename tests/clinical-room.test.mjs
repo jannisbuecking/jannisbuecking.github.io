@@ -3,8 +3,36 @@ import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.js';
 import { createClinicalRoom, READING_STOPS } from '../previews/clinical-room-model.js';
 
+test('Clinic uses one clipboard that fits the desk, with bound pages that turn in both directions', () => {
+  const room = createClinicalRoom('consultation', undefined, { includePhone: true });
+  try {
+    const board = room.clipboard.object, phone = room.phone.group;
+    assert.equal(room.pages.length, 3);
+    assert.ok(room.readings.every(reading => reading.object === board));
+    const desk = new THREE.Box3().setFromObject(room.group.getObjectByName('worktop'));
+    const bounds = new THREE.Box3().setFromObject(board);
+    assert.ok(bounds.min.x > desk.min.x && bounds.max.x < desk.max.x && bounds.min.z > desk.min.z && bounds.max.z < desk.max.z);
+    assert.ok(Math.abs(bounds.min.y - desk.max.y) < 1e-5, 'the clipboard rests on the tabletop');
+    assert.ok(room.entrance.object.getWorldPosition(new THREE.Vector3()).x < board.position.x && board.position.x < phone.position.x, 'computer, clipboard, phone are ordered left to right');
+    const anchors = room.pages.map(page => page.paper.localToWorld(new THREE.Vector3(0, .67, 0)));
+    const fixed = board.matrix.clone();
+    for (const progress of [0, .56, .675, .74, .855, .92, .855, .74, .675, .56, 0]) {
+      room.update(progress * .78); room.group.updateMatrixWorld(true);
+      assert.ok(board.matrix.equals(fixed));
+      room.pages.forEach((page, index) => assert.ok(page.paper.localToWorld(new THREE.Vector3(0, .67, 0)).distanceTo(anchors[index]) < 1e-6, 'the turning sheet stays attached to the clip'));
+    }
+    READING_STOPS.forEach((progress, index) => {
+      room.update(progress * .78);
+      assert.equal(room.clipboard.activePage, index);
+      assert.equal(room.pages.findIndex(page => page.hinge.visible), index);
+    });
+    room.update(READING_STOPS[0] * .78); assert.equal(room.clipboard.activePage, 0);
+    assert.ok(room.pages[0].hinge.visible);
+  } finally { room.dispose(); }
+});
+
 for (const variant of ['laboratory', 'consultation']) {
-  test(`${variant}: optical entry and clinical documents are unobstructed and fit desktop/mobile cameras`, () => {
+  test(`${variant}: optical entry and clinical pages are unobstructed and fit desktop/mobile cameras`, () => {
     const room = createClinicalRoom(variant);
     try {
       assert.equal(room.readings.length, 3);
@@ -19,17 +47,11 @@ for (const variant of ['laboratory', 'consultation']) {
         const source = setCamera(0, aspect);
         ray.set(source.position, source.target.clone().sub(source.position).normalize());
         assert.equal(ray.intersectObject(room.group, true)[0].object, room.entrance.object, 'the first view reaches the actual optical/screen image');
-        if (variant === 'consultation') {
-          const view = room.pose(READING_STOPS[0], aspect);
-          const label = room.folders[0].getObjectByName('folder-cover-label');
-          ray.set(view.position, label.getWorldPosition(new THREE.Vector3()).sub(view.position).normalize());
-          assert.equal(ray.intersectObject(room.group, true)[0].object, label, 'the cover title is outside the solid folder cover');
-        }
         READING_STOPS.forEach((progress, index) => {
           const view = setCamera(progress, aspect), item = room.readings[index];
           const paperCenter = item.paper.getWorldPosition(new THREE.Vector3());
           ray.set(view.position, paperCenter.clone().sub(view.position).normalize());
-          assert.equal(ray.intersectObject(room.group, true)[0].object, item.paper, 'the record stays readable after its folder opens');
+          assert.equal(ray.intersectObject(room.group, true)[0].object, item.paper, 'the record stays readable on the clipboard');
           for (const x of [-item.width / 2, item.width / 2]) for (const y of [-item.height / 2, item.height / 2]) {
             const point = item.object.localToWorld(new THREE.Vector3(x, y, .07)).project(camera);
             assert.ok(Math.abs(point.x) < .9 && Math.abs(point.y) < .9 && point.z > -1 && point.z < 1, 'the whole record fits inside the viewport');
@@ -38,7 +60,7 @@ for (const variant of ['laboratory', 'consultation']) {
       }
     } finally { room.dispose(); }
   });
-  test(`${variant}: scrolling and reversing move the camera and folder hinges, never the furniture or records`, () => {
+  test(`${variant}: scrolling and reversing move the camera and clipboard pages, never the furniture or clipboard`, () => {
     const room = createClinicalRoom(variant);
     try {
       const original = room.readings.map(item => item.object.matrix.clone());
@@ -51,7 +73,7 @@ for (const variant of ['laboratory', 'consultation']) {
         assert.ok(view.position.distanceTo(view.target) > .01);
         assert.ok(Math.abs(view.up.length() - 1) < 1e-9);
       }
-      room.folders.forEach(cover => assert.ok(Math.abs(cover.rotation.y) < 1e-12));
+      room.pages.forEach(page => assert.ok(Math.abs(page.hinge.rotation.x) < 1e-12));
     } finally { room.dispose(); }
   });
 }

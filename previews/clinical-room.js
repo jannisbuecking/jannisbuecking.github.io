@@ -1,7 +1,7 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { createClinicalRoom, READING_STOPS } from './clinical-room-model.js?v=rooms-1';
+import { createClinicalRoom, READING_STOPS } from './clinical-room-model.js?v=clinic-pages';
 import { experiences } from './clinical-data.js';
-import { createClinicalTextures } from './clinical-textures.js?v=full-clinical';
+import { createClinicalTextures } from './clinical-textures.js?v=clinic-pages';
 
 const variant = document.body.dataset.room;
 const container = document.querySelector('.room-canvas');
@@ -60,13 +60,13 @@ function frame(time) {
   room.update(current);
   if (current < .36 && Math.abs(current - lastMolecular) > .005) { textures.drawMolecule(current); lastMolecular = current; }
   renderer.render(world, camera);
-  const index = current < .66 ? 0 : current < .83 ? 1 : 2;
+  const index = current < .675 ? 0 : current < .855 ? 1 : 2;
   const phase = current < .12 ? 'molecular' : current < .34 ? 'zoomout' : current < .42 ? 'room' : 'experience';
   document.body.dataset.phase = phase; document.body.dataset.activeExperience = String(index); document.body.dataset.progress = current.toFixed(4);
   heading.style.opacity = phase === 'experience' || phase === 'molecular' ? '0' : '1';
   phaseNumber.textContent = phase === 'experience' ? `0${index + 1} / 03 · CLINICAL EXPERIENCE` : 'FROM MOLECULE TO MEDICINE';
-  phaseTitle.textContent = phase === 'experience' ? (index === 2 ? 'Scroll to finish ↓' : 'Scroll to the next record ↓') : phase === 'room' ? (variant === 'laboratory' ? 'A room for clinical discovery' : 'The clinical consultation room') : variant === 'laboratory' ? 'From the optical field to the whole laboratory' : 'From the screen to the whole consultation room';
-  phaseDetail.textContent = phase === 'experience' ? '' : variant === 'laboratory' ? 'Scroll onward to approach the three workstation records.' : 'Scroll onward to open the three clinical folders.';
+  phaseTitle.textContent = phase === 'experience' ? (index === 2 ? 'Scroll to finish ↓' : 'Scroll to the next record ↓') : phase === 'room' ? (variant === 'laboratory' ? 'A room for clinical discovery' : 'Clinic') : variant === 'laboratory' ? 'From the optical field to the whole laboratory' : 'From the screen to the Clinic';
+  phaseDetail.textContent = phase === 'experience' ? '' : variant === 'laboratory' ? 'Scroll onward to approach the three workstation records.' : 'Scroll onward to turn through the clipboard’s three pages.';
   progressBar.style.transform = `scaleX(${current})`;
   if (Math.abs(current - target) > .00002) request();
 }

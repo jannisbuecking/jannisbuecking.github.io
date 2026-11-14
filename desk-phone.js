@@ -59,7 +59,7 @@ export function createDeskPhone(host) {
     const local = [[-.5,.5],[.5,.5],[.5,-.5],[-.5,-.5]];
     const points = local.map(([x,y]) => phone.object.localToWorld(new THREE.Vector3(x * phone.width, y * phone.height, 0)).project(camera));
     if (points.some(point => point.z <= -1 || point.z >= 1) || points.every(point => point.x < -1) || points.every(point => point.x > 1) || points.every(point => point.y < -1) || points.every(point => point.y > 1)) { hide(); return; }
-    // HTML must never paint through a folder, lamp, or other foreground object.
+    // HTML must never paint through a page, lamp, or other foreground object.
     for (const [x,y] of [[0,0],[-.34,.34],[.34,.34],[.34,-.34],[-.34,-.34]]) {
       const point = phone.object.localToWorld(new THREE.Vector3(x * phone.width, y * phone.height, 0));
       ray.set(camera.position, point.sub(camera.position).normalize());

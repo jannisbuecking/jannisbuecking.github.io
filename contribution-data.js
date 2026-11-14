@@ -1,4 +1,4 @@
-// Both calendars share the daily snapshot and a single browser request.
+// The phone calendar uses the daily snapshot and a cached browser request.
 let request;
 export function getContributionData() {
   return request ??= fetch(new URL('./data/contributions.json', import.meta.url)).then(async response => {

@@ -33,7 +33,7 @@ jobs:
       - name: Prepare static website
         run: |
           mkdir -p _site/data
-          cp index.html styles.css projects.css research.css clinical.css desk-phone.css contributions.js contribution-data.js projects.js research.js research-model.js clinical.js clinical-snapshot.js desk-phone.js phone-geometry.js .nojekyll _site/
+          cp index.html styles.css projects.css research.css clinical.css desk-phone.css contribution-data.js projects.js research.js research-model.js clinical.js clinical-snapshot.js desk-phone.js phone-geometry.js .nojekyll _site/
           cp -R vendor _site/
           cp -R previews _site/
           cp data/contributions.json _site/data/

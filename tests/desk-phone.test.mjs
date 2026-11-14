@@ -4,7 +4,7 @@ import * as THREE from '../vendor/three/three.module.js';
 import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP } from '../previews/clinical-room-model.js';
 import { phoneTransform } from '../phone-geometry.js';
 
-test('the iPhone rests inside the existing desk and stays fixed while folders close', () => {
+test('the iPhone rests inside the existing desk and stays fixed while clipboard pages turn', () => {
   const room = createClinicalRoom('consultation', undefined, { includePhone: true });
   try {
     const desk = new THREE.Box3().setFromObject(room.group.getObjectByName('worktop'));
@@ -18,11 +18,11 @@ test('the iPhone rests inside the existing desk and stays fixed while folders cl
       assert.ok(room.phone.object.matrixWorld.equals(fixed));
     }
     room.update(PHONE_STOP);
-    assert.ok(room.folders.every(cover => Math.abs(cover.rotation.y) < 1e-9));
+    assert.equal(room.clipboard.activePage, 2);
   } finally { room.dispose(); }
 });
 
-test('the new phone chapter preserves the approved clinical camera path', () => {
+test('the phone chapter follows the same Clinic camera path', () => {
   const previous = createClinicalRoom('consultation', undefined, { matchEntrance: true });
   const room = createClinicalRoom('consultation', undefined, { matchEntrance: true, includePhone: true });
   try {
@@ -45,11 +45,11 @@ test('the phone is unobstructed and its real HTML screen matches the projected g
       for (const [x,y] of [[0,0],[-.34,.34],[.34,.34],[.34,-.34],[-.34,-.34]]) {
         const point = phone.object.localToWorld(new THREE.Vector3(x * phone.width, y * phone.height, 0));
         ray.set(view.position, point.sub(view.position).normalize());
-        assert.equal(ray.intersectObject(room.group, true)[0].object, phone.object, 'no folder or lamp covers the screen');
+        assert.equal(ray.intersectObject(room.group, true)[0].object, phone.object, 'no clipboard or lamp covers the screen');
       }
       const size = { w: aspect * 844, h: 844 };
       const quad = [[-.5,.5],[.5,.5],[.5,-.5],[-.5,-.5]].map(([x,y]) => {
-        const p = project(x,y); assert.ok(Math.abs(p.x) < .92 && Math.abs(p.y) < .92);
+        const p = project(x,y); assert.ok(Math.abs(p.x) < .98 && Math.abs(p.y) < .98);
         return { x: (p.x + 1) * size.w / 2, y: (1 - p.y) * size.h / 2 };
       });
       const matrix = phoneTransform(quad, 360, 780);

@@ -8,7 +8,7 @@ function texture(kind, index) {
   canvas.width = kind === 'molecular' ? 2048 : 1024;
   canvas.height = kind === 'molecular' ? 1400 : kind.includes('sign') ? 190 : 1400;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = kind === 'cover' ? experiences[index].color : '#fdfcf8'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#fdfcf8'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace;
   map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   if (kind === 'molecular') { molecularCanvas = canvas; molecularTexture = map; drawMolecule(0); return map; }
@@ -23,17 +23,17 @@ function texture(kind, index) {
   }
   if (kind.includes('sign')) {
     ctx.fillStyle = '#28694b'; ctx.fillRect(25, 30, 13, 130);
-    wrap(kind === 'lab-sign' ? 'CLINICAL LABORATORY' : 'CONSULTATION ROOM', 113, '600 58px system-ui', '#28694b', 70, 870);
+    wrap(kind === 'lab-sign' ? 'CLINICAL LABORATORY' : 'CLINIC', 113, '600 58px system-ui', '#28694b', 70, 870);
   } else {
-    const item = experiences[index], cover = kind === 'cover';
-    const ink = cover ? '#fdfcf8' : '#202923', muted = cover ? '#e4eadf' : '#586359';
-    let y = wrap(cover ? `CLINICAL EXPERIENCE  /  0${index + 1}` : item.year, 135, cover ? '500 36px system-ui' : '650 70px system-ui', cover ? muted : item.color, 90);
-    y = wrap(item.institution, y + (cover ? 190 : 55), '650 76px system-ui', ink, 92);
+    const item = experiences[index];
+    const ink = '#202923', muted = '#586359';
+    let y = wrap(item.year, 135, '650 70px system-ui', item.color, 90);
+    y = wrap(item.institution, y + 55, '650 76px system-ui', ink, 92);
     y = wrap(item.role, y + 65, '500 53px system-ui', muted, 72);
     y = wrap(item.location, y + 5, '400 51px system-ui', muted, 72);
-    ctx.fillStyle = cover ? '#fdfcf855' : '#d9ded5'; ctx.fillRect(100, y + 30, 824, 3);
-    if (!cover) wrap(item.topic, y + 130, '400 57px system-ui', ink, 80);
-    ctx.font = '600 35px system-ui'; ctx.fillStyle = muted; ctx.fillText(cover ? 'JANNIS BUECKING' : `CLINICAL EXPERIENCE  /  0${index + 1}`, 100, 1290);
+    ctx.fillStyle = '#d9ded5'; ctx.fillRect(100, y + 30, 824, 3);
+    wrap(item.topic, y + 130, '400 57px system-ui', ink, 80);
+    ctx.font = '600 35px system-ui'; ctx.fillStyle = muted; ctx.fillText(`CLINICAL EXPERIENCE  /  0${index + 1}`, 100, 1290);
   }
   return map;
 }
