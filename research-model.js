@@ -35,6 +35,41 @@ export function unfoldPoint(origin, target, amount) {
   return { x: origin.x + (target.x - origin.x) * t, y: origin.y + (target.y - origin.y) * t - arc };
 }
 
+// Each visible component owns a different grain throughout the transition.
+export function molecularOwners(nodeCount) {
+  let next = 0;
+  const take = count => Array.from({ length: count }, () => next++ * 37 % 100);
+  const owners = { sugars: take(nodeCount), phosphates: take(nodeCount - 1), bases: take(nodeCount), stems: take(nodeCount), bonds: take(2 * (nodeCount - 1)), subunits: take(2), labels: take(4) };
+  if (next > 100) throw new Error("Molecular components exceed the available pellet grains");
+  return owners;
+}
+
+export function samplePolygon(vertices, count = 64) {
+  const lengths = vertices.map((point, index) => Math.hypot(point.x - vertices[(index + 1) % vertices.length].x, point.y - vertices[(index + 1) % vertices.length].y));
+  const perimeter = lengths.reduce((sum, length) => sum + length, 0);
+  return Array.from({ length: count }, (_, index) => {
+    let remaining = index / count * perimeter, edge = 0;
+    while (edge < lengths.length - 1 && remaining > lengths[edge]) remaining -= lengths[edge++];
+    const a = vertices[edge], b = vertices[(edge + 1) % vertices.length], t = remaining / (lengths[edge] || 1);
+    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+  });
+}
+
+export function circleToShape(origin, target, amount) {
+  const center = target.reduce((sum, point) => ({ x: sum.x + point.x / target.length, y: sum.y + point.y / target.length }), { x: 0, y: 0 });
+  const area = target.reduce((sum, point, index) => {
+    const next = target[(index + 1) % target.length];
+    return sum + point.x * next.y - next.x * point.y;
+  }, 0);
+  const startAngle = Math.atan2(target[0].y - center.y, target[0].x - center.x);
+  const position = unfoldPoint(origin, center, amount);
+  return target.map((point, index) => {
+    const angle = startAngle + (area < 0 ? -1 : 1) * index / target.length * tau;
+    return { x: position.x + Math.cos(angle) * origin.r * (1 - amount) + (point.x - center.x) * amount,
+      y: position.y + Math.sin(angle) * origin.r * (1 - amount) + (point.y - center.y) * amount };
+  });
+}
+
 export function inspectionPose(progress) {
   const reading = progress / .56;
   const rise = smooth((progress - .56) / .12);

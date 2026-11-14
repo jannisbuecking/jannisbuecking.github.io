@@ -1,6 +1,6 @@
 import * as THREE from "./vendor/three/three.module.js";
-import "./projects.js?v=pellet-unfold";
-import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=pellet-unfold";
+import "./projects.js?v=pellet-shapes";
+import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=pellet-shapes";
 
 (() => {
   const section = document.getElementById("research");

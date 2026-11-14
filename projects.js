@@ -1,5 +1,5 @@
 // Adapted from the owner's Institute of Human Genetics Heidelberg RNA explorer.
-import { molecularPose, pelletComponent, unfoldPoint } from "./research-model.js?v=pellet-unfold";
+import { molecularPose, molecularOwners, unfoldPoint, samplePolygon, circleToShape } from "./research-model.js?v=pellet-shapes";
 (() => {
   "use strict";
   const section = document.querySelector(".rna-projects");
@@ -31,11 +31,12 @@ import { molecularPose, pelletComponent, unfoldPoint } from "./research-model.js
   let nodes = [], phosphates = [], projectNodes = [], firstX = 0, lastX = 0;
   let bridge = molecularPose(1), origins = [];
   let grains = [];
-  let ribosomeContour = [];
-  const componentOrder = Array.from({ length: 100 }, (_, index) => index).sort((a, b) => {
-    const p = pelletComponent(a), q = pelletComponent(b);
-    return Math.atan2(p.z, p.x) - Math.atan2(q.z, q.x);
-  });
+  const owners = molecularOwners(units.length);
+  const assigned = new Set(Object.values(owners).flat());
+  const subunits = [...shape.querySelectorAll("path")].map(element => ({ element, original: element.getAttribute("d"), points: [] }));
+  let bonds = [];
+  let uiBoxes = [];
+  const ui = [primeStart, primeEnd, section.querySelector(".section-heading"), section.querySelector(".rna-caption")];
 
   function svg(tag, attributes) {
     const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -55,6 +56,8 @@ import { molecularPose, pelletComponent, unfoldPoint } from "./research-model.js
     track.removeAttribute("style");
     scene.style.removeProperty("--rna-card-height");
     units.forEach(unit => unit.removeAttribute("style"));
+    section.querySelectorAll("[data-morph-element]").forEach(element => element.removeAttribute("style"));
+    subunits.forEach(({ element, original }) => { element.setAttribute("d", original); element.removeAttribute("style"); });
     cards.forEach(card => {
       card.removeAttribute("style");
       card.classList.remove("is-current");
@@ -112,7 +115,14 @@ import { molecularPose, pelletComponent, unfoldPoint } from "./research-model.js
         svg("path", { d: `M0 -10V${-(card ? stemHeight : baseline - markerTop - markerSize)}`, class: "rna-stem" }),
         svg("path", { d: "M-6 8L-10 -3L-1 -11L10 -6L8 7Z" })
       );
-      return { unit, card, x, sugar };
+      const element = card || mark;
+      element.dataset.morphElement = "base";
+      element.dataset.originIndex = owners.bases[index];
+      sugar.children[0].dataset.originIndex = owners.stems[index];
+      sugar.children[0].dataset.morphRole = "stem";
+      sugar.children[1].dataset.originIndex = owners.sugars[index];
+      sugar.children[1].dataset.morphRole = "sugar";
+      return { unit, card, x, sugar, element, box: { x, y: card ? cardTop + cardHeight / 2 : markerTop + markerSize / 2, width: unitWidth, height: card ? cardHeight : markerSize }, stem: card ? stemHeight : baseline - markerTop - markerSize };
     });
     projectNodes = nodes.filter(node => node.card);
     const drawing = document.createDocumentFragment();
@@ -123,22 +133,30 @@ import { molecularPose, pelletComponent, unfoldPoint } from "./research-model.js
     });
     nodes.forEach(node => drawing.append(node.sugar));
     phosphates = nodes.slice(0, -1).map((node, index) => {
-      const element = svg("circle", { r: 3.5 });
+      const element = svg("circle", { r: 3.5, "data-origin-index": owners.phosphates[index], "data-morph-role": "phosphate" });
       drawing.append(element);
       return { x: (node.x + nodes[index + 1].x) / 2, element };
     });
     sugars.replaceChildren(drawing);
+    bonds = owners.bonds.map(index => {
+      const element = svg("path", { class: "rna-morph-bond", "data-origin-index": index, "data-morph-role": "backbone" });
+      sugars.prepend(element);
+      return element;
+    });
     const length = nodes.at(-1).x + center;
     track.style.width = `${length}px`;
     backbone.setAttribute("viewBox", `0 0 ${length} ${stageHeight}`);
     ribosome.setAttribute("viewBox", `0 0 ${width} ${stageHeight}`);
     scale = Math.min(mobile ? 1.1 : 1.65, width * .85 / 420, (stageHeight - baseline - 12) / 145, (baseline - 12) / 218);
-    const subunits = [...shape.querySelectorAll("path")];
-    ribosomeContour = Array.from({ length: 100 }, (_, index) => {
-      const path = subunits[index % 2];
-      const point = path.getPointAtLength(path.getTotalLength() * Math.floor(index / 2) / 50);
-      return { x: center + point.x * scale, y: baseline + point.y * scale };
+    subunits.forEach((subunit, index) => {
+      subunit.points = Array.from({ length: 192 }, (_, step) => {
+        const point = subunit.element.getPointAtLength(subunit.element.getTotalLength() * step / 192);
+        return { x: point.x, y: point.y };
+      });
+      subunit.element.dataset.originIndex = owners.subunits[index];
+      subunit.element.dataset.morphRole = "subunit";
     });
+    ui.forEach((element, index) => { element.dataset.morphElement = "label"; element.dataset.originIndex = owners.labels[index]; });
     shape.setAttribute("transform", `translate(${center} ${baseline}) scale(${scale})`);
     firstX = nodes[0].x - markerSize * .65;
     lastX = nodes.at(-1).x + markerSize * .65;
@@ -148,6 +166,12 @@ import { molecularPose, pelletComponent, unfoldPoint } from "./research-model.js
     travel = nodes.at(-2).x - center - startCamera;
     distance = Math.max(travel * .8, sceneHeight * 2.6);
     journey.style.height = `${sceneHeight + distance}px`;
+    primeStart.style.left = `${firstX - startCamera}px`;
+    primeEnd.style.left = `${lastX - startCamera - 12}px`;
+    uiBoxes = ui.map((element, index) => {
+      const rect = element.getBoundingClientRect(), parent = (index < 2 ? stage : scene).getBoundingClientRect();
+      return { x: rect.left - parent.left + rect.width / 2, y: rect.top - parent.top + rect.height / 2, width: rect.width, height: rect.height };
+    });
     if (wasPinned) window.scrollTo({ top: window.scrollY + journey.getBoundingClientRect().top + previousProgress * distance, behavior: "instant" });
     else if (wasAfter) window.scrollBy({ top: journey.getBoundingClientRect().bottom - before.bottom, behavior: "instant" });
     cameraReady = false;
@@ -184,71 +208,95 @@ import { molecularPose, pelletComponent, unfoldPoint } from "./research-model.js
     const morph = section.classList.contains("has-lab-link") ? bridge : molecularPose(1);
     const { particles, unfold, bases, ribosome: forming, labels } = morph;
     section.dataset.unfold = unfold.toFixed(4);
-    const sourceIndex = index => componentOrder[Math.round(index / (nodes.length * 2 - 2) * 99)];
-    const source = index => {
-      const point = origins[sourceIndex(index)] || { x: center, y: baseline * .65, r: 8 };
-      return { ...point, x: point.x + camera };
+    const source = (index, local = true) => {
+      const point = origins[index] || { x: center, y: baseline * .65, r: 8 };
+      return { ...point, x: point.x + (local ? camera : 0) };
     };
-    const anchors = nodes.flatMap((node, index) => index < phosphates.length ? [node.x, phosphates[index].x] : [node.x]);
-    function pointAt(x) {
-      if (unfold === 1) return { x, y: yAt(x) };
-      let right = anchors.findIndex(anchor => anchor >= x);
-      if (right < 0) right = anchors.length - 1;
-      const left = Math.max(0, right - 1);
-      const a = source(left), b = source(right);
-      const fraction = left === right ? 0 : clamp((x - anchors[left]) / (anchors[right] - anchors[left]), 0, 1);
-      return unfoldPoint({ x: a.x + (b.x - a.x) * fraction, y: a.y + (b.y - a.y) * fraction }, { x, y: yAt(x) }, unfold);
+    const pathData = points => points.map((point, index) => `${index ? "L" : "M"}${point.x.toFixed(3)} ${point.y.toFixed(3)}`).join(" ") + "Z";
+    const fillBetween = (amount, final) => `color-mix(in srgb, var(--accent) ${(1 - amount) * 100}%, ${final})`;
+    function drawShape(element, origin, target, amount, finalFill) {
+      element.setAttribute("d", pathData(circleToShape(origin, target, amount)));
+      element.style.fill = fillBetween(amount, finalFill);
+      element.style.opacity = String(particles);
+    }
+    function morphElement(element, origin, box, amount, finalFill, wave = 0) {
+      const point = unfoldPoint(origin, { x: box.x, y: box.y + wave }, amount);
+      const w = origin.r * 2 * (1 - amount) + box.width * amount;
+      const h = origin.r * 2 * (1 - amount) + box.height * amount;
+      const radius = `calc(${50 * (1 - amount)}% + ${10 * amount}px)`;
+      element.style.transformOrigin = "50% 50%";
+      element.style.transform = `translate(${(point.x - box.x).toFixed(3)}px,${(point.y - box.y).toFixed(3)}px) scale(${w / box.width},${h / box.height})`;
+      element.style.borderRadius = amount === 1 ? "" : radius;
+      element.style.clipPath = amount === 1 ? "" : `inset(0 round ${radius})`;
+      element.style.background = amount === 1 ? "" : fillBetween(amount, finalFill);
+      element.style.opacity = String(particles);
+      const ink = amount ** 3;
+      element.style.setProperty("--morph-ink", ink.toFixed(4));
+      if (element.classList.contains("nucleotide-mark") || element.classList.contains("rna-prime")) element.style.color = amount === 1 ? "" : `color-mix(in srgb, var(--accent) ${ink * 100}%, transparent)`;
     }
     track.style.transform = `translate3d(${-camera.toFixed(2)}px,0,0)`;
     const points = [];
-    for (let x = firstX; x < lastX; x += 16) {
-      const point = pointAt(x);
-      points.push(`${points.length ? "L" : "M"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`);
-    }
-    const end = pointAt(lastX);
-    points.push(`L${end.x.toFixed(2)} ${end.y.toFixed(2)}`);
+    for (let x = firstX; x < lastX; x += 16) points.push(`${points.length ? "L" : "M"}${x.toFixed(2)} ${yAt(x).toFixed(2)}`);
+    points.push(`L${lastX.toFixed(2)} ${yAt(lastX).toFixed(2)}`);
     strand.setAttribute("d", points.join(" "));
-    strand.style.opacity = String(particles * unfold);
-    const grainTargets = new Map();
+    strand.style.display = unfold === 1 ? "" : "none";
+    strand.style.opacity = String(particles);
+    const anchors = nodes.flatMap((node, index) => index < phosphates.length ? [node.x, phosphates[index].x] : [node.x]);
+    bonds.forEach((element, index) => {
+      element.style.display = unfold === 1 ? "none" : "";
+      if (unfold === 1) return;
+      const from = index === 0 ? firstX : anchors[index], to = index === bonds.length - 1 ? lastX : anchors[index + 1];
+      const edge = Array.from({ length: 24 }, (_, step) => {
+        const x = from + (to - from) * step / 23;
+        return { x, y: yAt(x) };
+      });
+      const ribbon = [...edge.map(point => ({ x: point.x, y: point.y - 1.25 })), ...[...edge].reverse().map(point => ({ x: point.x, y: point.y + 1.25 }))];
+      drawShape(element, source(owners.bonds[index]), ribbon, unfold, "var(--accent)");
+      element.style.opacity = String(particles * (1 - .2 * unfold));
+    });
     nodes.forEach((node, index) => {
-      const origin = source(index * 2), point = pointAt(node.x);
-      const growth = node.card ? labels : bases;
-      node.unit.style.transformOrigin = `50% ${baseline}px`;
-      node.unit.style.transform = `translate3d(${(point.x - node.x).toFixed(2)}px,${(point.y - baseline).toFixed(2)}px,0) scale(${growth})`;
-      node.unit.style.opacity = String(growth);
-      const radius = origin.r * (1 - unfold) + 8 * unfold;
-      node.sugar.setAttribute("transform", `translate(${point.x} ${point.y}) scale(${radius / 8})`);
-      node.sugar.style.opacity = String(particles * unfold);
-      node.sugar.querySelector(".rna-stem").style.transform = `scaleY(${growth})`;
-      grainTargets.set(sourceIndex(index * 2), { point, radius, opacity: particles * (1 - unfold) });
+      const y = yAt(node.x), wave = y - baseline;
+      const polygon = samplePolygon([[-6,8],[-10,-3],[-1,-11],[10,-6],[8,7]].map(([x, dy]) => ({ x: node.x + x, y: y + dy })));
+      drawShape(node.sugar.children[1], source(owners.sugars[index]), polygon, unfold, "var(--background)");
+      const stem = samplePolygon([{ x: node.x - .65, y: y - 10 }, { x: node.x + .65, y: y - 10 }, { x: node.x + .65, y: y - node.stem }, { x: node.x - .65, y: y - node.stem }]);
+      drawShape(node.sugar.children[0], source(owners.stems[index]), stem, bases, "var(--accent)");
+      node.sugar.children[0].style.stroke = "none";
+      node.sugar.children[0].style.opacity = String(particles * (1 - .45 * bases));
+      morphElement(node.element, source(owners.bases[index]), node.box, node.card ? labels : bases, "var(--surface)", wave);
     });
     phosphates.forEach((node, index) => {
-      const origin = source(index * 2 + 1), point = pointAt(node.x);
-      node.element.setAttribute("cx", point.x);
-      node.element.setAttribute("cy", point.y);
+      const origin = source(owners.phosphates[index]);
+      const point = unfoldPoint(origin, { x: node.x, y: yAt(node.x) }, unfold);
+      node.element.setAttribute("cx", point.x); node.element.setAttribute("cy", point.y);
       node.element.setAttribute("r", origin.r * (1 - unfold) + 3.5 * unfold);
       node.element.style.opacity = String(particles);
-      grainTargets.set(sourceIndex(index * 2 + 1), { point, radius: 0, opacity: 0 });
     });
     grains.forEach(({ index, element }) => {
-      const origin = origins[index] || { x: center, y: baseline * .65, r: 8 };
-      const target = grainTargets.get(index);
-      const contour = ribosomeContour[index];
-      const assembling = unfoldPoint({ x: origin.x + camera, y: origin.y }, { x: contour.x + camera, y: contour.y }, forming);
-      const x = target ? target.point.x : assembling.x;
-      const y = target ? target.point.y : assembling.y;
-      element.setAttribute("cx", x); element.setAttribute("cy", y);
-      element.setAttribute("r", target ? target.radius : origin.r * (1 - forming) + 1.8 * forming);
-      element.style.opacity = String(target ? target.opacity : particles * (1 - forming) * .65);
+      element.style.display = assigned.has(index) ? "none" : "";
+      if (assigned.has(index)) return;
+      const origin = source(index);
+      element.setAttribute("cx", origin.x); element.setAttribute("cy", origin.y);
+      element.setAttribute("r", origin.r * (1 - unfold));
+      element.style.opacity = String(particles);
     });
-    const clusterY = origins.length ? origins.reduce((sum, point) => sum + point.y, 0) / origins.length : baseline * .65;
-    shape.setAttribute("transform", `translate(${center} ${clusterY + (baseline - clusterY) * forming}) scale(${scale * (.05 + .95 * forming)})`);
-    ribosome.style.opacity = String(.58 * forming);
-    section.querySelector(".section-heading").style.opacity = String(labels);
-    section.querySelector(".rna-caption").style.opacity = String(labels);
-    primeStart.style.opacity = primeEnd.style.opacity = String(bases);
+    // Each complete subunit is one pellet circle continuously reshaped into its contour.
+    shape.setAttribute("transform", `translate(${center} ${baseline}) scale(${scale})`);
+    ribosome.style.opacity = "1";
+    subunits.forEach((subunit, index) => {
+      const point = source(owners.subunits[index], false);
+      const origin = { x: (point.x - center) / scale, y: (point.y - baseline) / scale, r: point.r / scale };
+      drawShape(subunit.element, origin, subunit.points, forming, index ? "var(--level-1)" : "var(--tag)");
+      subunit.element.style.opacity = String(particles * (1 - .42 * forming));
+      if (forming === 1) subunit.element.setAttribute("d", subunit.original);
+    });
     primeStart.style.left = `${firstX - camera}px`;
     primeEnd.style.left = `${lastX - camera - 12}px`;
+    ui.forEach((element, index) => {
+      const inStage = index < 2, origin = source(owners.labels[index], false);
+      if (!inStage) origin.y += Number(section.dataset.rnaStageTop);
+      const box = { ...uiBoxes[index], x: uiBoxes[index].x - (inStage ? camera - startCamera : 0) };
+      if (box.width && box.height) morphElement(element, origin, box, labels, "transparent");
+    });
     const nearest = projectNodes.reduce((best, node) => Math.abs(node.x - camera - center) < Math.abs(best.x - camera - center) ? node : best);
     cards.forEach(card => card.classList.toggle("is-current", nearest.card === card));
     if (visible && !motion.matches) request();

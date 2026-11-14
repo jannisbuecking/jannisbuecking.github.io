@@ -120,10 +120,14 @@ cap lifts and moves aside. The camera centers over its opening and descends towa
 a modeled pellet in the conical tip. Liquid is hidden during this illustrative
 scale change so the pellet remains visible. Its 100 modeled grains are projected
 through the current camera into the actual RNA renderer. Those same particles
-unfold into the sugar/phosphate backbone while surrounding particles gather along
-the ribosome contours. The 3D grains yield to their projected counterparts at
-matching locations; bases, subunits, and project information grow into view in
-overlapping stages. There is no intermediate strand scene or whole-scene dissolve.
+are assigned one-to-one to 81 visible components: sugars, phosphates, bases/cards,
+stems, backbone segments, both complete ribosome subunits, and the four scene
+labels. Each SVG contour starts as its assigned circle and continuously reshapes
+into its destination. HTML bases, cards, and labels likewise transform from circles
+into their final containers, revealing their text as they open. Remaining grains
+shrink into the background. The 3D grains yield to their projected counterparts
+at matching locations. No molecular component is independently faded or scaled in;
+there is no intermediate strand scene or whole-scene dissolve.
 The two sections overlap by one viewport, so the formed strand continues directly
 into native project scrolling without an empty screen. Both renderers share one
 scroll-driven morph state; reversing the scroll folds the components back into
@@ -153,5 +157,6 @@ node --test tests/research-model.test.mjs
 The checks cover the six-slot geometry and opposing pairs, rigid tube poses
 throughout camera movement and indexing, overhead ray occlusion by the caps,
 the ordering of overhead alignment, cap opening, descent, and scene handoff,
-and consistency between pellet grain coordinates and the molecular morph endpoints.
+consistency between pellet grain coordinates and the molecular morph endpoints,
+unique ownership for all 81 components, and continuous circle-to-contour geometry.
 They also run before each deployment.

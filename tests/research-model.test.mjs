@@ -1,9 +1,26 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "../vendor/three/three.module.js";
-import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, unfoldPoint, RESEARCH_STOPS } from "../research-model.js";
+import { createCentrifuge, inspectionPose, molecularPose, molecularOwners, pelletComponent, unfoldPoint, samplePolygon, circleToShape, RESEARCH_STOPS } from "../research-model.js";
 
 const colors = { metal: "#d9ded5", rim: "#586359", paper: "#fdfcf8", accent: "#28694b", balance: "#e7eae3" };
+
+test("every molecular component owns a distinct pellet circle and preserves its shape at both endpoints", () => {
+  const owners = molecularOwners(13), ids = Object.values(owners).flat();
+  assert.equal(ids.length, 81);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.ok(ids.every(index => Number.isInteger(index) && index >= 0 && index < 100));
+  assert.throws(() => molecularOwners(17), /exceed/);
+  const origin = { x: 215, y: 340, r: 19 };
+  const target = samplePolygon([{ x: 700, y: 500 }, { x: 800, y: 500 }, { x: 800, y: 650 }, { x: 700, y: 650 }]);
+  const first = circleToShape(origin, target, 0), last = circleToShape(origin, target, 1);
+  first.forEach(point => assert.ok(Math.abs(Math.hypot(point.x - origin.x, point.y - origin.y) - origin.r) < 1e-9));
+  last.forEach((point, index) => assert.ok(Math.hypot(point.x - target[index].x, point.y - target[index].y) < 1e-9));
+  for (const amount of [0, .2, .5, .8, 1]) {
+    const a = circleToShape(origin, target, amount), b = circleToShape(origin, target, Math.min(1, amount + 1e-6));
+    assert.ok(a.every((point, index) => Math.hypot(point.x - b[index].x, point.y - b[index].y) < .002), "the contour has no sudden geometry changes");
+  }
+});
 
 test("molecular particles originate at the modeled pellet grains and arrive exactly on their destinations", () => {
   const model = createCentrifuge(colors);
