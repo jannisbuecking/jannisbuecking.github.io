@@ -118,10 +118,16 @@ After the third role, the camera pulls back and returns overhead before the roto
 indexes one additional position. Tube four, labeled **Projects**, opens: only its
 cap lifts and moves aside. The camera centers over its opening and descends toward
 a modeled pellet in the conical tip. Liquid is hidden during this illustrative
-scale change so the pellet remains visible. Surface detail gives way to an SVG
-field of strands; one guide strand aligns with the existing mRNA backbone as the
-actual ribosome/project scene fades in. The two sections overlap by one viewport,
-so the handoff continues into native project scrolling without an empty screen.
+scale change so the pellet remains visible. Its 100 modeled grains are projected
+through the current camera into the actual RNA renderer. Those same particles
+unfold into the sugar/phosphate backbone while surrounding particles gather along
+the ribosome contours. The 3D grains yield to their projected counterparts at
+matching locations; bases, subunits, and project information grow into view in
+overlapping stages. There is no intermediate strand scene or whole-scene dissolve.
+The two sections overlap by one viewport, so the formed strand continues directly
+into native project scrolling without an empty screen. Both renderers share one
+scroll-driven morph state; reversing the scroll folds the components back into
+their original pellet positions.
 
 The complete sequence reverses with upward scrolling. Research rendering stops
 while still or offscreen. The transition is enabled only when both animated
@@ -146,5 +152,6 @@ node --test tests/research-model.test.mjs
 
 The checks cover the six-slot geometry and opposing pairs, rigid tube poses
 throughout camera movement and indexing, overhead ray occlusion by the caps,
-and the ordering of overhead alignment, cap opening, descent, and scene handoff.
+the ordering of overhead alignment, cap opening, descent, and scene handoff,
+and consistency between pellet grain coordinates and the molecular morph endpoints.
 They also run before each deployment.

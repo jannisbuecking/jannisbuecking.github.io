@@ -1,9 +1,31 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "../vendor/three/three.module.js";
-import { createCentrifuge, inspectionPose, RESEARCH_STOPS } from "../research-model.js";
+import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, unfoldPoint, RESEARCH_STOPS } from "../research-model.js";
 
 const colors = { metal: "#d9ded5", rim: "#586359", paper: "#fdfcf8", accent: "#28694b", balance: "#e7eae3" };
+
+test("molecular particles originate at the modeled pellet grains and arrive exactly on their destinations", () => {
+  const model = createCentrifuge(colors);
+  try {
+    const grains = model.tubeGroups[3].getObjectByName("pellet-granules"), matrix = new THREE.Matrix4();
+    for (let index = 0; index < 100; index++) {
+      grains.getMatrixAt(index, matrix);
+      const position = new THREE.Vector3().setFromMatrixPosition(matrix), origin = pelletComponent(index);
+      assert.ok(position.distanceTo(new THREE.Vector3(origin.x, origin.y, origin.z)) < 1e-6);
+    }
+    const origin = { x: 313, y: 298 }, target = { x: 728, y: 607 };
+    assert.deepEqual(unfoldPoint(origin, target, 0), origin);
+    const final = unfoldPoint(origin, target, 1);
+    assert.ok(Math.hypot(final.x - target.x, final.y - target.y) < 1e-9);
+    for (let step = 0; step < 100; step++) {
+      const a = molecularPose(.90 + step / 1000), b = molecularPose(.90 + (step + 1) / 1000);
+      for (const key of Object.keys(a)) assert.ok(b[key] >= a[key] && b[key] <= 1);
+      if (a.labels > 0) assert.ok(a.unfold > .95, "project information appears after the strand is formed");
+    }
+    assert.ok(Object.values(molecularPose(1)).every(value => value === 1));
+  } finally { model.dispose(); }
+});
 
 test("three adjacent research tubes and three balance tubes occupy six equal slots", () => {
   const model = createCentrifuge(colors);

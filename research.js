@@ -1,5 +1,6 @@
 import * as THREE from "./vendor/three/three.module.js";
-import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=pellet-journey";
+import "./projects.js?v=pellet-unfold";
+import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=pellet-unfold";
 
 (() => {
   const section = document.getElementById("research");
@@ -14,18 +15,6 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
   const progressBar = section.querySelector(".research-progress span");
   const cue = section.querySelector(".research-scroll-cue");
   const projects = document.getElementById("projects");
-  const molecular = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  molecular.classList.add("research-molecular");
-  molecular.setAttribute("viewBox", "0 0 1000 1000");
-  molecular.setAttribute("preserveAspectRatio", "none");
-  molecular.setAttribute("aria-hidden", "true");
-  const strands = Array.from({ length: 13 }, (_, index) => {
-    const path = document.createElementNS(molecular.namespaceURI, "path");
-    if (index === 6) path.classList.add("molecular-guide");
-    molecular.append(path);
-    return path;
-  });
-  stage.append(molecular);
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const theme = window.matchMedia("(prefers-color-scheme: dark)");
   const sizeReference = document.createElement("div");
@@ -205,20 +194,21 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
       else request();
     });
   }
-  function syncBridge(pose) {
+  function syncBridge(pose, origins) {
     if (!linked) return;
+    const transition = molecularPose(pose.progress);
     const rect = projects.getBoundingClientRect();
-    const bridging = pose.handoff > 0 && rect.top > .5;
+    const bridging = transition.particles > 0 && rect.top > .5;
     projects.classList.toggle("is-bridging", bridging);
-    projects.style.setProperty("--lab-reveal", pose.handoff.toFixed(4));
+    projects.style.setProperty("--lab-visible", transition.particles > 0 ? "1" : "0");
+    projects.style.setProperty("--lab-background", transition.background.toFixed(4));
     projects.style.setProperty("--lab-left", `${rect.left}px`);
     projects.style.setProperty("--lab-width", `${rect.width}px`);
-    projects.dispatchEvent(new Event("labtransition"));
+    projects.dispatchEvent(new CustomEvent("labtransition", { detail: { ...transition, origins } }));
   }
   function draw(progress) {
     const pose = inspectionPose(linked ? progress : progress * .56);
     const { tilt, cameraAngle, rotorAngle, closeUp, focus, opening, dive, molecules, handoff } = pose;
-    syncBridge(pose);
     const w = visual.clientWidth, h = visual.clientHeight;
     if (!w || !h) return;
     if (w !== canvasWidth || h !== canvasHeight) {
@@ -248,25 +238,26 @@ import { createCentrifuge, inspectionPose, RESEARCH_SLOTS, SLOT_RADIUS, RESEARCH
     camera.updateProjectionMatrix();
     model.assembly.rotation.y = rotorAngle;
     model.openSample(opening);
+    world.updateMatrixWorld(true);
+    camera.updateMatrixWorld(true);
+    let origins;
+    if (linked && pose.progress > .9 && pose.progress < 1) {
+      const granules = model.tubeGroups[3].getObjectByName("pellet-granules");
+      const rnaTop = Number(projects.dataset.rnaStageTop);
+      origins = Array.from({ length: 100 }, (_, index) => {
+        const point = pelletComponent(index);
+        const center = new THREE.Vector3(point.x, point.y, point.z).applyMatrix4(granules.matrixWorld).project(camera);
+        return { x: (center.x + 1) * w / 2, y: stage.offsetTop + (1 - center.y) * h / 2 - rnaTop, r: .008 / viewHeight * h };
+      });
+    }
+    syncBridge(pose, origins);
+    // The projected particles take over at the same locations as these 3D grains.
+    model.tubeGroups[3].getObjectByName("pellet-granules").material.opacity = 1 - molecularPose(pose.progress).particles;
     // Tube transforms remain fixed. Only the fourth cap lifts off its tube.
     renderer.render(world, camera);
-    renderer.domElement.style.opacity = (1 - molecules).toFixed(4);
-    molecular.style.opacity = (molecules * (1 - handoff)).toFixed(4);
+    renderer.domElement.style.opacity = "1";
     heading.style.opacity = (1 - molecules).toFixed(4);
     controls.style.opacity = (1 - molecules).toFixed(4);
-    const rnaTop = Number(projects?.dataset.rnaStageTop || 0);
-    const baseline = Number(projects?.dataset.rnaBaseline || h * .72);
-    const guideY = (rnaTop + baseline - stage.offsetTop) / h * 1000;
-    strands.forEach((path, index) => {
-      const spread = 1 + molecules * 3;
-      const offset = (index - 6) * 55 * spread;
-      const y = 500 + offset;
-      const settle = index === 6 ? molecules : 0;
-      const endY = y * (1 - settle) + guideY * settle;
-      const wave = (1 - settle) * (80 + index * 9);
-      path.setAttribute("d", `M-100 ${endY} C150 ${endY-wave} 220 ${endY+wave} 450 ${endY} S780 ${endY-wave} 1100 ${endY}`);
-      path.style.opacity = index === 6 ? "1" : String(.35 * (1 - handoff));
-    });
     let nearest = 0, front = -Infinity;
     for (let index = 0; index < 3; index++) {
       const depth = Math.cos(rotorAngle + RESEARCH_SLOTS[index] * Math.PI / 3);

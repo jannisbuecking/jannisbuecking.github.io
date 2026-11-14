@@ -1,4 +1,5 @@
 // Adapted from the owner's Institute of Human Genetics Heidelberg RNA explorer.
+import { molecularPose, pelletComponent, unfoldPoint } from "./research-model.js?v=pellet-unfold";
 (() => {
   "use strict";
   const section = document.querySelector(".rna-projects");
@@ -28,6 +29,13 @@
   let startCamera = 0, travel = 0, distance = 0, camera = 0;
   let cameraReady = false, lastTime = 0, phase = 0;
   let nodes = [], phosphates = [], projectNodes = [], firstX = 0, lastX = 0;
+  let bridge = molecularPose(1), origins = [];
+  let grains = [];
+  let ribosomeContour = [];
+  const componentOrder = Array.from({ length: 100 }, (_, index) => index).sort((a, b) => {
+    const p = pelletComponent(a), q = pelletComponent(b);
+    return Math.atan2(p.z, p.x) - Math.atan2(q.z, q.x);
+  });
 
   function svg(tag, attributes) {
     const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -51,6 +59,8 @@
       card.removeAttribute("style");
       card.classList.remove("is-current");
     });
+    section.querySelector(".section-heading").style.removeProperty("opacity");
+    section.querySelector(".rna-caption").style.removeProperty("opacity");
   }
   function layout() {
     const previousProgress = progress();
@@ -106,6 +116,11 @@
     });
     projectNodes = nodes.filter(node => node.card);
     const drawing = document.createDocumentFragment();
+    grains = Array.from({ length: 100 }, (_, index) => {
+      const element = svg("circle", { class: "rna-pellet-grain" });
+      drawing.append(element);
+      return { index, element };
+    });
     nodes.forEach(node => drawing.append(node.sugar));
     phosphates = nodes.slice(0, -1).map((node, index) => {
       const element = svg("circle", { r: 3.5 });
@@ -118,6 +133,12 @@
     backbone.setAttribute("viewBox", `0 0 ${length} ${stageHeight}`);
     ribosome.setAttribute("viewBox", `0 0 ${width} ${stageHeight}`);
     scale = Math.min(mobile ? 1.1 : 1.65, width * .85 / 420, (stageHeight - baseline - 12) / 145, (baseline - 12) / 218);
+    const subunits = [...shape.querySelectorAll("path")];
+    ribosomeContour = Array.from({ length: 100 }, (_, index) => {
+      const path = subunits[index % 2];
+      const point = path.getPointAtLength(path.getTotalLength() * Math.floor(index / 2) / 50);
+      return { x: center + point.x * scale, y: baseline + point.y * scale };
+    });
     shape.setAttribute("transform", `translate(${center} ${baseline}) scale(${scale})`);
     firstX = nodes[0].x - markerSize * .65;
     lastX = nodes.at(-1).x + markerSize * .65;
@@ -160,20 +181,72 @@
     else camera += (target - camera) * (1 - Math.exp(-dt / 65));
     cameraReady = true;
     phase = time / 1900;
+    const morph = section.classList.contains("has-lab-link") ? bridge : molecularPose(1);
+    const { particles, unfold, bases, ribosome: forming, labels } = morph;
+    section.dataset.unfold = unfold.toFixed(4);
+    const sourceIndex = index => componentOrder[Math.round(index / (nodes.length * 2 - 2) * 99)];
+    const source = index => {
+      const point = origins[sourceIndex(index)] || { x: center, y: baseline * .65, r: 8 };
+      return { ...point, x: point.x + camera };
+    };
+    const anchors = nodes.flatMap((node, index) => index < phosphates.length ? [node.x, phosphates[index].x] : [node.x]);
+    function pointAt(x) {
+      if (unfold === 1) return { x, y: yAt(x) };
+      let right = anchors.findIndex(anchor => anchor >= x);
+      if (right < 0) right = anchors.length - 1;
+      const left = Math.max(0, right - 1);
+      const a = source(left), b = source(right);
+      const fraction = left === right ? 0 : clamp((x - anchors[left]) / (anchors[right] - anchors[left]), 0, 1);
+      return unfoldPoint({ x: a.x + (b.x - a.x) * fraction, y: a.y + (b.y - a.y) * fraction }, { x, y: yAt(x) }, unfold);
+    }
     track.style.transform = `translate3d(${-camera.toFixed(2)}px,0,0)`;
     const points = [];
-    for (let x = firstX; x < lastX; x += 16) points.push(`${points.length ? "L" : "M"}${x.toFixed(2)} ${yAt(x).toFixed(2)}`);
-    points.push(`L${lastX.toFixed(2)} ${yAt(lastX).toFixed(2)}`);
+    for (let x = firstX; x < lastX; x += 16) {
+      const point = pointAt(x);
+      points.push(`${points.length ? "L" : "M"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`);
+    }
+    const end = pointAt(lastX);
+    points.push(`L${end.x.toFixed(2)} ${end.y.toFixed(2)}`);
     strand.setAttribute("d", points.join(" "));
-    nodes.forEach(node => {
-      const y = yAt(node.x);
-      node.unit.style.transform = `translate3d(0,${(y - baseline).toFixed(2)}px,0)`;
-      node.sugar.setAttribute("transform", `translate(${node.x} ${y.toFixed(2)})`);
+    strand.style.opacity = String(particles * unfold);
+    const grainTargets = new Map();
+    nodes.forEach((node, index) => {
+      const origin = source(index * 2), point = pointAt(node.x);
+      const growth = node.card ? labels : bases;
+      node.unit.style.transformOrigin = `50% ${baseline}px`;
+      node.unit.style.transform = `translate3d(${(point.x - node.x).toFixed(2)}px,${(point.y - baseline).toFixed(2)}px,0) scale(${growth})`;
+      node.unit.style.opacity = String(growth);
+      const radius = origin.r * (1 - unfold) + 8 * unfold;
+      node.sugar.setAttribute("transform", `translate(${point.x} ${point.y}) scale(${radius / 8})`);
+      node.sugar.style.opacity = String(particles * unfold);
+      node.sugar.querySelector(".rna-stem").style.transform = `scaleY(${growth})`;
+      grainTargets.set(sourceIndex(index * 2), { point, radius, opacity: particles * (1 - unfold) });
     });
-    phosphates.forEach(node => {
-      node.element.setAttribute("cx", node.x);
-      node.element.setAttribute("cy", yAt(node.x).toFixed(2));
+    phosphates.forEach((node, index) => {
+      const origin = source(index * 2 + 1), point = pointAt(node.x);
+      node.element.setAttribute("cx", point.x);
+      node.element.setAttribute("cy", point.y);
+      node.element.setAttribute("r", origin.r * (1 - unfold) + 3.5 * unfold);
+      node.element.style.opacity = String(particles);
+      grainTargets.set(sourceIndex(index * 2 + 1), { point, radius: 0, opacity: 0 });
     });
+    grains.forEach(({ index, element }) => {
+      const origin = origins[index] || { x: center, y: baseline * .65, r: 8 };
+      const target = grainTargets.get(index);
+      const contour = ribosomeContour[index];
+      const assembling = unfoldPoint({ x: origin.x + camera, y: origin.y }, { x: contour.x + camera, y: contour.y }, forming);
+      const x = target ? target.point.x : assembling.x;
+      const y = target ? target.point.y : assembling.y;
+      element.setAttribute("cx", x); element.setAttribute("cy", y);
+      element.setAttribute("r", target ? target.radius : origin.r * (1 - forming) + 1.8 * forming);
+      element.style.opacity = String(target ? target.opacity : particles * (1 - forming) * .65);
+    });
+    const clusterY = origins.length ? origins.reduce((sum, point) => sum + point.y, 0) / origins.length : baseline * .65;
+    shape.setAttribute("transform", `translate(${center} ${clusterY + (baseline - clusterY) * forming}) scale(${scale * (.05 + .95 * forming)})`);
+    ribosome.style.opacity = String(.58 * forming);
+    section.querySelector(".section-heading").style.opacity = String(labels);
+    section.querySelector(".rna-caption").style.opacity = String(labels);
+    primeStart.style.opacity = primeEnd.style.opacity = String(bases);
     primeStart.style.left = `${firstX - camera}px`;
     primeEnd.style.left = `${lastX - camera - 12}px`;
     const nearest = projectNodes.reduce((best, node) => Math.abs(node.x - camera - center) < Math.abs(best.x - camera - center) ? node : best);
@@ -213,7 +286,11 @@
   });
   const routeHash = () => { if (location.hash.startsWith("#project-")) goToCard(location.hash.slice(1), true); };
   window.addEventListener("scroll", request, { passive: true });
-  section.addEventListener("labtransition", request);
+  section.addEventListener("labtransition", event => {
+    bridge = event.detail;
+    if (event.detail.origins) origins = event.detail.origins;
+    request();
+  });
   window.addEventListener("resize", scheduleLayout, { passive: true });
   window.addEventListener("hashchange", routeHash);
   // Run after the browser's initial fragment scroll, which otherwise shifts

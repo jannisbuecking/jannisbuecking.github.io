@@ -13,6 +13,28 @@ const tau = Math.PI * 2;
 const clamp = value => Math.max(0, Math.min(1, value));
 const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
 
+export function molecularPose(progress) {
+  return {
+    particles: smooth((progress - .90) / .02),
+    unfold: smooth((progress - .905) / .075),
+    bases: smooth((progress - .925) / .06),
+    ribosome: smooth((progress - .93) / .065),
+    labels: smooth((progress - .97) / .03),
+    background: smooth((progress - .91) / .06),
+  };
+}
+
+export function pelletComponent(index) {
+  const radius = .12 * Math.sqrt((index + .5) / 100), angle = index * 2.39996323;
+  return { x: Math.cos(angle) * radius, y: -1.567 + .055 * Math.sqrt(1 - (radius / .13) ** 2), z: Math.sin(angle) * radius };
+}
+
+export function unfoldPoint(origin, target, amount) {
+  const t = clamp(amount);
+  const arc = Math.sin(Math.PI * t) * Math.min(60, Math.hypot(target.x - origin.x, target.y - origin.y) * .08);
+  return { x: origin.x + (target.x - origin.x) * t, y: origin.y + (target.y - origin.y) * t - arc };
+}
+
 export function inspectionPose(progress) {
   const reading = progress / .56;
   const rise = smooth((progress - .56) / .12);
@@ -29,7 +51,7 @@ export function inspectionPose(progress) {
   const phase = progress < .56 ? (tilt < .02 ? "top" : tilt < .98 ? "turning" : "side")
     : progress < .68 ? "return" : progress < .74 ? "sample" : progress < .80 ? "opening"
     : progress < .92 ? "diving" : progress < .96 ? "molecular" : "ribosome";
-  return { tilt, cameraAngle: tilt * Math.PI / 2, rotorAngle, closeUp, focus, opening, dive, molecules, handoff, phase };
+  return { progress, tilt, cameraAngle: tilt * Math.PI / 2, rotorAngle, closeUp, focus, opening, dive, molecules, handoff, phase };
 }
 
 export function createCentrifuge(colors, textureFactory = () => null) {
@@ -114,12 +136,13 @@ export function createCentrifuge(colors, textureFactory = () => null) {
       const pellet = mount(tube, new THREE.SphereGeometry(1, 40, 24), pelletMaterial, 0, -1.57, 0, "sample-pellet");
       pellet.scale.set(.13, .055, .13);
       // Deterministic surface detail becomes visible as the camera approaches.
-      const granules = new THREE.InstancedMesh(new THREE.SphereGeometry(.008, 8, 6), pelletMaterial, 100);
+      const grainMaterial = standard({ color: colors.accent, roughness: .9, metalness: 0, transparent: true });
+      const granules = new THREE.InstancedMesh(new THREE.SphereGeometry(.008, 8, 6), grainMaterial, 100);
       granules.name = "pellet-granules";
       const matrix = new THREE.Matrix4();
       for (let n = 0; n < 100; n++) {
-        const radius = .12 * Math.sqrt((n + .5) / 100), angle = n * 2.39996323;
-        matrix.makeTranslation(Math.cos(angle) * radius, -1.567 + .055 * Math.sqrt(1 - (radius / .13) ** 2), Math.sin(angle) * radius);
+        const point = pelletComponent(n);
+        matrix.makeTranslation(point.x, point.y, point.z);
         granules.setMatrixAt(n, matrix);
       }
       tube.add(granules);
