@@ -207,9 +207,10 @@ turned sheets while its front edge stays in place. All items and pages fit on it
 The tabletop and inset wooden apron meet without overlapping faces to prevent
 flickering; the camera also uses a larger near plane for better depth precision.
 The Clinic overview stays 14% closer to the desk. Scrolling holds the camera on
-the clipboard and turns its sheets over the top clip: Zomba, Great Ormond Street,
-then UT Southwestern. Two raised binding rings hold a fixed pivot above the
-clipboard. Each opaque sheet lifts with a gentle curl, clears the top edge, turns
+the clipboard and turns its five sheets over the top clip: UT Southwestern,
+Great Ormond Street, Zomba (Pediatrics), University Medicine Oldenburg (Neurology),
+then John Radcliffe Hospital, Oxford University (Neurology). Two raised binding
+rings hold a fixed pivot above the clipboard. Each opaque sheet lifts with a gentle curl, clears the top edge, turns
 over, and lands flat on a visible stack behind the board. The sheet follows two
 joined circular arcs that preserve its physical length. It never drapes over the
 desk edge or passes through the board. Subtle outlines and shadows keep its blank
@@ -245,11 +246,10 @@ monitor-to-viewport projection and unobstructed document views on desktop/mobile
 
 Two separate scrollable prototypes are published alongside the main website:
 
-- [Microscope → clinical laboratory](https://jannisbuecking.github.io/previews/clinical-laboratory.html): pull back from the optical field into a cutaway laboratory, then approach three workstation clipboards.
-- [Monitor → Clinic](https://jannisbuecking.github.io/previews/clinical-consultation.html): pull back from the molecular image on a monitor, then turn through three pages on one clipboard.
+- [Microscope → clinical laboratory](https://jannisbuecking.github.io/previews/clinical-laboratory.html): pull back from the optical field into a cutaway laboratory, then approach five workstation clipboards.
+- [Monitor → Clinic](https://jannisbuecking.github.io/previews/clinical-consultation.html): pull back from the molecular image on a monitor, then turn through five pages on one clipboard.
 
-Both use the site's existing Zomba, Great Ormond Street, and UT Southwestern
-clinical entries. The facts are in `previews/clinical-data.js`; each page also
+Both use the same five revised clinical entries as the main website. The facts are in `previews/clinical-data.js`; each page also
 contains an accessible static copy. These independent concept pages remain
 available for comparison alongside the integrated Clinic. Scroll upward
 to reverse either sequence.

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.js';
-import { createClinicalRoom, clipboardPagePose, PAGE_LENGTH, BINDING_HEIGHT, BINDING_Y, READING_STOPS } from '../previews/clinical-room-model.js';
+import { createClinicalRoom, clipboardPagePose, PAGE_LENGTH, BINDING_HEIGHT, BINDING_Y, READING_STOPS, PAGE_TURN_STARTS, PAGE_TURN_DURATION } from '../previews/clinical-room-model.js';
 
 test('table aprons sit below and inside the worktops without overlapping side faces', () => {
   for (const variant of ['consultation', 'laboratory']) {
@@ -23,7 +23,7 @@ test('Clinic uses one clipboard that fits the desk, with bound pages that turn i
   const room = createClinicalRoom('consultation', undefined, { includePhone: true });
   try {
     const board = room.clipboard.object, phone = room.phone.group;
-    assert.equal(room.pages.length, 3);
+    assert.equal(room.pages.length, 5);
     assert.ok(room.readings.every(reading => reading.object === board));
     const desk = new THREE.Box3().setFromObject(room.group.getObjectByName('worktop'));
     const bounds = new THREE.Box3().setFromObject(board);
@@ -32,7 +32,7 @@ test('Clinic uses one clipboard that fits the desk, with bound pages that turn i
     assert.ok(room.entrance.object.getWorldPosition(new THREE.Vector3()).x < board.position.x && board.position.x < phone.position.x, 'computer, clipboard, phone are ordered left to right');
     const anchors = room.pages.map(page => page.paper.localToWorld(new THREE.Vector3(0, .67, 0)));
     const fixed = board.matrix.clone();
-    for (const progress of [0, .56, .675, .74, .855, .92, .855, .74, .675, .56, 0]) {
+    for (const progress of [0, ...READING_STOPS, ...READING_STOPS.toReversed(), 0]) {
       room.update(progress * .78); room.group.updateMatrixWorld(true);
       assert.ok(board.matrix.equals(fixed));
       room.pages.forEach((page, index) => assert.ok(page.paper.localToWorld(new THREE.Vector3(0, .67, 0)).distanceTo(anchors[index]) < 1e-6, 'the turning sheet stays attached to the clip'));
@@ -55,13 +55,13 @@ test('sheets clear the board, stay bound, and land flat on a visible rear stack'
     const desk = new THREE.Box3().setFromObject(room.group.getObjectByName('worktop'));
     assert.equal(board.getObjectsByProperty('name', 'raised-binding-ring').length, 2);
     const cameraPose = room.pose(.56 * .78, 1.54);
-    for (let step = 0; step <= 100; step++) {
+    for (const turningIndex of PAGE_TURN_STARTS.keys()) for (let step = 0; step <= 100; step++) {
       const turn = step / 100;
-      room.update((.61 + turn * .12) * .78); room.group.updateMatrixWorld(true);
+      room.update((PAGE_TURN_STARTS[turningIndex] + turn * PAGE_TURN_DURATION) * .78); room.group.updateMatrixWorld(true);
       assert.ok(room.pages.every(page => page.hinge.visible && page.back.visible && page.back.material.opacity === 1));
-      const pose = room.pose((.61 + turn * .12) * .78, 1.54);
+      const pose = room.pose((PAGE_TURN_STARTS[turningIndex] + turn * PAGE_TURN_DURATION) * .78, 1.54);
       assert.ok(pose.position.distanceTo(cameraPose.position) < 1e-9 && pose.target.distanceTo(cameraPose.target) < 1e-9, 'the reading camera stays still during the turn');
-      for (const index of [0, 1, 2]) {
+      for (const index of room.pages.keys()) {
         const anchor = clipboardPagePose(turn, 0, 0, index);
         assert.ok(Math.abs(anchor.y - PAGE_LENGTH / 2) < 1e-9 && Math.abs(anchor.z) < 1e-9);
         for (const across of [-1, 0, 1]) for (let sample = 0; sample <= 100; sample++) {
@@ -76,19 +76,19 @@ test('sheets clear the board, stay bound, and land flat on a visible rear stack'
         }
       }
       for (const aspect of [1512 / 982, 390 / 844]) {
-        const view = room.pose((.61 + turn * .12) * .78, aspect), camera = new THREE.PerspectiveCamera(42, aspect, .05, 180);
+        const view = room.pose((PAGE_TURN_STARTS[turningIndex] + turn * PAGE_TURN_DURATION) * .78, aspect), camera = new THREE.PerspectiveCamera(42, aspect, .05, 180);
         camera.position.copy(view.position); camera.up.copy(view.up); camera.lookAt(view.target); camera.updateMatrixWorld(true);
         for (const along of [0, .25, .5, .75, 1]) for (const across of [-1, 1]) {
-          const point = clipboardPagePose(turn, along, across);
+          const point = clipboardPagePose(turn, along, across, turningIndex);
           const projected = board.localToWorld(new THREE.Vector3(across * .495, BINDING_Y + point.y - PAGE_LENGTH / 2, BINDING_HEIGHT + point.z)).project(camera);
           assert.ok(Math.abs(projected.x) < .98 && Math.abs(projected.y) < .94, 'the moving sheet stays visible in desktop and phone framing');
         }
         for (const along of [.08, .2, .5, .8, .98]) for (const across of [-.7, 0, .7]) {
-          const point = clipboardPagePose(turn, along, across);
+          const point = clipboardPagePose(turn, along, across, turningIndex);
           const world = board.localToWorld(new THREE.Vector3(across * .495, BINDING_Y + point.y - PAGE_LENGTH / 2, BINDING_HEIGHT + point.z));
           const ray = new THREE.Raycaster(view.position, world.clone().sub(view.position).normalize());
           const hits = ray.intersectObject(room.group, true);
-          assert.ok(hits.length && [room.pages[0].paper, room.pages[0].back].includes(hits[0].object), 'room fixtures cannot obscure the turning sheet or its landing stack');
+          assert.ok(hits.length && [room.pages[turningIndex].paper, room.pages[turningIndex].back].includes(hits[0].object), 'room fixtures cannot obscure the turning sheet or its landing stack');
         }
       }
     }
@@ -100,7 +100,7 @@ test('sheets clear the board, stay bound, and land flat on a visible rear stack'
       }
       assert.ok(Math.abs(length - PAGE_LENGTH) < .0003, 'curling preserves the physical sheet length');
     }
-    for (const index of [0, 1]) {
+    for (const index of PAGE_TURN_STARTS.keys()) {
       const a = clipboardPagePose(1, .7, 0, index), b = clipboardPagePose(1, 1, 0, index);
       assert.ok(Math.abs(a.z - b.z) < 1e-9, 'finished sheets rest flat behind the binding');
       assert.ok(BINDING_Y + a.y - PAGE_LENGTH / 2 > .775, 'the stack is behind the clipboard');
@@ -132,7 +132,7 @@ for (const variant of ['laboratory', 'consultation']) {
   test(`${variant}: optical entry and clinical pages are unobstructed and fit desktop/mobile cameras`, () => {
     const room = createClinicalRoom(variant);
     try {
-      assert.equal(room.readings.length, 3);
+      assert.equal(room.readings.length, 5);
       const camera = new THREE.PerspectiveCamera(42, 1, .003, 180), ray = new THREE.Raycaster();
       function setCamera(progress, aspect) {
         const view = room.pose(progress, aspect);

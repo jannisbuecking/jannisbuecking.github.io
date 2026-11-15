@@ -1,5 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { experiences as defaultExperiences, molecularPaths } from './clinical-data.js';
+import { experiences as defaultExperiences, molecularPaths } from './clinical-data.js?v=five-clinical';
 
 export function createClinicalTextures(renderer, experiences = defaultExperiences) {
 let molecularCanvas, molecularTexture;

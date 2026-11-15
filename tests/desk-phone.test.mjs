@@ -18,7 +18,7 @@ test('the iPhone rests inside the existing desk and stays fixed while clipboard 
       assert.ok(room.phone.object.matrixWorld.equals(fixed));
     }
     room.update(PHONE_STOP);
-    assert.equal(room.clipboard.activePage, 2);
+    assert.equal(room.clipboard.activePage, 4);
   } finally { room.dispose(); }
 });
 

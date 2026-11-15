@@ -1,8 +1,11 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { experiences } from './clinical-data.js';
+import { experiences } from './clinical-data.js?v=five-clinical';
 
 export const smooth = value => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
-export const READING_STOPS = [.56, .74, .92];
+const READING_INTERVAL = .36 / (experiences.length - 1);
+export const READING_STOPS = experiences.map((_, index) => .56 + index * READING_INTERVAL);
+export const PAGE_TURN_STARTS = READING_STOPS.slice(0, -1).map(stop => stop + READING_INTERVAL * 5 / 18);
+export const PAGE_TURN_DURATION = READING_INTERVAL * 2 / 3;
 export const CLINICAL_FRACTION = .78;
 export const PHONE_STOP = .96;
 
@@ -133,18 +136,19 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
     const glass = mesh(ocular, new THREE.CircleGeometry(.18, 64), textured('molecular'), [0, 0, .048], 'optical-field');
     const knob = cylinder(scope, .12, .12, .16, c.dark, .42, .5, -.18); knob.rotation.z = Math.PI / 2;
     entrance = { object: glass, width: .36, height: .36 };
-    // The three experiences are printed on physical clipboards on the bench.
+    // Space the records evenly inside the existing worktop.
     experiences.forEach((item, index) => {
-      const board = new THREE.Group(); board.position.set(-3.5 + index * 3.25, 1.72, -1.32); board.rotation.x = -Math.PI / 2 + .22; group.add(board);
+      const recordX = -4.45 + index * 8 / (experiences.length - 1);
+      const board = new THREE.Group(); board.position.set(recordX, 1.72, -1.32); board.rotation.x = -Math.PI / 2 + .22; group.add(board);
       mesh(board, rounded(1.48, 1.98, .065), mat(item.color));
       const paper = plaque(board, 'experience', index, 1.32, 1.8, 0, -.025, .052);
       box(board, .45, .16, .07, c.metal, 0, .92, .08, 'clipboard-clip');
-      cylinder(group, .027, .027, .4, c.metal, -3.5 + index * 3.25, 1.665, -2.1);
+      cylinder(group, .027, .027, .4, c.metal, recordX, 1.665, -2.1);
       readings.push({ object: board, paper, width: 1.48, height: 1.98, index });
       // Slide trays and sample racks remain behind each record.
-      const tray = box(group, .85, .06, .5, c.white, -2.5 + index * 3.1, 1.51, -2.5);
+      const tray = box(group, .85, .06, .5, c.white, recordX + .25, 1.51, -2.5);
       for (let n = 0; n < 4; n++) {
-        const x = -2.8 + index * 3.1 + n * .18;
+        const x = recordX - .05 + n * .18;
         cylinder(group, .045, .045, .26, c.glass, x, 1.67, -2.5);
         cylinder(group, .05, .05, .045, c.green, x, 1.82, -2.5);
       }
@@ -251,7 +255,12 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
       const direction = clipboard ? frame.normal.clone().addScaledVector(frame.up, -.25).normalize() : frame.normal;
       return { position: frame.position.clone().addScaledVector(direction, distance), target: frame.position, up: frame.up };
     });
-    const keys = [{ p: 0, view: source }, { p: .035, view: source }, { p: .34, view: overview }, { p: .4, view: overview }, { p: .56, view: closeups[0] }, { p: .61, view: closeups[0] }, { p: .74, view: closeups[1] }, { p: .79, view: closeups[1] }, { p: .92, view: closeups[2] }, { p: 1, view: closeups[2] }];
+    const keys = [{ p: 0, view: source }, { p: .035, view: source }, { p: .34, view: overview }, { p: .4, view: overview }];
+    closeups.forEach((view, index) => {
+      keys.push({ p: READING_STOPS[index], view });
+      if (index < closeups.length - 1) keys.push({ p: PAGE_TURN_STARTS[index], view });
+    });
+    keys.push({ p: 1, view: closeups.at(-1) });
     let index = keys.findIndex(key => key.p >= progress); if (index < 1) index = 1;
     const from = keys[index - 1], to = keys[index], t = smooth((progress - from.p) / (to.p - from.p));
     return { position: from.view.position.clone().lerp(to.view.position, t), target: from.view.target.clone().lerp(to.view.target, t), up: from.view.up.clone().lerp(to.view.up, t).normalize(), fov };
@@ -270,7 +279,7 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
   function update(progress) {
     const clinical = phone ? Math.min(1, progress / CLINICAL_FRACTION) : progress;
     pages.forEach((page, index) => {
-      const turn = index < 2 ? Math.max(0, Math.min(1, (clinical - (.61 + index * .18)) / .12)) : 0;
+      const turn = index < pages.length - 1 ? Math.max(0, Math.min(1, (clinical - PAGE_TURN_STARTS[index]) / PAGE_TURN_DURATION)) : 0;
       if (turn !== page.turn) {
         const positions = page.geometry.attributes.position, uv = page.geometry.attributes.uv;
         for (let vertex = 0; vertex < positions.count; vertex++) {
@@ -285,7 +294,7 @@ export function createClinicalRoom(variant, textureFactory = () => null, options
         page.turn = turn;
       }
     });
-    if (clipboard) clipboard.activePage = pages[1].turn >= .5 ? 2 : pages[0].turn >= .5 ? 1 : 0;
+    if (clipboard) clipboard.activePage = pages.reduce((active, page, index) => page.turn >= .5 ? index + 1 : active, 0);
   }
   function dispose() {
     const geometries = new Set(); group.traverse(object => { if (object.geometry) geometries.add(object.geometry); });

@@ -1,9 +1,9 @@
 import * as THREE from './vendor/three/three.module.js';
 import './projects.js?v=green-particles';
-import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=lift-turn-stack';
-import { createClinicalTextures } from './previews/clinical-textures.js?v=lift-turn-stack';
+import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=five-clinical';
+import { createClinicalTextures } from './previews/clinical-textures.js?v=five-clinical';
 import { captureRNAScene } from './clinical-snapshot.js?v=full-clinical';
-import { experiences } from './previews/clinical-data.js';
+import { experiences } from './previews/clinical-data.js?v=five-clinical';
 import { createDeskPhone } from './desk-phone.js?v=desk-phone';
 
 const section = document.getElementById('clinical');
@@ -18,7 +18,7 @@ const motion = matchMedia('(prefers-reduced-motion: reduce)');
 const phone = createDeskPhone(document.getElementById('contact'));
 const entries = [...section.querySelectorAll('.clinical-records .experience-list > li')].map((item, index) => {
   const [role, location] = item.querySelector('.entry-role').textContent.trim().split(' · ');
-  return { ...experiences[index], year: item.querySelector('.entry-year').textContent.trim(), institution: item.querySelector('h4').textContent.trim(), role, location, topic: item.querySelector('p:last-child').textContent.trim() };
+  return { ...experiences[index], id: item.id, year: item.querySelector('.entry-year').textContent.trim(), institution: item.querySelector('h4').textContent.trim(), role, location, topic: item.querySelector('p:last-child').textContent.trim() };
 });
 const sizeReference = document.createElement('div'); sizeReference.className = 'clinical-size-reference'; scene.append(sizeReference);
 const clamp = value => Math.max(0, Math.min(1, value));
@@ -74,7 +74,7 @@ function layout() {
   enabled = true; section.classList.add('is-enhanced'); projects.classList.add('has-clinical-link');
   phone.mount(scene);
   projects.style.setProperty('--clinical-viewport', `${height}px`);
-  distance = Math.max(3600, height * 6.4) / CLINICAL_FRACTION; journey.style.height = `${height + distance}px`;
+  distance = Math.max(3600, height * (6.4 + Math.max(0, entries.length - 3))) / CLINICAL_FRACTION; journey.style.height = `${height + distance}px`;
   renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix();
   const background = getComputedStyle(document.documentElement).getPropertyValue('--background').trim(); renderer.setClearColor(background);
   if (wasPinned) scrollTo({ top: scrollY + journey.getBoundingClientRect().top + previous * distance, behavior: 'instant' });
@@ -135,7 +135,7 @@ function frame(time) {
     phone.update(room, camera, width, height, current, visible);
   }
   const phase = current > CLINICAL_FRACTION ? 'phone' : clinicalProgress < .035 ? 'handoff' : clinicalProgress < .34 ? 'zoomout' : clinicalProgress < .42 ? 'room' : 'experience';
-  const index = room?.clipboard?.activePage ?? (clinicalProgress < .675 ? 0 : clinicalProgress < .855 ? 1 : 2);
+  const index = room?.clipboard?.activePage ?? READING_STOPS.reduce((active, stop, index) => clinicalProgress >= stop ? index : active, 0);
   heading.style.opacity = String(smooth((clinicalProgress - .10) / .15) * (1 - smooth((clinicalProgress - .40) / .04)));
   caption.style.opacity = String(smooth((clinicalProgress - .07) / .12));
   section.dataset.phase = phase; section.dataset.progress = current.toFixed(4); section.dataset.activeExperience = String(index);
@@ -151,7 +151,7 @@ function refresh() {
 }
 function routeHash() {
   if (!enabled) return;
-  const index = ['#clinical-zomba', '#clinical-london', '#clinical-dallas'].indexOf(location.hash);
+  const index = entries.findIndex(item => `#${item.id}` === location.hash);
   const overview = ['#clinical', '#clinical-title'].includes(location.hash);
   const contact = ['#contact', '#phone-title'].includes(location.hash);
   if (index < 0 && !overview && !contact) return;

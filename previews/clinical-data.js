@@ -1,8 +1,10 @@
-// Clinical entries transcribed from the existing personal website.
+// Clinical entries shared by the personal website and room previews.
 export const experiences = [
-  { year: "2025", institution: "Zomba Central Hospital", role: "Clinical elective", location: "Zomba, Malawi", topic: "Rotations across departments in a resource-limited healthcare setting.", short: "Zomba", color: "#39765e" },
-  { year: "2024", institution: "Great Ormond Street Hospital", role: "Clinical elective", location: "London, United Kingdom", topic: "Pediatric neurosurgery.", short: "London", color: "#647f91" },
   { year: "2024", institution: "UT Southwestern Medical Center", role: "Clinical elective", location: "Dallas, United States", topic: "Neuropathology.", short: "Dallas", color: "#a07b53" },
+  { year: "2024", institution: "Great Ormond Street Hospital", role: "Clinical elective", location: "London, United Kingdom", topic: "Pediatric neurosurgery.", short: "London", color: "#647f91" },
+  { year: "2025", institution: "Zomba Central Hospital", role: "Clinical elective", location: "Zomba, Malawi (Africa)", topic: "Pediatrics.", short: "Zomba", color: "#39765e" },
+  { year: "2026", institution: "University Medicine Oldenburg", role: "Clinical elective", location: "Oldenburg, Germany", topic: "Neurology.", short: "Oldenburg", color: "#647f91" },
+  { year: "2026", institution: "John Radcliffe Hospital, Oxford University", role: "Clinical elective", location: "Oxford, United Kingdom", topic: "Neurology.", short: "Oxford", color: "#39765e" },
 ];
 
 // The same two subunit outlines used by the main mRNA project scene.
