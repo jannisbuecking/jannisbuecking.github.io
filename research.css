@@ -1,8 +1,11 @@
 .research-experience { position: relative; margin-bottom: clamp(3.5rem, 7vw, 6rem); }
 .research-scene { position: relative; isolation: isolate; }
+.research-intro { padding: 24px var(--scene-gutter) 12px; text-align: center; }
+.research-intro h1 { margin: 0; font-size: clamp(1.85rem, 3vw, 2.75rem); font-weight: 650; line-height: 1.15; letter-spacing: -.045em; }
+.research-intro p { margin: 7px 0 0; color: var(--muted); font-size: clamp(.875rem, 1.25vw, 1rem); line-height: 1.45; }
 .research-experience:not(.is-enhanced) .research-scene { width: min(100% - 3rem, 69rem); margin-inline: auto; }
 .research-heading { opacity: 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; padding-top: 1.5rem; }
-.research-heading h1 { margin: 0; line-height: 1.2; font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 600; letter-spacing: -.035em; }
+.research-heading h2 { margin: 0; line-height: 1.2; font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 600; letter-spacing: -.035em; }
 .research-stage { position: relative; }
 .research-visual { display: none; }
 .research-tubes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
@@ -17,6 +20,7 @@
 .research-size-reference { position: absolute; top: 0; width: 0; height: 100vh; height: 100svh; visibility: hidden; pointer-events: none; contain: strict; }
 
 .research-experience.is-enhanced .research-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: clip; background: var(--background); }
+.research-experience.is-enhanced .research-intro { position: absolute; top: 0; left: 0; right: 0; z-index: 6; pointer-events: none; }
 .research-experience.is-enhanced .research-heading { position: relative; z-index: 5; margin-bottom: 0; padding-inline: var(--scene-gutter); }
 .research-experience.is-enhanced .research-stage { position: absolute; top: var(--research-stage-top); bottom: 76px; width: 100%; isolation: isolate; overflow: clip; }
 .research-experience.is-enhanced .research-visual { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -30,7 +34,8 @@
 @media (max-width: 760px) {
   .research-tubes { grid-template-columns: 1fr; gap: 1rem; }
   .research-heading { gap: .75rem; }
-  .research-heading h1 { font-size: 1.5rem; }
+  .research-intro { padding-top: 16px; }
+  .research-heading h2 { font-size: 1.5rem; }
   .research-experience.is-enhanced .research-heading { padding-bottom: 12px; background: var(--background); }
   .research-experience.is-enhanced .research-stage { top: 12px; bottom: 76px; }
   .research-experience.is-enhanced .research-controls { bottom: 20px; }
@@ -38,5 +43,5 @@
 }
 @media (max-width: 420px) {
   .research-heading { align-items: start; }
-  .research-heading h1 { font-size: 1.35rem; }
+  .research-heading h2 { font-size: 1.35rem; }
 }

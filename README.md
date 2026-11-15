@@ -125,7 +125,11 @@ pipettes, the six-well plate, and culture dish above the rotor, with the
 stethoscope and neurological tools in a compact band below. On tall phones the
 centrifuge occupies about 88% of the width. The camera moves closer as it lowers,
 with the tools fixed in place. Mobile rim highlights, rounded cap edges, satin
-green caps, and soft contact shading add depth; desktop placement is retained.
+green caps, and soft contact shading beneath the rotor add depth; desktop
+placement is retained. The tools share the uninterrupted page background, with
+no broad shadow patches. The opening title reads “Jannis Buecking” and “Bridging
+the gap between bench and bedside.” It fades as the camera lowers, with mobile
+camera framing reserving room for both lines without moving the tools.
 The opening rotor spins clockwise at 3 radians per second (about one revolution
 every 2.1 seconds). The first scroll applies constant deceleration, finishing at
 the next equivalent 60° arrangement without reversing or accelerating. All six

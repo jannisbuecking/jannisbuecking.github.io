@@ -45,7 +45,7 @@ export function createResearchBench(colors) {
   }
   const lab = station('laboratory-tools');
   const clinic = station('clinical-instruments');
-  const pipettes = [], shadows = [];
+  const pipettes = [];
 
   // Three adjustable micropipettes: plunger, finger rest, body, display, shaft, tip.
   [-.85, 0, .85].forEach((x, index) => {
@@ -124,15 +124,6 @@ export function createResearchBench(colors) {
   disc(stethoscope, .285, .025, white, .12, -1.57, .265);
   disc(stethoscope, .07, .028, sage, .12, -1.57, .28);
 
-  // Soft contact shading anchors the tools without a separate image asset.
-  for (const frame of [lab, clinic]) {
-    for (let layer = 0; layer < 5; layer++) {
-      const shade = material('#24382a', { transparent: true, opacity: .012, depthWrite: false, metalness: 0 });
-      const shadow = mount(frame, new THREE.CircleGeometry(1, 40), shade, 0, -.4, -.02 - layer * .001);
-      shadow.scale.set(1.4 + layer * .07, 3.12 + layer * .07, 1);
-      shadows.push({ shadow, layer });
-    }
-  }
   const originalPoses = [...lab.children, ...clinic.children].map(object => ({ object, position: object.position.clone(), rotation: object.rotation.clone(), scale: object.scale.clone() }));
   let layoutMode;
   function update(aspect) {
@@ -141,7 +132,6 @@ export function createResearchBench(colors) {
     if (mode === layoutMode) return;
     layoutMode = mode;
     for (const { object, position, rotation, scale } of originalPoses) { object.position.copy(position); object.rotation.copy(rotation); object.scale.copy(scale); }
-    for (const { shadow } of shadows) shadow.material.color.set(portrait ? '#0b1a12' : '#24382a');
     if (portrait) {
       lab.position.set(0, -2.29, -5.4); clinic.position.set(0, -2.29, 5.35);
       lab.scale.setScalar(1); clinic.scale.setScalar(1);
@@ -155,9 +145,6 @@ export function createResearchBench(colors) {
       hammer.position.set(1.25, 0, .14); hammer.rotation.z = -.04; hammer.scale.setScalar(.6);
       fork.position.set(2.3, .05, .12); fork.rotation.z = -.06; fork.scale.setScalar(.6);
       pen.position.set(3.25, -.02, .1); pen.rotation.z = -.13; pen.scale.setScalar(.9);
-      for (const { shadow, layer } of shadows) {
-        shadow.position.y = 0; shadow.scale.set(3.9 + layer * .06, 1.13 + layer * .04, 1);
-      }
       return;
     }
     lab.position.x = -6.05; clinic.position.x = 6.05;

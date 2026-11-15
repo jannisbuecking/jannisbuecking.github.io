@@ -1,6 +1,6 @@
 import * as THREE from "./vendor/three/three.module.js";
 import "./projects.js?v=green-particles";
-import { createResearchBench, isPortraitBench, researchOverviewHeight } from "./research-bench.js?v=portrait-bench";
+import { createResearchBench, isPortraitBench, researchOverviewHeight } from "./research-bench.js?v=bench-bedside";
 import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE_PARTICLE_RADIUS, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=portrait-bench";
 
 (() => {
@@ -9,6 +9,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
   const journey = section.querySelector(".research-journey");
   const scene = section.querySelector(".research-scene");
   const heading = section.querySelector(".research-heading");
+  const intro = section.querySelector(".research-intro");
   const stage = section.querySelector(".research-stage");
   const visual = section.querySelector(".research-visual");
   const articles = [...section.querySelectorAll(".research-tube")];
@@ -41,6 +42,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
   let labelJob = null, lastScrollInput = -Infinity, labelPaints = 0;
   let readingQuality = false, qualityTimer;
   let ambientLight, keyLight, fillLight, portraitLook;
+  let overviewInset = 0;
   const spin = createOpeningSpin();
   let spinState = spin.snapshot(), hasOpened = false;
   const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
@@ -215,6 +217,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     articles.forEach(article => article.classList.remove("is-current"));
     controls.hidden = true;
     heading.style.removeProperty("opacity");
+    intro.style.removeProperty("opacity");
     controls.style.removeProperty("opacity");
     section.classList.remove("has-project-transition");
     projects?.classList.remove("has-lab-link", "is-bridging");
@@ -229,12 +232,15 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     width = section.clientWidth;
     stableHeight = sizeReference.getBoundingClientRect().height;
     if (motion.matches || unavailable) { heading.style.opacity = "1"; return; }
-    const headingHeight = heading.getBoundingClientRect().height + 24;
+    // Measure the title at the full animated scene width, rather than the
+    // narrower static fallback where its name and tagline may wrap differently.
+    section.classList.add("is-enhanced");
+    const headingHeight = Math.max(heading.getBoundingClientRect().height, intro.getBoundingClientRect().height) + 24;
+    overviewInset = width <= 760 ? intro.getBoundingClientRect().height + 12 : 0;
     const stageHeight = stableHeight - (width <= 760 ? 12 : headingHeight) - 76;
-    if (width < 260 || stageHeight < 440 || !initializeRenderer()) { heading.style.opacity = "1"; return; }
+    if (width < 260 || stageHeight < 440 || !initializeRenderer()) { section.classList.remove("is-enhanced"); heading.style.opacity = "1"; return; }
     enabled = true;
     linked = Boolean(projects?.classList.contains("is-enhanced"));
-    section.classList.add("is-enhanced");
     section.classList.toggle("has-project-transition", linked);
     projects?.classList.toggle("has-lab-link", linked);
     section.style.setProperty("--lab-viewport", `${stableHeight}px`);
@@ -300,7 +306,10 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     const overview = (1 - smooth(tilt / .72)) * (1 - smooth(focus / .2));
     bench.update(aspect);
     const rotorHeight = Math.max(8.4, 8.55 / aspect);
-    const benchHeight = researchOverviewHeight(aspect);
+    // Reserve title space within the overhead camera, keeping one framebuffer
+    // size as the camera lowers and this inset smoothly leaves the composition.
+    const openingHeight = Math.max(1, h - overviewInset);
+    const benchHeight = researchOverviewHeight(w / openingHeight) * h / openingHeight;
     const overviewHeight = rotorHeight + (benchHeight - rotorHeight) * overview;
     // Desktop stays at one reading distance. Narrow windows widen only enough
     // to bridge the physical gap between adjacent tubes without an empty view.
@@ -320,7 +329,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     const readingTargetY = portrait ? .22 : .02;
     const targetY = (.1 + (readingTargetY - .1) * closeUp) * (1 - dive) - .86 * dive;
     const targetZ = (SLOT_RADIUS + .487) * closeUp * (1 - focus) + SLOT_RADIUS * focus
-      + (portrait ? .45 * overview * (1 - closeUp) * (1 - focus) : 0);
+      + (portrait ? (.45 - overviewInset * benchHeight / (2 * h)) * overview * (1 - closeUp) * (1 - focus) : 0);
     // Descend through the liquid surface and stop above its suspended particles.
     const cameraDistance = 18 * (1 - dive) + .24 * dive;
     camera.position.set(0, targetY + Math.cos(cameraAngle) * cameraDistance, targetZ + Math.sin(cameraAngle) * cameraDistance);
@@ -356,6 +365,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     renderer.render(world, camera);
     renderer.domElement.style.opacity = "1";
     heading.style.opacity = (smooth((pose.progress - .1792) / .0224) * (1 - molecules)).toFixed(4);
+    intro.style.opacity = (1 - smooth((pose.progress - .015) / .1)).toFixed(4);
     controls.style.opacity = (1 - molecules).toFixed(4);
     articles.forEach((article, index) => article.classList.toggle("is-current", nearest === index));
     section.dataset.phase = pose.phase;
