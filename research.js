@@ -1,6 +1,6 @@
 import * as THREE from "./vendor/three/three.module.js";
 import "./projects.js?v=clean-scenes";
-import { createResearchBench } from "./research-bench.js?v=bench-spin";
+import { createResearchBench } from "./research-bench.js?v=neuro-bench";
 import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=clear-pellet";
 
 (() => {
@@ -120,7 +120,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
       renderer.toneMappingExposure = 1.1;
       renderer.setClearColor(0x000000, 0);
       renderer.domElement.setAttribute("role", "img");
-      renderer.domElement.setAttribute("aria-label", "Six upright tubes in a clockwise centrifuge rotor, with laboratory pipettes on the left and a stethoscope and clinical instruments on the right. Scroll through Heidelberg University, Heidelberg research, UCSF, Harvard, and Boston Children’s Hospital, then return overhead, open the Projects sample in tube 6, and descend into its pellet to enter the mRNA science projects.");
+      renderer.domElement.setAttribute("aria-label", "Six upright tubes in a clockwise centrifuge rotor, with three laboratory pipettes, a six-well plate, and bacterial colonies on the left, and neurological examination instruments on the right. Scroll through Heidelberg University, Heidelberg research, UCSF, Harvard, and Boston Children’s Hospital, then return overhead, open the Projects sample in tube 6, and descend into its pellet to enter the mRNA science projects.");
       renderer.domElement.setAttribute("aria-describedby", articles.map(article => article.id).join(" "));
       visual.append(renderer.domElement);
       world = new THREE.Scene();
@@ -222,11 +222,11 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
       canvasWidth = w; canvasHeight = h;
     }
     const aspect = w / h;
-    const context = (1 - smooth(tilt / .72)) * (1 - smooth(focus / .2));
-    bench.update(context, aspect);
+    const overview = (1 - smooth(tilt / .72)) * (1 - smooth(focus / .2));
+    bench.update(aspect);
     const rotorHeight = Math.max(8.4, 8.55 / aspect);
     const benchHeight = Math.max(8.6, (aspect < 1.1 ? 11.4 : 17.5) / aspect);
-    const overviewHeight = rotorHeight + (benchHeight - rotorHeight) * context;
+    const overviewHeight = rotorHeight + (benchHeight - rotorHeight) * overview;
     const labelHeight = Math.max(2.55, 1.28 / aspect);
     const readingHeight = overviewHeight + (labelHeight - overviewHeight) * closeUp;
     const tubeHeight = Math.max(1.35, 1.35 / aspect);
@@ -287,7 +287,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
     section.dataset.rotorAngle = angle.toFixed(5);
     section.dataset.spinSpeed = spinState.speed.toFixed(3);
     section.dataset.spinMode = spinState.mode;
-    section.dataset.benchVisible = context.toFixed(3);
+    section.dataset.benchVisible = bench.group.visible ? "1" : "0";
     section.dataset.activeTube = nearest.toString();
     section.dataset.sharpLabel = sharpLabel.toString();
     section.dataset.pixelRatio = pixelRatio.toString();

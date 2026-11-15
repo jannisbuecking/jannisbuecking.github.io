@@ -132,23 +132,36 @@ test("the top-view tools stay stationary, on the correct sides, and clear of the
   const bench = createResearchBench(colors);
   try {
     for (const aspect of [1512 / 820, 390 / 670]) {
-      bench.update(1, aspect); bench.group.updateMatrixWorld(true);
+      bench.update(aspect); bench.group.updateMatrixWorld(true);
       assert.ok(bench.lab.position.x < 0 && bench.clinic.position.x > 0);
       assert.equal(bench.lab.getObjectsByProperty("name", "micropipette").length, 3);
-      assert.ok(bench.clinic.getObjectByName("stethoscope-chestpiece"));
+      assert.equal(bench.lab.getObjectsByProperty("name", "culture-well").length, 6);
+      assert.equal(bench.lab.getObjectByName("plate-frame").geometry.parameters.shapes.holes.length, 6);
+      assert.equal(bench.lab.getObjectByName("bacterial-colonies").count, 64);
+      for (const name of ["neurology-reflex-hammer", "neurology-tuning-fork", "neurological-penlight", "sensory-monofilament"]) assert.ok(bench.clinic.getObjectByName(name));
       const matrices = [bench.lab.matrix.clone(), bench.clinic.matrix.clone()];
       const height = Math.max(8.6, (aspect < 1.1 ? 11.4 : 17.5) / aspect);
       bench.group.traverse(object => {
         if (!object.geometry || object.geometry.type === "CircleGeometry") return;
         const positions = object.geometry.attributes.position;
-        for (let vertex = 0; vertex < positions.count; vertex++) {
-          const point = new THREE.Vector3().fromBufferAttribute(positions, vertex).applyMatrix4(object.matrixWorld);
-          assert.ok(Math.abs(point.x) < height * aspect / 2 && Math.abs(point.z) < height / 2, "tools fit the overhead framing");
-          assert.ok(Math.hypot(point.x, point.z) > 3.92, "equipment does not overlap the rotor");
+        for (let instance = 0; instance < (object.isInstancedMesh ? object.count : 1); instance++) {
+          const transform = object.matrixWorld.clone();
+          if (object.isInstancedMesh) { const local = new THREE.Matrix4(); object.getMatrixAt(instance, local); transform.multiply(local); }
+          for (let vertex = 0; vertex < positions.count; vertex++) {
+            const point = new THREE.Vector3().fromBufferAttribute(positions, vertex).applyMatrix4(transform);
+            assert.ok(Math.abs(point.x) < height * aspect / 2 && Math.abs(point.z) < height / 2, "tools fit the overhead framing");
+            assert.ok(Math.hypot(point.x, point.z) > 3.92, "equipment does not overlap the rotor");
+          }
         }
       });
-      bench.update(.2, aspect); bench.group.updateMatrixWorld(true);
+      const opacity = new Map(); bench.group.traverse(object => { if (object.material) opacity.set(object.material, object.material.opacity); });
+      bench.update(aspect); bench.group.updateMatrixWorld(true);
+      assert.ok(bench.group.visible && bench.lab.visible && bench.clinic.visible, "equipment remains in the scene");
       assert.ok(bench.lab.matrix.equals(matrices[0]) && bench.clinic.matrix.equals(matrices[1]));
+      for (const [material, original] of opacity) assert.equal(material.opacity, original, "camera framing never changes material opacity");
+      for (const name of ["neurology-reflex-hammer", "neurology-tuning-fork", "neurological-penlight", "sensory-monofilament"]) {
+        bench.clinic.getObjectByName(name).traverse(object => { if (object.material) assert.equal(object.material.opacity, 1, "neurology instruments stay fully opaque"); });
+      }
     }
   } finally { bench.dispose(); }
 });

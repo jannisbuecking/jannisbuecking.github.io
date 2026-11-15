@@ -112,10 +112,12 @@ Tube transforms and dimensions remain fixed relative to the rotor throughout.
 opening view shows the instruments and rotor without its heading.
 
 The camera starts exactly overhead using an orthographic projection, showing
-only the six plain circular caps. On the left are three micropipettes, a 96-tip
-rack, a Petri dish, and a reagent bottle; a stethoscope, reflex hammer, and penlight
-are on the right. These tools stay on the stationary work surface and fade as the
-camera lowers. Compact screens place them diagonally left and right to keep all
+only the six plain circular caps. On the left are three micropipettes, a six-well
+culture plate with visible media, and a bacterial agar plate with 64 raised cream
+colonies. On the right are a ring-headed reflex hammer, tuning fork, penlight, and
+sensory monofilament. All equipment stays fixed on the work surface at its original
+opacity throughout scrolling. The camera naturally moves past it; no tools fade
+or disappear. Compact screens place them diagonally left and right to keep all
 six tubes visible.
 The opening rotor spins clockwise at 3 radians per second (about one revolution
 every 2.1 seconds). The first scroll applies constant deceleration, finishing at
