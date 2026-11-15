@@ -83,15 +83,15 @@ export function createResearchBench(colors) {
   }
   culture.add(colonies);
 
-  // Neurological examination kit: ring-headed hammer, tuning fork, light, filament.
-  const hammer = new THREE.Group(); hammer.name = 'neurology-reflex-hammer'; hammer.position.set(-.86, .45, .14); hammer.rotation.z = -.09; clinic.add(hammer);
+  // Examination kit: reflex hammer and tuning fork above the stethoscope.
+  const hammer = new THREE.Group(); hammer.name = 'neurology-reflex-hammer'; hammer.position.set(-1, 1.25, .14); hammer.rotation.z = -.09; hammer.scale.setScalar(.78); clinic.add(hammer);
   mount(hammer, new THREE.CylinderGeometry(.034, .045, 2.6, 20), metal, 0, .12, 0);
   mount(hammer, new THREE.CapsuleGeometry(.085, .77, 6, 16), dark, 0, -1.41, 0);
   disc(hammer, .38, .17, dark, 0, 1.66, .015, 'rubber-hammer-head');
   disc(hammer, .23, .175, metal, 0, 1.66, .015);
   disc(hammer, .07, .18, sage, 0, 1.66, .015);
 
-  const fork = new THREE.Group(); fork.name = 'neurology-tuning-fork'; fork.position.set(.82, .82, .12); fork.rotation.z = .08; clinic.add(fork);
+  const fork = new THREE.Group(); fork.name = 'neurology-tuning-fork'; fork.position.set(1, 1.3, .12); fork.rotation.z = .08; fork.scale.setScalar(.78); clinic.add(fork);
   for (const x of [-.24, .24]) {
     box(fork, .11, 1.65, .12, metal, x, 1.18, 0, 'tuning-fork-prong');
     roundBox(fork, .23, .27, .17, metal, x, 1.91, -.08, .035);
@@ -100,14 +100,21 @@ export function createResearchBench(colors) {
   mount(fork, new THREE.CylinderGeometry(.055, .055, .78, 20), metal, 0, -.39, 0);
   mount(fork, new THREE.CapsuleGeometry(.07, .1, 4, 16), metal, 0, -.78, 0);
 
-  const pen = new THREE.Group(); pen.name = 'neurological-penlight'; pen.position.set(.88, -2.3, .1); pen.rotation.z = -.18; clinic.add(pen);
+  const pen = new THREE.Group(); pen.name = 'neurological-penlight'; pen.position.set(1.3, -2.2, .1); pen.rotation.z = -.18; clinic.add(pen);
   mount(pen, new THREE.CylinderGeometry(.085, .085, 1.45, 24), metal);
   mount(pen, new THREE.CylinderGeometry(.092, .092, .2, 24), dark, 0, .72, 0);
   box(pen, .025, .5, .04, dark, .07, .34, .06);
 
-  const filament = new THREE.Group(); filament.name = 'sensory-monofilament'; filament.position.set(-.75, -2.85, .1); filament.rotation.z = .2; clinic.add(filament);
-  mount(filament, new THREE.CapsuleGeometry(.095, .72, 6, 16), yellow);
-  tube(filament, [[0, .45, 0], [0, .76, 0], [.08, 1.02, 0], [.29, 1.15, 0]], .015, dark, 'sensory-filament');
+  const stethoscope = new THREE.Group(); stethoscope.name = 'stethoscope'; stethoscope.position.set(-.1, -1.85, 0); stethoscope.scale.setScalar(.75); clinic.add(stethoscope);
+  for (const side of [-1, 1]) {
+    tube(stethoscope, [[0, .3, .16], [side * .4, .67, .16], [side * .64, 1.25, .16], [side * .66, 1.63, .16]], .074, dark, 'stethoscope-y-tube');
+    tube(stethoscope, [[side * .66, 1.6, .16], [side * .64, 1.98, .16], [side * .49, 2.29, .16], [side * .29, 2.4, .16]], .045, metal, 'stethoscope-ear-tube');
+    const ear = mount(stethoscope, new THREE.CapsuleGeometry(.085, .12, 4, 12), dark, side * .24, 2.4, .16, 'stethoscope-ear-tip'); ear.rotation.z = Math.PI / 2;
+  }
+  tube(stethoscope, [[0, .3, .16], [-.16, -.25, .14], [-.84, -.93, .12], [-1.02, -1.86, .12], [-.6, -2.64, .12], [.4, -2.76, .12], [1.1, -2.12, .12], [.98, -1.3, .12], [.4, -.98, .12], [.12, -1.48, .15]], .075, dark, 'stethoscope-hose');
+  disc(stethoscope, .36, .12, metal, .12, -1.57, .19, 'stethoscope-chestpiece');
+  disc(stethoscope, .285, .025, white, .12, -1.57, .265);
+  disc(stethoscope, .07, .028, sage, .12, -1.57, .28);
 
   // Soft contact shading anchors the tools without a separate image asset.
   for (const frame of [lab, clinic]) {

@@ -85,7 +85,8 @@ available through the Google Scholar app on the contact phone.
 
 ## Animated science projects
 
-The section is titled **Selected work**, with a centered scroll cue.
+The section is titled **Selected work**. All scenes use the same centered cue:
+“Scroll down to continue ↓”. The website ends at the contact phone, without a footer.
 The project explorer adapts the mRNA strand, sugar-phosphate backbone, and two-part
 ribosome schematic from the owner's
 [Institute of Human Genetics Heidelberg portal](https://github.com/jannisbuecking/human-genetics-heidelberg-tools).
@@ -108,14 +109,14 @@ The rigid six-position rotor has equal tubes spaced 60° apart.
 Tube order is Heidelberg University, Heidelberg research, UCSF, Harvard,
 Boston Children’s Hospital, and Projects. Position 6 holds the project sample.
 Tube transforms and dimensions remain fixed relative to the rotor throughout.
-“Education and Research Experiences” fades in after scrolling begins; the
+“Education and Research Experiences” fades in once the camera reaches the side view; the
 opening view shows the instruments and rotor without its heading.
 
 The camera starts exactly overhead using an orthographic projection, showing
 only the six plain circular caps. On the left are three micropipettes, a six-well
 culture plate with visible media, and a bacterial agar plate with 64 raised cream
 colonies. On the right are a ring-headed reflex hammer, tuning fork, penlight, and
-sensory monofilament. All equipment stays fixed on the work surface at its original
+stethoscope. All equipment stays fixed on the work surface at its original
 opacity throughout scrolling. The camera naturally moves past it; no tools fade
 or disappear. Compact screens place them diagonally left and right to keep all
 six tubes visible.

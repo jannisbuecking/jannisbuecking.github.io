@@ -14,8 +14,6 @@ const scene = section.querySelector('.clinical-scene');
 const container = section.querySelector('.clinical-canvas');
 const heading = section.querySelector('.clinical-heading');
 const caption = section.querySelector('.clinical-caption');
-const counter = section.querySelector('.clinical-counter');
-const cue = section.querySelector('.clinical-cue');
 const bar = section.querySelector('.clinical-progress span');
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
 const phone = createDeskPhone(document.getElementById('contact'));
@@ -142,8 +140,6 @@ function frame(time) {
   heading.style.opacity = String(smooth((clinicalProgress - .10) / .15) * (1 - smooth((clinicalProgress - .40) / .04)));
   caption.style.opacity = String(smooth((clinicalProgress - .07) / .12));
   bar.parentElement.style.opacity = String(smooth((clinicalProgress - .035) / .065));
-  counter.textContent = phase === 'phone' ? 'LET’S CONNECT' : phase === 'experience' ? `PAGE 0${index + 1} / 03 · CLINICAL EXPERIENCE` : 'CLINIC';
-  cue.textContent = phase === 'phone' ? 'Tap an app to connect · scroll to continue ↓' : phase === 'experience' ? (index === 2 ? 'Scroll to the iPhone ↓' : 'Scroll to turn the page ↓') : 'Scroll to reveal the Clinic and approach the clipboard ↓';
   bar.style.transform = `scaleX(${current})`;
   section.dataset.phase = phase; section.dataset.progress = current.toFixed(4); section.dataset.activeExperience = String(index);
   if (Math.abs(current - target) > .00002) request();

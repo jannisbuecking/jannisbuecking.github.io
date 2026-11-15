@@ -1,6 +1,6 @@
 import * as THREE from "./vendor/three/three.module.js";
 import "./projects.js?v=clean-scenes";
-import { createResearchBench } from "./research-bench.js?v=neuro-bench";
+import { createResearchBench } from "./research-bench.js?v=phone-ending";
 import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=clear-pellet";
 
 (() => {
@@ -14,7 +14,6 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
   const articles = [...section.querySelectorAll(".research-tube")];
   const controls = section.querySelector(".research-controls");
   const progressBar = section.querySelector(".research-progress span");
-  const cue = section.querySelector(".research-scroll-cue");
   const projects = document.getElementById("projects");
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const theme = window.matchMedia("(prefers-color-scheme: dark)");
@@ -277,11 +276,9 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
     // Tube transforms remain fixed. Only the Projects cap lifts off its tube.
     renderer.render(world, camera);
     renderer.domElement.style.opacity = "1";
-    heading.style.opacity = (smooth((pose.progress - .012) / .055) * (1 - molecules)).toFixed(4);
+    heading.style.opacity = (smooth((pose.progress - .1792) / .0224) * (1 - molecules)).toFixed(4);
     controls.style.opacity = (1 - molecules).toFixed(4);
     articles.forEach((article, index) => article.classList.toggle("is-current", nearest === index));
-    const transitionCues = { return: "Scroll to return overhead ↓", sample: "Tube 06 · From sample to discovery ↓", opening: "Scroll to open the tube ↓", diving: "Into the pellet ↓", molecular: "From sample to molecular scale ↓", ribosome: "Science projects · mRNA → ribosome" };
-    cue.textContent = transitionCues[pose.phase] || (tilt < .98 ? "Scroll to lower the viewpoint ↓" : `${String(nearest + 1).padStart(2, "0")} / 05 · ${nearest === 4 ? "Scroll to continue" : "Scroll to the next tube"} ↓`);
     progressBar.style.transform = `scaleX(${progress})`;
     section.dataset.phase = pose.phase;
     section.dataset.rotorAngle = angle.toFixed(5);

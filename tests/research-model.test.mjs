@@ -138,7 +138,7 @@ test("the top-view tools stay stationary, on the correct sides, and clear of the
       assert.equal(bench.lab.getObjectsByProperty("name", "culture-well").length, 6);
       assert.equal(bench.lab.getObjectByName("plate-frame").geometry.parameters.shapes.holes.length, 6);
       assert.equal(bench.lab.getObjectByName("bacterial-colonies").count, 64);
-      for (const name of ["neurology-reflex-hammer", "neurology-tuning-fork", "neurological-penlight", "sensory-monofilament"]) assert.ok(bench.clinic.getObjectByName(name));
+      for (const name of ["neurology-reflex-hammer", "neurology-tuning-fork", "neurological-penlight", "stethoscope"]) assert.ok(bench.clinic.getObjectByName(name));
       const matrices = [bench.lab.matrix.clone(), bench.clinic.matrix.clone()];
       const height = Math.max(8.6, (aspect < 1.1 ? 11.4 : 17.5) / aspect);
       bench.group.traverse(object => {
@@ -159,7 +159,7 @@ test("the top-view tools stay stationary, on the correct sides, and clear of the
       assert.ok(bench.group.visible && bench.lab.visible && bench.clinic.visible, "equipment remains in the scene");
       assert.ok(bench.lab.matrix.equals(matrices[0]) && bench.clinic.matrix.equals(matrices[1]));
       for (const [material, original] of opacity) assert.equal(material.opacity, original, "camera framing never changes material opacity");
-      for (const name of ["neurology-reflex-hammer", "neurology-tuning-fork", "neurological-penlight", "sensory-monofilament"]) {
+      for (const name of ["neurology-reflex-hammer", "neurology-tuning-fork", "neurological-penlight", "stethoscope"]) {
         bench.clinic.getObjectByName(name).traverse(object => { if (object.material) assert.equal(object.material.opacity, 1, "neurology instruments stay fully opaque"); });
       }
     }
