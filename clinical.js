@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three/three.module.js';
-import './projects.js?v=clean-scenes';
+import './projects.js?v=green-particles';
 import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=lift-turn-stack';
 import { createClinicalTextures } from './previews/clinical-textures.js?v=lift-turn-stack';
 import { captureRNAScene } from './clinical-snapshot.js?v=full-clinical';
@@ -14,7 +14,6 @@ const scene = section.querySelector('.clinical-scene');
 const container = section.querySelector('.clinical-canvas');
 const heading = section.querySelector('.clinical-heading');
 const caption = section.querySelector('.clinical-caption');
-const bar = section.querySelector('.clinical-progress span');
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
 const phone = createDeskPhone(document.getElementById('contact'));
 const entries = [...section.querySelectorAll('.clinical-records .experience-list > li')].map((item, index) => {
@@ -139,8 +138,6 @@ function frame(time) {
   const index = room?.clipboard?.activePage ?? (clinicalProgress < .675 ? 0 : clinicalProgress < .855 ? 1 : 2);
   heading.style.opacity = String(smooth((clinicalProgress - .10) / .15) * (1 - smooth((clinicalProgress - .40) / .04)));
   caption.style.opacity = String(smooth((clinicalProgress - .07) / .12));
-  bar.parentElement.style.opacity = String(smooth((clinicalProgress - .035) / .065));
-  bar.style.transform = `scaleX(${current})`;
   section.dataset.phase = phase; section.dataset.progress = current.toFixed(4); section.dataset.activeExperience = String(index);
   if (Math.abs(current - target) > .00002) request();
 }

@@ -86,7 +86,8 @@ available through the Google Scholar app on the contact phone.
 ## Animated science projects
 
 The section is titled **Selected work**. All scenes use the same centered cue:
-“Scroll down to continue ↓”. The website ends at the contact phone, without a footer.
+“Scroll down to continue ↓”. There are no bottom progress bars. The website ends
+at the contact phone, without a footer.
 The project explorer adapts the mRNA strand, sugar-phosphate backbone, and two-part
 ribosome schematic from the owner's
 [Institute of Human Genetics Heidelberg portal](https://github.com/jannisbuecking/human-genetics-heidelberg-tools).
@@ -136,22 +137,25 @@ is upgraded, replacing and disposing its predecessor so texture memory stays
 bounded. The overhead view uses lighter rendering and solid, unlettered caps.
 After the fifth research/education label, the camera pulls back and returns overhead before the rotor
 indexes to the project sample. Tube six, labeled **Projects**, opens: only its
-cap lifts and moves aside. The camera centers over its opening and descends toward
-a modeled pellet in the conical tip. The project sample has no visible liquid
-overlay, so the pellet is clear as soon as the cap uncovers the opening. Its 100 modeled grains are projected
+cap lifts and moves aside. All six tubes use the same green cap, translucent
+liquid filling, and cloud of 100 green particles suspended inside the liquid.
+There is no pellet. The camera centers over the opening and descends through
+the lightly tinted liquid surface, whose reflection softens continuously as
+the lens enters. The suspended particles are projected
 through the current camera into the actual RNA renderer. Those same particles
 are assigned one-to-one to 81 visible components: sugars, phosphates, bases/cards,
 stems, backbone segments, both complete ribosome subunits, and the four scene
 labels. Each SVG contour starts as its assigned circle and continuously reshapes
 into its destination. HTML bases, cards, and labels likewise transform from circles
 into their final containers, revealing their text as they open. Remaining grains
-shrink into the background. The 3D grains yield to their projected counterparts
-at matching locations. No molecular component is independently faded or scaled in;
+shrink into the background. The 3D particles stay solid until their projected
+counterparts cover them at matching locations; reshaping starts only after
+that transfer, avoiding dimming or duplicate trails. No molecular component is independently faded or scaled in;
 there is no intermediate strand scene or whole-scene dissolve.
 The two sections overlap by one viewport, so the formed strand continues directly
 into native project scrolling without an empty screen. Both renderers share one
 scroll-driven morph state; reversing the scroll folds the components back into
-their original pellet positions.
+their original positions within the liquid.
 
 The camera and inspection sequence reverse with upward scrolling; the opening
 spinner resumes clockwise on returning to the top. Research rendering stops
@@ -178,7 +182,7 @@ node --test tests/*.test.mjs
 The checks cover the six-slot geometry and opposing pairs, rigid tube poses
 throughout camera movement and indexing, overhead ray occlusion by the caps,
 the ordering of overhead alignment, cap opening, descent, and scene handoff,
-consistency between pellet grain coordinates and the molecular morph endpoints,
+consistency between suspended particle coordinates and the molecular morph endpoints,
 unique ownership for all 81 components, and continuous circle-to-contour geometry.
 They also run before each deployment.
 

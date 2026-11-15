@@ -1,5 +1,5 @@
 // Adapted from the owner's Institute of Human Genetics Heidelberg RNA explorer.
-import { molecularPose, molecularOwners, unfoldPoint, samplePolygon, circleToShape } from "./research-model.js?v=pellet-shapes";
+import { molecularPose, molecularOwners, unfoldPoint, samplePolygon, circleToShape } from "./research-model.js?v=green-particles";
 (() => {
   "use strict";
   const section = document.querySelector(".rna-projects");
@@ -128,7 +128,7 @@ import { molecularPose, molecularOwners, unfoldPoint, samplePolygon, circleToSha
     projectNodes = nodes.filter(node => node.card);
     const drawing = document.createDocumentFragment();
     grains = Array.from({ length: 100 }, (_, index) => {
-      const element = svg("circle", { class: "rna-pellet-grain" });
+      const element = svg("circle", { class: "rna-sample-particle" });
       drawing.append(element);
       return { index, element };
     });
@@ -280,7 +280,7 @@ import { molecularPose, molecularOwners, unfoldPoint, samplePolygon, circleToSha
       element.setAttribute("r", origin.r * (1 - unfold));
       element.style.opacity = String(particles);
     });
-    // Each complete subunit is one pellet circle continuously reshaped into its contour.
+    // Each complete subunit is one suspended particle continuously reshaped into its contour.
     shape.setAttribute("transform", `translate(${center} ${baseline}) scale(${scale})`);
     ribosome.style.opacity = "1";
     subunits.forEach((subunit, index) => {

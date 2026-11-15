@@ -9,6 +9,7 @@ export const EDUCATION_SLOTS = [0, 3];
 export const EXPERIENCE_SLOTS = [0, 1, 2, 3, 4];
 export const RESEARCH_STOPS = [.2016, .2856, .3696, .4536, .5376];
 export const SAMPLE_SLOT = 5;
+export const SAMPLE_PARTICLE_RADIUS = .008;
 export const CAP_TOP = 1.781;
 export const OPENING_END = .08;
 export const OPENING_SPEED = 3;
@@ -50,18 +51,20 @@ export function createOpeningSpin() {
 
 export function molecularPose(progress) {
   return {
-    particles: smooth((progress - .90) / .02),
-    unfold: smooth((progress - .905) / .075),
-    bases: smooth((progress - .925) / .06),
-    ribosome: smooth((progress - .93) / .065),
+    particles: smooth((progress - .90) / .015),
+    unfold: smooth((progress - .915) / .06),
+    bases: smooth((progress - .93) / .055),
+    ribosome: smooth((progress - .935) / .06),
     labels: smooth((progress - .97) / .03),
     background: smooth((progress - .91) / .06),
   };
 }
 
-export function pelletComponent(index) {
-  const radius = .12 * Math.sqrt((index + .5) / 100), angle = index * 2.39996323;
-  return { x: Math.cos(angle) * radius, y: -1.567 + .055 * Math.sqrt(1 - (radius / .13) ** 2), z: Math.sin(angle) * radius };
+export function sampleParticle(index) {
+  const radius = .25 * Math.sqrt((index + .5) / 100), angle = index * 2.39996323;
+  // A suspended volume inside the liquid, rather than a sedimented pellet.
+  const depth = (index * .61803398875) % 1;
+  return { x: Math.cos(angle) * radius, y: -.72 - .18 * depth, z: Math.sin(angle) * radius };
 }
 
 export function unfoldPoint(origin, target, amount) {
@@ -75,7 +78,7 @@ export function molecularOwners(nodeCount) {
   let next = 0;
   const take = count => Array.from({ length: count }, () => next++ * 37 % 100);
   const owners = { sugars: take(nodeCount), phosphates: take(nodeCount - 1), bases: take(nodeCount), stems: take(nodeCount), bonds: take(2 * (nodeCount - 1)), subunits: take(2), labels: take(4) };
-  if (next > 100) throw new Error("Molecular components exceed the available pellet grains");
+  if (next > 100) throw new Error("Molecular components exceed the available sample particles");
   return owners;
 }
 
@@ -143,9 +146,7 @@ export function createCentrifuge(colors, textureFactory = () => null) {
   const edge = standard({ color: colors.rim, metalness: .45, roughness: .3 });
   const plastic = standard({ color: colors.paper, metalness: 0, roughness: .32, transparent: true, opacity: .42, depthWrite: false, side: THREE.DoubleSide });
   const researchCap = standard({ color: colors.accent, roughness: .7, metalness: 0 });
-  const balanceCap = standard({ color: colors.balance, roughness: .7, metalness: 0 });
   const researchLiquid = standard({ color: colors.accent, transparent: true, opacity: .45, metalness: 0, depthWrite: false });
-  const balanceLiquid = standard({ color: colors.balance, transparent: true, opacity: .45, metalness: 0, depthWrite: false });
   const mount = (parent, geometry, material, x = 0, y = 0, z = 0, name = "") => {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z);
@@ -178,14 +179,16 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     tube.rotation.y = theta;
     assembly.add(tube);
     tubeGroups.push(tube);
-    const capMaterial = researchIndex >= 0 ? researchCap : balanceCap;
-    const liquidMaterial = researchIndex >= 0 ? researchLiquid : balanceLiquid;
-    // Equal tube dimensions. The project sample exposes its pellet directly.
+    const capMaterial = researchCap;
+    const liquidMaterial = researchLiquid;
+    // Every tube has the same cap, filling, and suspended particles.
     mount(tube, new THREE.CylinderGeometry(.48, .48, 2.5, 48, 1, true), plastic, 0, .25, 0, "tube-wall");
     mount(tube, new THREE.CylinderGeometry(.49, .49, .32, 48, 1, true), standard({ color: colors.metal, roughness: .32, metalness: 0, transparent: true, opacity: .7, depthWrite: false }), 0, 1.35, 0, "tube-neck");
     mount(tube, new THREE.CylinderGeometry(.48, .055, .7, 48, 1, true), plastic, 0, -1.35, 0, "conical-tip");
-    mount(tube, new THREE.CylinderGeometry(.43, .43, .42, 40), liquidMaterial, 0, -.77, 0, "liquid-column").visible = slot !== SAMPLE_SLOT;
-    mount(tube, new THREE.CylinderGeometry(.43, .05, .64, 40), liquidMaterial, 0, -1.3, 0, "liquid-cone").visible = slot !== SAMPLE_SLOT;
+    mount(tube, new THREE.CylinderGeometry(.43, .43, .42, 40, 1, true), liquidMaterial, 0, -.77, 0, "liquid-column");
+    mount(tube, new THREE.CylinderGeometry(.43, .05, .64, 40, 1, true), liquidMaterial, 0, -1.3, 0, "liquid-cone");
+    const surface = mount(tube, new THREE.CircleGeometry(.43, 48), standard({ color: colors.accent, transparent: true, opacity: .18, metalness: 0, depthWrite: false, side: THREE.DoubleSide }), 0, -.56, 0, "liquid-surface");
+    surface.rotation.x = -Math.PI / 2;
     const collar = mount(tube, new THREE.TorusGeometry(.59, .06, 12, 48), edge, 0, 1.25, 0, "support-collar");
     collar.rotation.x = Math.PI / 2;
     const cap = new THREE.Group();
@@ -199,21 +202,19 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     }
     const top = mount(cap, new THREE.CircleGeometry(.605, 64), capMaterial, 0, CAP_TOP, 0, "cap-top");
     top.rotation.x = -Math.PI / 2;
-    if (slot === SAMPLE_SLOT) {
-      const pelletMaterial = standard({ color: colors.accent, roughness: .9, metalness: 0 });
-      const pellet = mount(tube, new THREE.SphereGeometry(1, 40, 24), pelletMaterial, 0, -1.57, 0, "sample-pellet");
-      pellet.scale.set(.13, .055, .13);
-      // Deterministic surface detail becomes visible as the camera approaches.
-      const grainMaterial = standard({ color: colors.accent, roughness: .9, metalness: 0, transparent: true });
-      const granules = new THREE.InstancedMesh(new THREE.SphereGeometry(.008, 8, 6), grainMaterial, 100);
-      granules.name = "pellet-granules";
+    {
+      // Flat green circles match the projected circles used by the RNA renderer.
+      const particleMaterial = new THREE.MeshBasicMaterial({ color: colors.accent, toneMapped: false, transparent: true });
+      materials.push(particleMaterial);
+      const particles = new THREE.InstancedMesh(new THREE.SphereGeometry(SAMPLE_PARTICLE_RADIUS, 12, 8), particleMaterial, 100);
+      particles.name = "sample-particles";
       const matrix = new THREE.Matrix4();
       for (let n = 0; n < 100; n++) {
-        const point = pelletComponent(n);
+        const point = sampleParticle(n);
         matrix.makeTranslation(point.x, point.y, point.z);
-        granules.setMatrixAt(n, matrix);
+        particles.setMatrixAt(n, matrix);
       }
-      tube.add(granules);
+      tube.add(particles);
     }
     const labelTexture = textureFactory("label", slot, researchIndex);
     if (labelTexture) {
@@ -240,6 +241,14 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     cap.position.set(smooth((amount - .3) / .7) * 1.4, amount * 1.6, 0);
     cap.rotation.y = amount * Math.PI * .8;
   }
+  function immerseSample(cameraY, molecularAmount) {
+    const sample = tubeGroups[SAMPLE_SLOT];
+    // The surface loses its reflection continuously as the lens enters the liquid.
+    sample.getObjectByName("liquid-surface").material.opacity = .18 * smooth((cameraY + .56) / .18);
+    // Keep the source circles solid until their exact projected copies cover them.
+    // Reshaping starts after this transfer, avoiding dimming or duplicate trails.
+    sample.getObjectByName("sample-particles").material.opacity = molecularAmount < 1 ? 1 : 0;
+  }
   function setLabelTexture(slot, texture) {
     const material = tubeGroups[slot].getObjectByName("tube-label").material;
     const previous = material.map;
@@ -250,5 +259,5 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     material.map = texture;
     textures.push(texture);
   }
-  return { assembly, base, tubeGroups, openSample, setLabelTexture, dispose };
+  return { assembly, base, tubeGroups, openSample, immerseSample, setLabelTexture, dispose };
 }

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "../vendor/three/three.module.js";
 import { createResearchBench } from "../research-bench.js";
-import { createCentrifuge, inspectionPose, createOpeningSpin, OPENING_END, OPENING_SPEED, molecularPose, molecularOwners, pelletComponent, unfoldPoint, samplePolygon, circleToShape, EXPERIENCE_SLOTS, SAMPLE_SLOT, RESEARCH_STOPS } from "../research-model.js";
+import { createCentrifuge, inspectionPose, createOpeningSpin, OPENING_END, OPENING_SPEED, molecularPose, molecularOwners, sampleParticle, SAMPLE_PARTICLE_RADIUS, unfoldPoint, samplePolygon, circleToShape, EXPERIENCE_SLOTS, SAMPLE_SLOT, RESEARCH_STOPS } from "../research-model.js";
 
 const colors = { metal: "#d9ded5", rim: "#586359", paper: "#fdfcf8", accent: "#28694b", balance: "#e7eae3" };
 
@@ -23,7 +23,7 @@ test("replacing a reading label releases its old texture and canvas", () => {
   assert.equal(newDisposals, 1);
 });
 
-test("every molecular component owns a distinct pellet circle and preserves its shape at both endpoints", () => {
+test("every molecular component owns a distinct suspended particle and preserves its shape at both endpoints", () => {
   const owners = molecularOwners(13), ids = Object.values(owners).flat();
   assert.equal(ids.length, 81);
   assert.equal(new Set(ids).size, ids.length);
@@ -40,14 +40,16 @@ test("every molecular component owns a distinct pellet circle and preserves its 
   }
 });
 
-test("molecular particles originate at the modeled pellet grains and arrive exactly on their destinations", () => {
+test("molecular particles originate at the modeled liquid particles and arrive exactly on their destinations", () => {
   const model = createCentrifuge(colors);
   try {
-    const grains = model.tubeGroups[SAMPLE_SLOT].getObjectByName("pellet-granules"), matrix = new THREE.Matrix4();
+    const grains = model.tubeGroups[SAMPLE_SLOT].getObjectByName("sample-particles"), matrix = new THREE.Matrix4();
     for (let index = 0; index < 100; index++) {
       grains.getMatrixAt(index, matrix);
-      const position = new THREE.Vector3().setFromMatrixPosition(matrix), origin = pelletComponent(index);
+      const position = new THREE.Vector3().setFromMatrixPosition(matrix), origin = sampleParticle(index);
       assert.ok(position.distanceTo(new THREE.Vector3(origin.x, origin.y, origin.z)) < 1e-6);
+      assert.ok(Math.hypot(position.x, position.z) + SAMPLE_PARTICLE_RADIUS < .43, "particles are inside the liquid column");
+      assert.ok(position.y - SAMPLE_PARTICLE_RADIUS > -.98 && position.y + SAMPLE_PARTICLE_RADIUS < -.56, "particles float below the surface and above the cone");
     }
     const origin = { x: 313, y: 298 }, target = { x: 728, y: 607 };
     assert.deepEqual(unfoldPoint(origin, target, 0), origin);
@@ -56,6 +58,7 @@ test("molecular particles originate at the modeled pellet grains and arrive exac
     for (let step = 0; step < 100; step++) {
       const a = molecularPose(.90 + step / 1000), b = molecularPose(.90 + (step + 1) / 1000);
       for (const key of Object.keys(a)) assert.ok(b[key] >= a[key] && b[key] <= 1);
+      if (a.particles < 1) assert.equal(a.unfold + a.bases + a.ribosome + a.labels, 0, "particles finish transferring before any component reshapes");
       if (a.labels > 0) assert.ok(a.unfold > .95, "project information appears after the strand is formed");
     }
     assert.ok(Object.values(molecularPose(1)).every(value => value === 1));
@@ -81,6 +84,12 @@ test("research, education, and projects follow the requested six-tube sequence",
       assert.ok(tube.position.clone().add(opposite.position).length() < 1e-9);
       assert.deepEqual(tube.getObjectByName("tube-wall").geometry.parameters, opposite.getObjectByName("tube-wall").geometry.parameters);
       assert.deepEqual(tube.getObjectByName("liquid-column").geometry.parameters, opposite.getObjectByName("liquid-column").geometry.parameters);
+      for (const name of ["cap", "cap-top", "cap-rib", "liquid-column", "liquid-cone"]) {
+        assert.equal(tube.getObjectByName(name).material, next.getObjectByName(name).material, "all six tubes share the same cap and filling materials");
+        assert.ok(tube.getObjectByName(name).visible);
+      }
+      assert.equal(tube.getObjectByName("sample-particles").count, 100);
+      assert.equal(tube.getObjectByName("sample-pellet"), undefined);
     }
   } finally { model.dispose(); }
 });
@@ -234,12 +243,28 @@ test("the camera returns overhead before tube six opens and the molecular handof
     assert.equal(inspectionPose(.94).handoff, 0);
     assert.equal(inspectionPose(1).handoff, 1);
     assert.equal(inspectionPose(1).phase, "ribosome");
-    for (const amount of [.72, .85, .94, .96, 1, .85]) {
+    for (const amount of [.85, .94, .96, 1, .85]) {
       model.openSample(amount);
       model.assembly.updateMatrixWorld(true);
-      const ray = new THREE.Raycaster(new THREE.Vector3(0, 18, position.z), new THREE.Vector3(0, -1, 0));
-      const visibleHits = ray.intersectObject(model.assembly, true).filter(hit => hit.object.visible);
-      assert.ok(["sample-pellet", "pellet-granules"].includes(visibleHits[0].object.name), "the pellet is clear throughout opening, without an intermediary layer");
+      for (let index = 0; index < 100; index++) {
+        const local = sampleParticle(index), point = sample.localToWorld(new THREE.Vector3(local.x, local.y, local.z));
+        const ray = new THREE.Raycaster(new THREE.Vector3(point.x, 18, point.z), new THREE.Vector3(0, -1, 0));
+        const visibleHits = ray.intersectObject(model.assembly, true).filter(hit => hit.object.visible && hit.object.material.opacity >= .99);
+        assert.equal(visibleHits[0].object.name, "sample-particles", "each particle is clear of opaque caps, rims, and internal layers");
+      }
     }
+    const surface = sample.getObjectByName("liquid-surface");
+    for (const cameraY of [1, -.45, -.56, -.62, -.45, 1]) {
+      model.immerseSample(cameraY, .4);
+      assert.ok(surface.material.opacity >= 0 && surface.material.opacity <= .18);
+      if (cameraY <= -.56) assert.equal(surface.material.opacity, 0, "no surface obstructs the immersed view");
+      assert.equal(sample.getObjectByName("sample-particles").material.opacity, 1, "source circles stay solid during the matched handoff");
+      assert.equal(model.tubeGroups[0].getObjectByName("liquid-surface").material.opacity, .18);
+      assert.equal(model.tubeGroups[0].getObjectByName("sample-particles").material.opacity, 1);
+    }
+    model.immerseSample(-.62, 1);
+    assert.equal(sample.getObjectByName("sample-particles").material.opacity, 0);
+    model.immerseSample(1, 0);
+    assert.equal(sample.getObjectByName("sample-particles").material.opacity, 1, "reverse scrolling restores the source particles");
   } finally { model.dispose(); }
 });

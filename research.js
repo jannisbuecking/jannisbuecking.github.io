@@ -1,7 +1,7 @@
 import * as THREE from "./vendor/three/three.module.js";
-import "./projects.js?v=clean-scenes";
+import "./projects.js?v=green-particles";
 import { createResearchBench } from "./research-bench.js?v=phone-ending";
-import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=clear-pellet";
+import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE_PARTICLE_RADIUS, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=green-particles";
 
 (() => {
   const section = document.getElementById("research");
@@ -13,7 +13,6 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
   const visual = section.querySelector(".research-visual");
   const articles = [...section.querySelectorAll(".research-tube")];
   const controls = section.querySelector(".research-controls");
-  const progressBar = section.querySelector(".research-progress span");
   const projects = document.getElementById("projects");
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const theme = window.matchMedia("(prefers-color-scheme: dark)");
@@ -119,7 +118,7 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
       renderer.toneMappingExposure = 1.1;
       renderer.setClearColor(0x000000, 0);
       renderer.domElement.setAttribute("role", "img");
-      renderer.domElement.setAttribute("aria-label", "Six upright tubes in a clockwise centrifuge rotor, with three laboratory pipettes, a six-well plate, and bacterial colonies on the left, and neurological examination instruments on the right. Scroll through Heidelberg University, Heidelberg research, UCSF, Harvard, and Boston Children’s Hospital, then return overhead, open the Projects sample in tube 6, and descend into its pellet to enter the mRNA science projects.");
+      renderer.domElement.setAttribute("aria-label", "Six upright tubes in a clockwise centrifuge rotor, with three laboratory pipettes, a six-well plate, and bacterial colonies on the left, and neurological examination instruments on the right. Scroll through Heidelberg University, Heidelberg research, UCSF, Harvard, and Boston Children’s Hospital, then return overhead, open the Projects sample in tube 6, and zoom into its suspended green particles to enter the mRNA science projects.");
       renderer.domElement.setAttribute("aria-describedby", articles.map(article => article.id).join(" "));
       visual.append(renderer.domElement);
       world = new THREE.Scene();
@@ -230,15 +229,16 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
     const readingHeight = overviewHeight + (labelHeight - overviewHeight) * closeUp;
     const tubeHeight = Math.max(1.35, 1.35 / aspect);
     const focusedHeight = readingHeight + (tubeHeight - readingHeight) * focus;
-    const viewHeight = focusedHeight * (1 - dive) + .22 * dive;
+    const particleHeight = Math.max(.62, .58 / aspect);
+    const viewHeight = focusedHeight * (1 - dive) + particleHeight * dive;
     camera.left = -viewHeight * aspect / 2;
     camera.right = viewHeight * aspect / 2;
     camera.top = viewHeight / 2;
     camera.bottom = -viewHeight / 2;
     camera.zoom = 1;
-    const targetY = (.1 + (.02 - .1) * closeUp) * (1 - dive) - 1.57 * dive;
+    const targetY = (.1 + (.02 - .1) * closeUp) * (1 - dive) - .86 * dive;
     const targetZ = (SLOT_RADIUS + .487) * closeUp * (1 - focus) + SLOT_RADIUS * focus;
-    // Overhead descent stays on the open tube's axis and ends just above its pellet.
+    // Descend through the liquid surface and stop above its suspended particles.
     const cameraDistance = 18 * (1 - dive) + .24 * dive;
     camera.position.set(0, targetY + Math.cos(cameraAngle) * cameraDistance, targetZ + Math.sin(cameraAngle) * cameraDistance);
     // A stable camera basis throughout the vertical orbit: no roll or pole flip.
@@ -252,17 +252,17 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
     camera.updateMatrixWorld(true);
     let origins;
     if (linked && pose.progress > .9 && pose.progress < 1) {
-      const granules = model.tubeGroups[SAMPLE_SLOT].getObjectByName("pellet-granules");
+      const particles = model.tubeGroups[SAMPLE_SLOT].getObjectByName("sample-particles");
       const rnaTop = Number(projects.dataset.rnaStageTop);
       origins = Array.from({ length: 100 }, (_, index) => {
-        const point = pelletComponent(index);
-        const center = new THREE.Vector3(point.x, point.y, point.z).applyMatrix4(granules.matrixWorld).project(camera);
-        return { x: (center.x + 1) * w / 2, y: stage.offsetTop + (1 - center.y) * h / 2 - rnaTop, r: .008 / viewHeight * h };
+        const point = sampleParticle(index);
+        const center = new THREE.Vector3(point.x, point.y, point.z).applyMatrix4(particles.matrixWorld).project(camera);
+        return { x: (center.x + 1) * w / 2, y: stage.offsetTop + (1 - center.y) * h / 2 - rnaTop, r: SAMPLE_PARTICLE_RADIUS / viewHeight * h };
       });
     }
     syncBridge(pose, origins);
-    // The projected particles take over at the same locations as these 3D grains.
-    model.tubeGroups[SAMPLE_SLOT].getObjectByName("pellet-granules").material.opacity = 1 - molecularPose(pose.progress).particles;
+    // The projected particles take over at the same locations as these 3D particles.
+    model.immerseSample(camera.position.y, molecularPose(pose.progress).particles);
     let nearest = 0, front = -Infinity;
     for (let index = 0; index < articles.length; index++) {
       const depth = Math.cos(angle + EXPERIENCE_SLOTS[index] * Math.PI / 3);
@@ -279,7 +279,6 @@ import { createCentrifuge, inspectionPose, molecularPose, pelletComponent, creat
     heading.style.opacity = (smooth((pose.progress - .1792) / .0224) * (1 - molecules)).toFixed(4);
     controls.style.opacity = (1 - molecules).toFixed(4);
     articles.forEach((article, index) => article.classList.toggle("is-current", nearest === index));
-    progressBar.style.transform = `scaleX(${progress})`;
     section.dataset.phase = pose.phase;
     section.dataset.rotorAngle = angle.toFixed(5);
     section.dataset.spinSpeed = spinState.speed.toFixed(3);
