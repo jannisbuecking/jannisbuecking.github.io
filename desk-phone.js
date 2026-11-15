@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three/three.module.js';
 import { phoneTransform } from './phone-geometry.js?v=desk-phone';
-import { getContributionData } from './contribution-data.js?v=desk-phone';
+import { getContributionData, contributionCalendarLayout } from './contribution-data.js?v=responsive-scroll';
 
 export function createDeskPhone(host) {
   const screen = host.querySelector('.desk-phone');
@@ -9,21 +9,17 @@ export function createDeskPhone(host) {
   let mounted = false;
   const parseDate = value => new Date(`${value}T00:00:00Z`);
   getContributionData().then(data => {
-    const offset = parseDate(data.days[0].date).getUTCDay(), columns = Math.ceil((data.days.length + offset) / 7);
+    const { offset, columns, months: monthLabels } = contributionCalendarLayout(data.days);
     const months = document.createElement('div'); months.className = 'phone-calendar-months';
     const grid = document.createElement('div'); grid.className = 'phone-calendar-grid';
     months.style.gridTemplateColumns = grid.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
     const colors = ['#e8eee5', '#b4d4b4', '#72ad7d', '#3d8958', '#1f623f'];
-    let lastMonth = -1;
+    monthLabels.forEach(({ label: text, column, span }) => {
+      const label = document.createElement('span'); label.textContent = text;
+      label.style.gridColumn = `${column} / span ${span}`; months.append(label);
+    });
     data.days.forEach((day, index) => {
       const date = parseDate(day.date), column = Math.floor((index + offset) / 7) + 1;
-      if (date.getUTCMonth() !== lastMonth) {
-        if (column <= columns - 2) {
-          const label = document.createElement('span'); label.textContent = date.toLocaleDateString('en', { month: 'short', timeZone: 'UTC' });
-          label.style.gridColumn = `${column} / span 3`; months.append(label);
-        }
-        lastMonth = date.getUTCMonth();
-      }
       const cell = document.createElement('span'); cell.style.gridColumn = column; cell.style.gridRow = date.getUTCDay() + 1;
       cell.style.setProperty('--day-color', colors[Math.max(0, Math.min(4, day.level))]);
       cell.title = `${day.count} contributions on ${day.date}`; grid.append(cell);

@@ -80,7 +80,8 @@ python3 scripts/update_contributions.py
 
 Research, education, and clinical entries are condensed from the
 owner-provided CV screenshots. Edit these entries in `index.html`; only the
-GitHub contribution calendar updates automatically. The publication list is
+GitHub contribution calendar updates automatically. Month labels stay in one
+row, aligned to their week columns; partial months without room for a label are omitted. The publication list is
 available through the Google Scholar app on the contact phone.
 
 ## Animated science projects
@@ -123,7 +124,9 @@ or disappear. Compact screens place them diagonally left and right to keep all
 six tubes visible.
 The opening rotor spins clockwise at 3 radians per second (about one revolution
 every 2.1 seconds). The first scroll applies constant deceleration, finishing at
-the next aligned revolution without reversing or accelerating. The camera stays
+the next equivalent 60° arrangement without reversing or accelerating. All six
+caps match, so this rebase preserves the overhead image exactly and reduces
+the settling wait to 0.2–0.9 seconds. The camera stays
 overhead while it slows, then moves along a vertical arc to the side. Subsequent scrolling turns the entire assembly
 around its vertical axis through the five research and education entries in
 the same order as the physical tubes. The side view zooms into the
@@ -134,9 +137,12 @@ and end of the reading sequence. Narrow viewports widen just enough to keep
 adjacent tubes visible during the handover. There is no separate
 description panel. The same source text remains available to screen readers
 and in the automatic static fallback. Reading labels use 2048 × 3072 textures
-and up to the display’s native 3× pixel density. Up to three reading textures
-are prepared and uploaded ahead of time during idle periods, after scrolling
-pauses. Tube changes do not paint labels or upload replacement textures inside
+and up to the display’s native 3× pixel density. Framebuffer resolution stays
+fixed during the first camera tilt and becomes sharper after the first reading
+settles. Label preparation pauses during camera motion and when offscreen.
+The opening prepares just the first sharp label. In the side view, up to three
+reading textures are prepared and uploaded ahead of time during idle periods,
+after scrolling pauses. Tube changes do not paint labels or upload replacement textures inside
 the animation frame. Eviction releases both GPU textures and their large canvas
 buffers while retaining the lightweight fallback labels. The 32 ridges on each
 cap are instanced together to reduce draw calls without changing their shape.
@@ -217,7 +223,9 @@ desk edge or passes through the board. Subtle outlines and shadows keep its blan
 back visible. The stationary reading camera frames both the active page and rear
 stack, with larger document text for readability. The ceiling fixture sits over
 the examination area, clear of these sight lines. The complete turn is reversible
-and leaves the next record unobstructed.
+and leaves the next record unobstructed. The clipboard passage requires 25%
+less scrolling; the room entrance and phone approach retain their original
+physical scroll distances. Deep links and resizing use the same reversible mapping.
 Their text comes directly from the clinical entries in `index.html`, which also
 serve as the accessible static fallback. Clinical experience is no longer repeated
 in a separate background section. Upward scrolling turns the sheets back in order and returns through the monitor

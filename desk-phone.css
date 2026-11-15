@@ -23,7 +23,8 @@
 .phone-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #3d8958; box-shadow: 0 0 0 3px #3d895812; }
 .phone-activity .phone-contribution-total { margin: 9px 0 0; color: #173a29; font-size: 32px; line-height: 1.2; font-weight: 650; letter-spacing: -.04em; }
 .phone-activity .phone-calendar-period { margin: 1px 0 12px; color: #58715e; font-size: 10px; line-height: 1.4; }
-.phone-calendar-months { display: grid; height: 14px; color: #66806c; font-size: 7px; }
+.phone-calendar-months { display: grid; grid-template-rows: 14px; column-gap: 1px; height: 14px; color: #66806c; font-size: 7px; }
+.phone-calendar-months span { grid-row: 1; min-width: 0; white-space: nowrap; line-height: 12px; }
 .phone-calendar-grid { display: grid; grid-template-rows: repeat(7,minmax(0,1fr)); gap: 1px; width: 100%; height: 37px; }
 .phone-calendar-grid span { display: block; border-radius: 1px; background: var(--day-color); }
 .phone-calendar-message { margin: 8px 0; font-size: 11px; color: #58715e; }

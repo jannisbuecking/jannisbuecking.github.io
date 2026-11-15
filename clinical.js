@@ -1,10 +1,10 @@
 import * as THREE from './vendor/three/three.module.js';
 import './projects.js?v=green-particles';
-import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP, smooth } from './previews/clinical-room-model.js?v=five-clinical';
+import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, CLINICAL_SCROLL_LENGTH, PHONE_STOP, clinicalScrollOffset, clinicalScrollProgress, smooth } from './previews/clinical-room-model.js?v=responsive-scroll';
 import { createClinicalTextures } from './previews/clinical-textures.js?v=five-clinical';
 import { captureRNAScene } from './clinical-snapshot.js?v=full-clinical';
 import { experiences } from './previews/clinical-data.js?v=five-clinical';
-import { createDeskPhone } from './desk-phone.js?v=desk-phone';
+import { createDeskPhone } from './desk-phone.js?v=responsive-scroll';
 
 const section = document.getElementById('clinical');
 const projects = document.getElementById('projects');
@@ -54,7 +54,7 @@ function initialize() {
     renderer?.dispose(); renderer = null; unavailable = true; return false;
   }
 }
-function progress() { return distance ? clamp(-journey.getBoundingClientRect().top / distance) : 0; }
+function progress() { return distance ? clinicalScrollProgress(clamp(-journey.getBoundingClientRect().top / distance)) : 0; }
 function request() { if (!queued) { queued = true; requestAnimationFrame(frame); } }
 function reset() {
   enabled = false; freeze(false);
@@ -74,10 +74,11 @@ function layout() {
   enabled = true; section.classList.add('is-enhanced'); projects.classList.add('has-clinical-link');
   phone.mount(scene);
   projects.style.setProperty('--clinical-viewport', `${height}px`);
-  distance = Math.max(3600, height * (6.4 + Math.max(0, entries.length - 3))) / CLINICAL_FRACTION; journey.style.height = `${height + distance}px`;
+  distance = Math.max(3600, height * (6.4 + Math.max(0, entries.length - 3))) / CLINICAL_FRACTION * CLINICAL_SCROLL_LENGTH;
+  journey.style.height = `${height + distance}px`;
   renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix();
   const background = getComputedStyle(document.documentElement).getPropertyValue('--background').trim(); renderer.setClearColor(background);
-  if (wasPinned) scrollTo({ top: scrollY + journey.getBoundingClientRect().top + previous * distance, behavior: 'instant' });
+  if (wasPinned) scrollTo({ top: scrollY + journey.getBoundingClientRect().top + clinicalScrollOffset(previous) * distance, behavior: 'instant' });
   else if (wasAfter) scrollBy({ top: journey.getBoundingClientRect().bottom - before.bottom, behavior: 'instant' });
   request();
 }
@@ -156,7 +157,7 @@ function routeHash() {
   const contact = ['#contact', '#phone-title'].includes(location.hash);
   if (index < 0 && !overview && !contact) return;
   current = contact ? PHONE_STOP : (overview ? .36 : READING_STOPS[index]) * CLINICAL_FRACTION; ready = true;
-  scrollTo({ top: scrollY + journey.getBoundingClientRect().top + current * distance, behavior: 'instant' }); request();
+  scrollTo({ top: scrollY + journey.getBoundingClientRect().top + clinicalScrollOffset(current) * distance, behavior: 'instant' }); request();
 }
 window.addEventListener('scroll', request, { passive: true });
 window.addEventListener('resize', () => { if (enabled && ready && resizeProgress === null) resizeProgress = current; scheduleLayout(); }, { passive: true });

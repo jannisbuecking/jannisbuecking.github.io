@@ -3,6 +3,23 @@ import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.js';
 import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, PHONE_STOP } from '../previews/clinical-room-model.js';
 import { phoneTransform } from '../phone-geometry.js';
+import { contributionCalendarLayout } from '../contribution-data.js';
+
+test('calendar month labels skip cramped partial months and never overlap week columns', () => {
+  const makeDays = (start, count) => Array.from({ length: count }, (_, index) => ({ date: new Date(Date.parse(`${start}T00:00:00Z`) + index * 86400000).toISOString().slice(0, 10) }));
+  const layout = contributionCalendarLayout(makeDays('2025-11-16', 365));
+  assert.equal(layout.months[0].label, 'Dec', 'the short first November cannot push December onto a second row');
+  for (const start of ['2025-11-16', '2025-12-31', '2024-02-28', '2026-01-01']) {
+    const { offset, columns, months } = contributionCalendarLayout(makeDays(start, 371));
+    assert.equal(offset, new Date(`${start}T00:00:00Z`).getUTCDay());
+    assert.ok(columns >= 53 && columns <= 54);
+    months.forEach((month, index) => {
+      assert.ok(month.column >= 1 && month.column + month.span <= columns + 1);
+      assert.ok(month.span >= 3);
+      if (index) assert.ok(month.column >= months[index - 1].column + months[index - 1].span);
+    });
+  }
+});
 
 test('the iPhone rests inside the existing desk and stays fixed while clipboard pages turn', () => {
   const room = createClinicalRoom('consultation', undefined, { includePhone: true });

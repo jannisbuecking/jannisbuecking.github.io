@@ -1,7 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.js';
-import { createClinicalRoom, clipboardPagePose, PAGE_LENGTH, BINDING_HEIGHT, BINDING_Y, READING_STOPS, PAGE_TURN_STARTS, PAGE_TURN_DURATION } from '../previews/clinical-room-model.js';
+import { createClinicalRoom, clipboardPagePose, PAGE_LENGTH, BINDING_HEIGHT, BINDING_Y, READING_STOPS, PAGE_TURN_STARTS, PAGE_TURN_DURATION, CLINICAL_FRACTION, CLINICAL_SCROLL_LENGTH, clinicalScrollOffset, clinicalScrollProgress } from '../previews/clinical-room-model.js';
+
+test('clipboard scrolling takes 25 percent less distance without speeding up the room or phone', () => {
+  const distance = progress => clinicalScrollOffset(progress) * CLINICAL_SCROLL_LENGTH;
+  for (let progress = 0; progress <= 1; progress += .001) {
+    assert.ok(Math.abs(clinicalScrollProgress(clinicalScrollOffset(progress)) - progress) < 1e-12, 'scroll positions and deep links round-trip without jumps');
+  }
+  for (let index = 1; index < READING_STOPS.length; index++) {
+    const from = READING_STOPS[index - 1] * CLINICAL_FRACTION, to = READING_STOPS[index] * CLINICAL_FRACTION;
+    assert.ok(Math.abs((distance(to) - distance(from)) / (to - from) - .75) < 1e-12);
+  }
+  assert.ok(Math.abs((distance(.3) - distance(.1)) / .2 - 1) < 1e-12);
+  assert.ok(Math.abs((distance(.99) - distance(.8)) / .19 - 1) < 1e-12);
+  assert.equal(clinicalScrollProgress(0), 0);
+  assert.equal(clinicalScrollProgress(1), 1);
+});
 
 test('table aprons sit below and inside the worktops without overlapping side faces', () => {
   for (const variant of ['consultation', 'laboratory']) {

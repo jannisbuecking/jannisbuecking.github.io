@@ -13,6 +13,7 @@ export const SAMPLE_PARTICLE_RADIUS = .008;
 export const CAP_TOP = 1.781;
 export const OPENING_END = .08;
 export const OPENING_SPEED = 3;
+export const OPENING_SECTOR = Math.PI / 3;
 
 const tau = Math.PI * 2;
 const clamp = value => Math.max(0, Math.min(1, value));
@@ -22,12 +23,13 @@ const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
 const enterReading = t => t * t * t * (6 + t * (-8 + 3 * t));
 
 // Negative rotation about +Y is clockwise through the overhead camera.
-// Brake with constant deceleration to the next complete revolution, never rewind.
+// The six identical overhead caps repeat every 60 degrees. Align to the next
+// equivalent sector instead of waiting for a whole revolution, never rewind.
 export function createOpeningSpin() {
-  let angle = 0, speed = OPENING_SPEED, mode = "idle", start = 0, elapsed = 0, duration = 0, destination = 0;
-  const snapshot = () => ({ angle, speed, mode });
+  let angle = 0, alignment = 0, speed = OPENING_SPEED, mode = "idle", start = 0, elapsed = 0, duration = 0, destination = 0;
+  const snapshot = () => ({ angle, renderAngle: angle - alignment, speed, mode });
   function align() {
-    angle = Math.floor(angle / tau) * tau; speed = 0; mode = "settled";
+    angle = Math.floor(angle / OPENING_SECTOR) * OPENING_SECTOR; alignment = angle; speed = 0; mode = "settled";
     return snapshot();
   }
   function update(seconds, progress) {
@@ -36,7 +38,8 @@ export function createOpeningSpin() {
     } else {
       if (mode === "idle") {
         start = angle; elapsed = 0;
-        destination = Math.floor((angle - OPENING_SPEED * .18) / tau) * tau;
+        destination = Math.floor((angle - OPENING_SPEED * .10) / OPENING_SECTOR) * OPENING_SECTOR;
+        alignment = destination;
         duration = 2 * (start - destination) / OPENING_SPEED;
         mode = "braking";
       }

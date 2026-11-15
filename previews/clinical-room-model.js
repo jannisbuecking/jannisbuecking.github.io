@@ -8,6 +8,24 @@ export const PAGE_TURN_STARTS = READING_STOPS.slice(0, -1).map(stop => stop + RE
 export const PAGE_TURN_DURATION = READING_INTERVAL * 2 / 3;
 export const CLINICAL_FRACTION = .78;
 export const PHONE_STOP = .96;
+export const CLINICAL_PAGE_SCROLL_SCALE = .75;
+const pageStart = READING_STOPS[0] * CLINICAL_FRACTION;
+const pageEnd = READING_STOPS.at(-1) * CLINICAL_FRACTION;
+const pageSpan = pageEnd - pageStart;
+export const CLINICAL_SCROLL_LENGTH = 1 - pageSpan * (1 - CLINICAL_PAGE_SCROLL_SCALE);
+
+// Shorten only the clipboard passage. The room entrance and phone retain
+// their original physical scroll distances, including after resizing/deep links.
+export function clinicalScrollOffset(progress) {
+  const p = Math.max(0, Math.min(1, progress));
+  return (p - (1 - CLINICAL_PAGE_SCROLL_SCALE) * Math.max(0, Math.min(pageSpan, p - pageStart))) / CLINICAL_SCROLL_LENGTH;
+}
+export function clinicalScrollProgress(offset) {
+  const distance = Math.max(0, Math.min(1, offset)) * CLINICAL_SCROLL_LENGTH;
+  if (distance <= pageStart) return distance;
+  if (distance < pageStart + pageSpan * CLINICAL_PAGE_SCROLL_SCALE) return pageStart + (distance - pageStart) / CLINICAL_PAGE_SCROLL_SCALE;
+  return distance + pageSpan * (1 - CLINICAL_PAGE_SCROLL_SCALE);
+}
 
 export const PAGE_LENGTH = 1.34;
 export const BINDING_HEIGHT = .19;

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "../vendor/three/three.module.js";
 import { createResearchBench } from "../research-bench.js";
-import { createCentrifuge, inspectionPose, createOpeningSpin, OPENING_END, OPENING_SPEED, molecularPose, molecularOwners, sampleParticle, SAMPLE_PARTICLE_RADIUS, unfoldPoint, samplePolygon, circleToShape, EXPERIENCE_SLOTS, SAMPLE_SLOT, RESEARCH_STOPS } from "../research-model.js";
+import { createCentrifuge, inspectionPose, createOpeningSpin, OPENING_END, OPENING_SPEED, OPENING_SECTOR, molecularPose, molecularOwners, sampleParticle, SAMPLE_PARTICLE_RADIUS, unfoldPoint, samplePolygon, circleToShape, EXPERIENCE_SLOTS, SAMPLE_SLOT, RESEARCH_STOPS } from "../research-model.js";
 
 const colors = { metal: "#d9ded5", rim: "#586359", paper: "#fdfcf8", accent: "#28694b", balance: "#e7eae3" };
 
@@ -166,13 +166,29 @@ test("the opening spin is clockwise and brakes continuously without reversing", 
       if (state.mode === "settled") { settled = true; break; }
     }
     assert.ok(settled);
-    assert.ok(Math.abs(Math.sin(previous.angle)) < 1e-9 && Math.cos(previous.angle) > .9999999);
+    assert.ok(Math.abs(Math.sin(previous.angle * 6)) < 1e-9);
+    assert.equal(previous.renderAngle, 0);
     const resumed = spin.update(.1, 0);
     assert.ok(resumed.angle < previous.angle && resumed.speed === OPENING_SPEED);
   }
   // Through the overhead camera, clockwise carries the bottom tube to the left.
   const point = new THREE.Vector3(0, 0, 2.8).applyAxisAngle(new THREE.Vector3(0, 1, 0), -.1);
   assert.ok(point.x < 0 && point.z > 0);
+});
+
+test("identical overhead caps permit a short, visually continuous opening brake", () => {
+  const capCenters = angle => Array.from({ length: 6 }, (_, index) => ({
+    x: Math.sin(angle + index * OPENING_SECTOR), z: Math.cos(angle + index * OPENING_SECTOR),
+  }));
+  for (let phase = .01; phase < 7; phase += .047) {
+    const spin = createOpeningSpin(), before = spin.update(phase, 0);
+    let after = spin.update(0, .1), elapsed = 0;
+    const beforeCaps = capCenters(before.renderAngle), afterCaps = capCenters(after.renderAngle);
+    assert.ok(beforeCaps.every(cap => afterCaps.some(next => Math.hypot(cap.x - next.x, cap.z - next.z) < 1e-9)), "rebasing preserves the six visible cap positions exactly");
+    while (after.mode !== "settled" && elapsed < 2) { after = spin.update(1 / 120, .1); elapsed += 1 / 120; }
+    assert.ok(elapsed >= .19 && elapsed < .91, "the camera never waits for a full revolution");
+    assert.equal(after.renderAngle, 0);
+  }
 });
 
 test("the top-view tools stay stationary, on the correct sides, and clear of the tubes", () => {
