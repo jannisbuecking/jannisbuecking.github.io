@@ -128,13 +128,19 @@ overhead while it slows, then moves along a vertical arc to the side. Subsequent
 around its vertical axis through the five research and education entries in
 the same order as the physical tubes. The side view zooms into the
 front tube, with the full institution, dates, role, lab, and research summary
-printed on its curved label. The camera gently pulls back while passing between
-neighboring labels. There is no separate
+printed on its curved label. The desktop reading camera holds its distance
+while the rotor turns continuously between labels, easing only at the beginning
+and end of the reading sequence. Narrow viewports widen just enough to keep
+adjacent tubes visible during the handover. There is no separate
 description panel. The same source text remains available to screen readers
 and in the automatic static fallback. Reading labels use 2048 × 3072 textures
-and up to the display’s native 3× pixel density. Only the current reading label
-is upgraded, replacing and disposing its predecessor so texture memory stays
-bounded. The overhead view uses lighter rendering and solid, unlettered caps.
+and up to the display’s native 3× pixel density. Up to three reading textures
+are prepared and uploaded ahead of time during idle periods, after scrolling
+pauses. Tube changes do not paint labels or upload replacement textures inside
+the animation frame. Eviction releases both GPU textures and their large canvas
+buffers while retaining the lightweight fallback labels. The 32 ridges on each
+cap are instanced together to reduce draw calls without changing their shape.
+The overhead view uses lighter rendering and solid, unlettered caps.
 After the fifth research/education label, the camera pulls back and returns overhead before the rotor
 indexes to the project sample. Tube six, labeled **Projects**, opens: only its
 cap lifts and moves aside. All six tubes use the same green cap, translucent

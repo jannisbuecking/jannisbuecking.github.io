@@ -1,7 +1,7 @@
 import * as THREE from "./vendor/three/three.module.js";
 import "./projects.js?v=green-particles";
 import { createResearchBench } from "./research-bench.js?v=phone-ending";
-import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE_PARTICLE_RADIUS, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=green-particles";
+import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE_PARTICLE_RADIUS, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=smooth-side";
 
 (() => {
   const section = document.getElementById("research");
@@ -34,7 +34,9 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
   let enabled = false, unavailable = false, queued = false, layoutQueued = false, linked = false;
   let width = 0, stableHeight = 0, distance = 0, current = 0;
   let ready = false, lastTime = 0, renderer, world, camera, model;
-  let canvasWidth = 0, canvasHeight = 0, bridgeProgress, sharpLabel = -1, labelFactory, bench;
+  let canvasWidth = 0, canvasHeight = 0, bridgeProgress, labelFactory, bench;
+  let baseLabels = [], sharpLabels = new Map(), labelWindow = [0, 1, 2], labelAnchor = 0, labelDirection = 1;
+  let labelJob = null, lastScrollInput = -Infinity, labelPaints = 0;
   const spin = createOpeningSpin();
   let spinState = spin.snapshot(), hasOpened = false;
   const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
@@ -98,15 +100,65 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     };
   }
   function buildModel() {
+    cancelLabelPreparation();
     if (model) { world.remove(model.assembly, model.base); model.dispose(); }
     if (bench) { world.remove(bench.group); bench.dispose(); }
     const colors = palette();
     bench = createResearchBench(colors);
     world.add(bench.group);
     labelFactory = textureFactory(colors);
-    sharpLabel = -1;
     model = createCentrifuge(colors, labelFactory);
+    baseLabels = EXPERIENCE_SLOTS.map(slot => model.tubeGroups[slot].getObjectByName("tube-label").material.map);
+    sharpLabels = new Map(); labelWindow = [0, 1, 2]; labelAnchor = 0; labelDirection = 1; labelPaints = 0;
     world.add(model.assembly, model.base);
+    scheduleLabelPreparation();
+  }
+  function cancelLabelPreparation() {
+    if (!labelJob) return;
+    if (labelJob.idle) window.cancelIdleCallback(labelJob.id);
+    else clearTimeout(labelJob.id);
+    labelJob = null;
+  }
+  function scheduleLabelPreparation() {
+    if (!enabled || unavailable || labelJob || !model) return;
+    const wanted = new Set(labelWindow);
+    if (labelWindow.every(index => sharpLabels.has(index)) && [...sharpLabels.keys()].every(index => wanted.has(index))) return;
+    const wait = 180 - (performance.now() - lastScrollInput);
+    if (wait > 0) {
+      labelJob = { idle: false, id: setTimeout(() => { labelJob = null; scheduleLabelPreparation(); }, wait) };
+      return;
+    }
+    const prepare = () => {
+      labelJob = null;
+      if (!enabled || unavailable) return;
+      if (performance.now() - lastScrollInput < 180) { scheduleLabelPreparation(); return; }
+      const desired = new Set(labelWindow);
+      for (const [index, texture] of sharpLabels) if (!desired.has(index)) {
+        model.setLabelTexture(EXPERIENCE_SLOTS[index], baseLabels[index], { retainPrevious: true });
+        model.releaseLabelTexture(texture); sharpLabels.delete(index);
+      }
+      const index = labelWindow.find(index => !sharpLabels.has(index));
+      if (index !== undefined) {
+        const texture = labelFactory("label", EXPERIENCE_SLOTS[index], index, 2);
+        renderer.initTexture(texture);
+        model.setLabelTexture(EXPERIENCE_SLOTS[index], texture, { retainPrevious: true });
+        sharpLabels.set(index, texture); labelPaints++;
+        request();
+      }
+      scheduleLabelPreparation();
+    };
+    labelJob = window.requestIdleCallback
+      ? { idle: true, id: window.requestIdleCallback(prepare, { timeout: 1500 }) }
+      : { idle: false, id: setTimeout(prepare, 32) };
+  }
+  function anticipateLabels(index) {
+    if (index !== labelAnchor) {
+      labelDirection = index > labelAnchor ? 1 : -1;
+      labelAnchor = index;
+      labelWindow = [index, index + labelDirection, index - labelDirection, index + 2 * labelDirection, index - 2 * labelDirection]
+        .filter(candidate => candidate >= 0 && candidate < EXPERIENCE_SLOTS.length).slice(0, 3);
+    }
+    scheduleLabelPreparation();
   }
   function initializeRenderer() {
     if (renderer) return true;
@@ -143,6 +195,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
   function targetProgress() { return distance ? clamp(-journey.getBoundingClientRect().top / distance) : 0; }
   function request() { if (!queued) { queued = true; requestAnimationFrame(frame); } }
   function reset() {
+    cancelLabelPreparation();
     enabled = false;
     bridgeProgress = undefined;
     section.classList.remove("is-enhanced");
@@ -183,6 +236,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     else if (wasAfter) window.scrollBy({ top: journey.getBoundingClientRect().bottom - before.bottom, behavior: "instant" });
     ready = false;
     request();
+    scheduleLabelPreparation();
   }
   function scheduleLayout() {
     if (layoutQueued) return;
@@ -210,7 +264,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
   }
   function draw(progress) {
     const pose = inspectionPose(linked ? progress : progress * .56);
-    const { tilt, cameraAngle, rotorAngle, closeUp, focus, opening, dive, molecules, handoff } = pose;
+    const { tilt, cameraAngle, rotorAngle, closeUp, readingSpread, focus, opening, dive, molecules, handoff } = pose;
     const w = visual.clientWidth, h = visual.clientHeight;
     if (!w || !h) return;
     const pixelRatio = Math.min(window.devicePixelRatio || 1, closeUp > .5 ? 3 : 1.5);
@@ -225,7 +279,11 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     const rotorHeight = Math.max(8.4, 8.55 / aspect);
     const benchHeight = Math.max(8.6, (aspect < 1.1 ? 11.4 : 17.5) / aspect);
     const overviewHeight = rotorHeight + (benchHeight - rotorHeight) * overview;
-    const labelHeight = Math.max(2.55, 1.28 / aspect);
+    // Desktop stays at one reading distance. Narrow windows widen only enough
+    // to bridge the physical gap between adjacent tubes without an empty view.
+    const readingHeightAtRest = Math.max(2.55, 1.28 / aspect);
+    const narrowPullback = Math.max(0, 3.93 / aspect - readingHeightAtRest);
+    const labelHeight = readingHeightAtRest + narrowPullback * readingSpread;
     const readingHeight = overviewHeight + (labelHeight - overviewHeight) * closeUp;
     const tubeHeight = Math.max(1.35, 1.35 / aspect);
     const focusedHeight = readingHeight + (tubeHeight - readingHeight) * focus;
@@ -268,11 +326,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
       const depth = Math.cos(angle + EXPERIENCE_SLOTS[index] * Math.PI / 3);
       if (depth > front) { front = depth; nearest = index; }
     }
-    if (closeUp > .65 && sharpLabel !== nearest) {
-      if (sharpLabel >= 0) model.setLabelTexture(EXPERIENCE_SLOTS[sharpLabel], labelFactory("label", EXPERIENCE_SLOTS[sharpLabel], sharpLabel));
-      model.setLabelTexture(EXPERIENCE_SLOTS[nearest], labelFactory("label", EXPERIENCE_SLOTS[nearest], nearest, 2));
-      sharpLabel = nearest;
-    }
+    if (pose.progress < .56) anticipateLabels(pose.progress < RESEARCH_STOPS[0] ? 0 : nearest);
     // Tube transforms remain fixed. Only the Projects cap lifts off its tube.
     renderer.render(world, camera);
     renderer.domElement.style.opacity = "1";
@@ -285,7 +339,10 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     section.dataset.spinMode = spinState.mode;
     section.dataset.benchVisible = bench.group.visible ? "1" : "0";
     section.dataset.activeTube = nearest.toString();
-    section.dataset.sharpLabel = sharpLabel.toString();
+    section.dataset.sharpLabel = sharpLabels.has(nearest) ? nearest.toString() : "-1";
+    section.dataset.labelPaints = labelPaints.toString();
+    section.dataset.labelCache = sharpLabels.size.toString();
+    section.dataset.viewHeight = viewHeight.toFixed(5);
     section.dataset.pixelRatio = pixelRatio.toString();
     section.dataset.tubeCount = model.tubeGroups.length.toString();
     section.dataset.closeup = closeUp.toFixed(3);
@@ -334,7 +391,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
   const routeHash = () => { const index = articles.findIndex(article => `#${article.id}` === location.hash); if (index >= 0) goToTube(index, true); };
   motion.addEventListener("change", refreshAnimation);
   theme.addEventListener("change", () => { if (model) { buildModel(); request(); } });
-  window.addEventListener("scroll", request, { passive: true });
+  window.addEventListener("scroll", () => { lastScrollInput = performance.now(); request(); }, { passive: true });
   window.addEventListener("resize", scheduleLayout, { passive: true });
   window.addEventListener("hashchange", routeHash);
   window.addEventListener("load", () => requestAnimationFrame(routeHash), { once: true });

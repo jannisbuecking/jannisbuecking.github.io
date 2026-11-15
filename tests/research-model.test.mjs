@@ -23,6 +23,27 @@ test("replacing a reading label releases its old texture and canvas", () => {
   assert.equal(newDisposals, 1);
 });
 
+test("prepared reading labels can be reused and evicted without disposing the fallback", () => {
+  const model = createCentrifuge(colors, () => new THREE.Texture());
+  const fallback = model.tubeGroups[0].getObjectByName("tube-label").material.map;
+  const prepared = new THREE.Texture(); prepared.image = { width: 2048, height: 3072, getContext() {} };
+  let fallbackDisposals = 0, preparedDisposals = 0;
+  fallback.addEventListener("dispose", () => fallbackDisposals++);
+  prepared.addEventListener("dispose", () => preparedDisposals++);
+  for (let pass = 0; pass < 3; pass++) {
+    model.setLabelTexture(0, prepared, { retainPrevious: true });
+    model.setLabelTexture(0, fallback, { retainPrevious: true });
+  }
+  assert.equal(fallbackDisposals + preparedDisposals, 0);
+  model.releaseLabelTexture(prepared);
+  assert.equal(preparedDisposals, 1);
+  assert.equal(prepared.image.width, 1);
+  assert.equal(model.tubeGroups[0].getObjectByName("tube-label").material.map, fallback);
+  model.dispose();
+  assert.equal(fallbackDisposals, 1);
+  assert.equal(preparedDisposals, 1);
+});
+
 test("every molecular component owns a distinct suspended particle and preserves its shape at both endpoints", () => {
   const owners = molecularOwners(13), ids = Object.values(owners).flat();
   assert.equal(ids.length, 81);
@@ -89,6 +110,7 @@ test("research, education, and projects follow the requested six-tube sequence",
         assert.ok(tube.getObjectByName(name).visible);
       }
       assert.equal(tube.getObjectByName("sample-particles").count, 100);
+      assert.equal(tube.getObjectByName("cap-rib").count, 32, "instancing preserves all cap ridges");
       assert.equal(tube.getObjectByName("sample-pellet"), undefined);
     }
   } finally { model.dispose(); }
@@ -110,6 +132,22 @@ test("continuous scrolling brings all five research and education labels forward
       assert.ok(inspectionPose(progress + .005).rotorAngle < inspectionPose(progress).rotorAngle);
     }
   } finally { model.dispose(); }
+});
+
+test("side-view passes keep their reading distance and join without stop-start motion", () => {
+  const first = RESEARCH_STOPS[0], last = RESEARCH_STOPS.at(-1);
+  for (let progress = first; progress <= last; progress += .001) {
+    assert.equal(inspectionPose(progress).closeUp, 1, "reading zoom does not pulse between tubes");
+  }
+  const step = 1e-6;
+  const velocity = (from, to) => (inspectionPose(to).rotorAngle - inspectionPose(from).rotorAngle) / (to - from);
+  for (const stop of RESEARCH_STOPS.slice(1, -1)) {
+    const before = velocity(stop - step, stop), after = velocity(stop, stop + step);
+    assert.ok(before < -1 && after < -1, "crossing a label does not stop the rotor");
+    assert.ok(Math.abs(before - after) < 1e-5, "angular velocity matches on both sides of each label");
+  }
+  assert.ok(Math.abs(velocity(first, first + step)) < 1e-6, "rotation eases in after the first reading");
+  assert.ok(Math.abs(velocity(last - step, last)) < 1e-6, "rotation eases out before returning overhead");
 });
 
 test("the opening spin is clockwise and brakes continuously without reversing", () => {

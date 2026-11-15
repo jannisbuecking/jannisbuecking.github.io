@@ -17,6 +17,9 @@ export const OPENING_SPEED = 3;
 const tau = Math.PI * 2;
 const clamp = value => Math.max(0, Math.min(1, value));
 const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
+// Join the reading passes with continuous speed and acceleration, easing only
+// into the first pass and out of the last. Pausing the scroll still pauses it.
+const enterReading = t => t * t * t * (6 + t * (-8 + 3 * t));
 
 // Negative rotation about +Y is clockwise through the overhead camera.
 // Brake with constant deceleration to the next complete revolution, never rewind.
@@ -119,23 +122,25 @@ export function inspectionPose(progress) {
   const tilt = smooth((progress - OPENING_END) / (.1792 - OPENING_END)) * (1 - rise);
   let index = 0;
   while (index < RESEARCH_STOPS.length - 2 && progress > RESEARCH_STOPS[index + 1]) index++;
-  const between = smooth((progress - RESEARCH_STOPS[index]) / (RESEARCH_STOPS[index + 1] - RESEARCH_STOPS[index]));
+  const fraction = clamp((progress - RESEARCH_STOPS[index]) / (RESEARCH_STOPS[index + 1] - RESEARCH_STOPS[index]));
+  const between = index === 0 ? enterReading(fraction)
+    : index === RESEARCH_STOPS.length - 2 ? 1 - enterReading(1 - fraction) : fraction;
   const slot = EXPERIENCE_SLOTS[index] + (EXPERIENCE_SLOTS[index + 1] - EXPERIENCE_SLOTS[index]) * between;
   const rotorAngle = -tau / 6 * (slot + (SAMPLE_SLOT - EXPERIENCE_SLOTS.at(-1)) * select);
-  const pullback = EXPERIENCE_SLOTS[index + 1] - EXPERIENCE_SLOTS[index] > 1 ? .55 : .35;
-  const closeUp = smooth((reading - .26) / .1) * (1 - pullback * Math.sin(Math.PI * between) ** 2) * (1 - rise);
+  const closeUp = smooth((reading - .26) / .1) * (1 - rise);
+  const readingSpread = Math.sin(Math.PI * between) ** 4;
   const focus = smooth((progress - .72) / .08);
   const phase = progress < .56 ? (tilt < .02 ? "top" : tilt < .98 ? "turning" : "side")
     : progress < .68 ? "return" : progress < .74 ? "sample" : progress < .80 ? "opening"
     : progress < .92 ? "diving" : progress < .96 ? "molecular" : "ribosome";
-  return { progress, tilt, cameraAngle: tilt * Math.PI / 2, rotorAngle, closeUp, focus, opening, dive, molecules, handoff, phase };
+  return { progress, tilt, cameraAngle: tilt * Math.PI / 2, rotorAngle, closeUp, readingSpread, focus, opening, dive, molecules, handoff, phase };
 }
 
 export function createCentrifuge(colors, textureFactory = () => null) {
   const assembly = new THREE.Group();
   assembly.name = "six-position-rotor";
   const tubeGroups = [];
-  const textures = [];
+  const textures = new Set();
   const materials = [];
   const standard = options => {
     const material = new THREE.MeshStandardMaterial({ roughness: .5, metalness: .12, ...options });
@@ -195,11 +200,16 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     cap.name = "removable-cap";
     tube.add(cap);
     mount(cap, new THREE.CylinderGeometry(.625, .625, .27, 64), capMaterial, 0, 1.645, 0, "cap");
+    const ribs = new THREE.InstancedMesh(new THREE.BoxGeometry(.035, .22, .025), capMaterial, 32);
+    ribs.name = "cap-rib";
+    const ribPose = new THREE.Object3D();
     for (let ridge = 0; ridge < 32; ridge++) {
       const phi = ridge * tau / 32;
-      const rib = mount(cap, new THREE.BoxGeometry(.035, .22, .025), capMaterial, Math.sin(phi) * .627, 1.645, Math.cos(phi) * .627, "cap-rib");
-      rib.rotation.y = phi;
+      ribPose.position.set(Math.sin(phi) * .627, 1.645, Math.cos(phi) * .627);
+      ribPose.rotation.y = phi; ribPose.updateMatrix();
+      ribs.setMatrixAt(ridge, ribPose.matrix);
     }
+    cap.add(ribs);
     const top = mount(cap, new THREE.CircleGeometry(.605, 64), capMaterial, 0, CAP_TOP, 0, "cap-top");
     top.rotation.x = -Math.PI / 2;
     {
@@ -218,7 +228,7 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     }
     const labelTexture = textureFactory("label", slot, researchIndex);
     if (labelTexture) {
-      textures.push(labelTexture);
+      textures.add(labelTexture);
       const labelMaterial = new THREE.MeshBasicMaterial({ map: labelTexture, toneMapped: false, side: THREE.FrontSide });
       materials.push(labelMaterial);
       // A curved label fixed to the outward-facing tube wall, never a billboard.
@@ -234,7 +244,7 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     assembly.traverse(object => object.geometry?.dispose());
     base.traverse(object => object.geometry?.dispose());
     materials.forEach(material => material.dispose());
-    textures.forEach(texture => texture.dispose());
+    [...textures].forEach(releaseLabelTexture);
   }
   function openSample(amount) {
     const cap = tubeGroups[SAMPLE_SLOT].getObjectByName("removable-cap");
@@ -249,15 +259,18 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     // Reshaping starts after this transfer, avoiding dimming or duplicate trails.
     sample.getObjectByName("sample-particles").material.opacity = molecularAmount < 1 ? 1 : 0;
   }
-  function setLabelTexture(slot, texture) {
+  function releaseLabelTexture(texture) {
+    if (!textures.delete(texture)) return;
+    texture.dispose();
+    if (texture.image?.getContext) { texture.image.width = 1; texture.image.height = 1; }
+  }
+  function setLabelTexture(slot, texture, { retainPrevious = false } = {}) {
     const material = tubeGroups[slot].getObjectByName("tube-label").material;
     const previous = material.map;
-    const index = textures.indexOf(previous);
-    if (index >= 0) textures.splice(index, 1);
-    previous?.dispose();
-    if (previous?.image?.getContext) { previous.image.width = 1; previous.image.height = 1; }
+    if (previous === texture) return;
+    if (!retainPrevious) releaseLabelTexture(previous);
     material.map = texture;
-    textures.push(texture);
+    textures.add(texture);
   }
-  return { assembly, base, tubeGroups, openSample, immerseSample, setLabelTexture, dispose };
+  return { assembly, base, tubeGroups, openSample, immerseSample, setLabelTexture, releaseLabelTexture, dispose };
 }
