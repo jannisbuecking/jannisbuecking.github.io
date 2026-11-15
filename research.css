@@ -31,7 +31,8 @@
   .research-tubes { grid-template-columns: 1fr; gap: 1rem; }
   .research-heading { gap: .75rem; }
   .research-heading h1 { font-size: 1.5rem; }
-  .research-experience.is-enhanced .research-stage { bottom: 98px; }
+  .research-experience.is-enhanced .research-heading { padding-bottom: 12px; background: var(--background); }
+  .research-experience.is-enhanced .research-stage { top: 12px; bottom: 76px; }
   .research-experience.is-enhanced .research-controls { bottom: 20px; }
   .research-scroll-cue { font-size: .65rem; }
 }

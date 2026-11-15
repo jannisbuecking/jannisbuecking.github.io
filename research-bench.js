@@ -1,5 +1,11 @@
 import * as THREE from './vendor/three/three.module.js';
 
+export const isPortraitBench = aspect => aspect < 1.1;
+export function researchOverviewHeight(aspect) {
+  return isPortraitBench(aspect) ? Math.max(14.4, 8.95 / aspect)
+    : Math.max(8.6, 17.5 / aspect);
+}
+
 // Tools lie on the same work surface as the rotor. They never rotate with it.
 export function createResearchBench(colors) {
   const group = new THREE.Group(); group.name = 'research-and-clinic-bench';
@@ -39,10 +45,12 @@ export function createResearchBench(colors) {
   }
   const lab = station('laboratory-tools');
   const clinic = station('clinical-instruments');
+  const pipettes = [], shadows = [];
 
   // Three adjustable micropipettes: plunger, finger rest, body, display, shaft, tip.
   [-.85, 0, .85].forEach((x, index) => {
     const pipette = new THREE.Group(); pipette.name = 'micropipette';
+    pipettes.push(pipette);
     pipette.position.set(x, 1 + (index === 1 ? .14 : 0), .18); pipette.rotation.z = (index - 1) * -.09; lab.add(pipette);
     mount(pipette, new THREE.CapsuleGeometry(.16, 1.15, 6, 16), white, 0, .65, 0);
     box(pipette, .48, .12, .22, white, .06, 1.28, 0);
@@ -122,13 +130,39 @@ export function createResearchBench(colors) {
       const shade = material('#24382a', { transparent: true, opacity: .012, depthWrite: false, metalness: 0 });
       const shadow = mount(frame, new THREE.CircleGeometry(1, 40), shade, 0, -.4, -.02 - layer * .001);
       shadow.scale.set(1.4 + layer * .07, 3.12 + layer * .07, 1);
+      shadows.push({ shadow, layer });
     }
   }
+  const originalPoses = [...lab.children, ...clinic.children].map(object => ({ object, position: object.position.clone(), rotation: object.rotation.clone(), scale: object.scale.clone() }));
+  let layoutMode;
   function update(aspect) {
-    const compact = aspect < 1.1;
-    lab.position.x = compact ? -3.9 : -6.05; clinic.position.x = compact ? 3.9 : 6.05;
-    lab.position.z = compact ? -4.7 : 0; clinic.position.z = compact ? 4.7 : 0;
-    lab.scale.setScalar(compact ? .65 : 1); clinic.scale.setScalar(compact ? .65 : 1);
+    const portrait = isPortraitBench(aspect);
+    const mode = portrait ? 'portrait' : 'wide';
+    if (mode === layoutMode) return;
+    layoutMode = mode;
+    for (const { object, position, rotation, scale } of originalPoses) { object.position.copy(position); object.rotation.copy(rotation); object.scale.copy(scale); }
+    for (const { shadow } of shadows) shadow.material.color.set(portrait ? '#0b1a12' : '#24382a');
+    if (portrait) {
+      lab.position.set(0, -2.29, -5.4); clinic.position.set(0, -2.29, 5.35);
+      lab.scale.setScalar(1); clinic.scale.setScalar(1);
+      pipettes.forEach((pipette, index) => {
+        pipette.position.set(-1.75, .65 - index * .65, .18);
+        pipette.rotation.z = Math.PI / 2 + (index - 1) * .025; pipette.scale.setScalar(.9);
+      });
+      plate.position.set(1.35, .05, 0); plate.scale.setScalar(.9);
+      culture.position.set(3.15, 0, .02); culture.scale.setScalar(.85);
+      stethoscope.position.set(-1.75, 0, 0); stethoscope.rotation.z = Math.PI / 2; stethoscope.scale.setScalar(.72);
+      hammer.position.set(1.25, 0, .14); hammer.rotation.z = -.04; hammer.scale.setScalar(.6);
+      fork.position.set(2.3, .05, .12); fork.rotation.z = -.06; fork.scale.setScalar(.6);
+      pen.position.set(3.25, -.02, .1); pen.rotation.z = -.13; pen.scale.setScalar(.9);
+      for (const { shadow, layer } of shadows) {
+        shadow.position.y = 0; shadow.scale.set(3.9 + layer * .06, 1.13 + layer * .04, 1);
+      }
+      return;
+    }
+    lab.position.x = -6.05; clinic.position.x = 6.05;
+    lab.position.z = clinic.position.z = 0;
+    lab.scale.setScalar(1); clinic.scale.setScalar(1);
   }
   function dispose() {
     group.traverse(object => object.geometry?.dispose());

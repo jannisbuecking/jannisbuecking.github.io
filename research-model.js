@@ -155,6 +155,8 @@ export function createCentrifuge(colors, textureFactory = () => null) {
   const plastic = standard({ color: colors.paper, metalness: 0, roughness: .32, transparent: true, opacity: .42, depthWrite: false, side: THREE.DoubleSide });
   const researchCap = standard({ color: colors.accent, roughness: .7, metalness: 0 });
   const researchLiquid = standard({ color: colors.accent, transparent: true, opacity: .45, metalness: 0, depthWrite: false });
+  const capBevels = [];
+  const metalColor = new THREE.Color(colors.metal), capColor = new THREE.Color(colors.accent);
   const mount = (parent, geometry, material, x = 0, y = 0, z = 0, name = "") => {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z);
@@ -174,6 +176,8 @@ export function createCentrifuge(colors, textureFactory = () => null) {
   }
   const plate = mount(assembly, new THREE.ExtrudeGeometry(plateShape, { depth: .16, bevelEnabled: true, bevelThickness: .025, bevelSize: .025, bevelSegments: 2, curveSegments: 48 }), metal, 0, 1.04, 0, "perforated-rotor-plate");
   plate.rotation.x = -Math.PI / 2;
+  const mobileRim = mount(assembly, new THREE.TorusGeometry(3.64, .025, 12, 144), standard({ color: '#b4c4b9', metalness: .65, roughness: .3, transparent: true, opacity: .55 }), 0, 1.228, 0, 'mobile-rotor-rim');
+  mobileRim.rotation.x = -Math.PI / 2; mobileRim.visible = false;
   mount(assembly, new THREE.CylinderGeometry(.38, .38, .23, 48), edge, 0, 1.37, 0, "hub-nut");
   mount(assembly, new THREE.CylinderGeometry(.2, .2, 3.25, 32), edge, 0, -.43, 0, "spindle");
 
@@ -215,6 +219,8 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     cap.add(ribs);
     const top = mount(cap, new THREE.CircleGeometry(.605, 64), capMaterial, 0, CAP_TOP, 0, "cap-top");
     top.rotation.x = -Math.PI / 2;
+    const bevel = mount(cap, new THREE.TorusGeometry(.57, .035, 12, 64), capMaterial, 0, CAP_TOP + .003, 0, 'cap-bevel');
+    bevel.rotation.x = -Math.PI / 2; bevel.visible = false; capBevels.push(bevel);
     {
       // Flat green circles match the projected circles used by the RNA renderer.
       const particleMaterial = new THREE.MeshBasicMaterial({ color: colors.accent, toneMapped: false, transparent: true });
@@ -242,6 +248,20 @@ export function createCentrifuge(colors, textureFactory = () => null) {
   base.name = "stationary-stand";
   mount(base, new THREE.CylinderGeometry(3.9, 3.9, .3, 96), metal, 0, -2.13, 0, "base");
   mount(base, new THREE.CylinderGeometry(3.92, 3.92, .07, 96), edge, 0, -2.29, 0, "base-rim");
+  const contact = new THREE.Group(); contact.name = 'mobile-contact-shadow'; base.add(contact); contact.visible = false;
+  for (let layer = 0; layer < 5; layer++) {
+    const shade = mount(contact, new THREE.CircleGeometry(4.01 + layer * .04, 96), new THREE.MeshBasicMaterial({ color: '#08170f', transparent: true, opacity: .028, depthWrite: false }), 0, -2.34 - layer * .001, 0);
+    shade.rotation.x = -Math.PI / 2; materials.push(shade.material);
+  }
+
+  function setMobilePresentation(enabled) {
+    mobileRim.visible = contact.visible = enabled;
+    capBevels.forEach(bevel => { bevel.visible = enabled; });
+    metal.color.copy(metalColor); researchCap.color.copy(capColor);
+    if (enabled) { metal.color.lerp(new THREE.Color('#718b7c'), .14); researchCap.color.lerp(new THREE.Color('#2c7356'), .25); }
+    researchCap.roughness = enabled ? .43 : .7;
+    researchCap.metalness = enabled ? .04 : 0;
+  }
 
   function dispose() {
     assembly.traverse(object => object.geometry?.dispose());
@@ -275,5 +295,5 @@ export function createCentrifuge(colors, textureFactory = () => null) {
     material.map = texture;
     textures.add(texture);
   }
-  return { assembly, base, tubeGroups, openSample, immerseSample, setLabelTexture, releaseLabelTexture, dispose };
+  return { assembly, base, tubeGroups, openSample, immerseSample, setLabelTexture, releaseLabelTexture, setMobilePresentation, dispose };
 }

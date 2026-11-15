@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "../vendor/three/three.module.js";
-import { createResearchBench } from "../research-bench.js";
+import { createResearchBench, isPortraitBench, researchOverviewHeight } from "../research-bench.js";
 import { createCentrifuge, inspectionPose, createOpeningSpin, OPENING_END, OPENING_SPEED, OPENING_SECTOR, molecularPose, molecularOwners, sampleParticle, SAMPLE_PARTICLE_RADIUS, unfoldPoint, samplePolygon, circleToShape, EXPERIENCE_SLOTS, SAMPLE_SLOT, RESEARCH_STOPS } from "../research-model.js";
 
 const colors = { metal: "#d9ded5", rim: "#586359", paper: "#fdfcf8", accent: "#28694b", balance: "#e7eae3" };
@@ -191,19 +191,24 @@ test("identical overhead caps permit a short, visually continuous opening brake"
   }
 });
 
-test("the top-view tools stay stationary, on the correct sides, and clear of the tubes", () => {
+test("responsive workbench tools stay stationary, fit the viewport, and remain clear of the tubes", () => {
   const bench = createResearchBench(colors);
   try {
-    for (const aspect of [1512 / 820, 390 / 670]) {
+    for (const aspect of [1512 / 820, 390 / 756, 430 / 844, 320 / 480, 768 / 880, 1512 / 820]) {
       bench.update(aspect); bench.group.updateMatrixWorld(true);
-      assert.ok(bench.lab.position.x < 0 && bench.clinic.position.x > 0);
+      if (isPortraitBench(aspect)) {
+        assert.equal(bench.lab.position.x, 0); assert.equal(bench.clinic.position.x, 0);
+        assert.ok(bench.lab.position.z < -3.92 && bench.clinic.position.z > 3.92, "mobile tools occupy bands above and below the rotor");
+        assert.ok(bench.lab.getObjectsByProperty("name", "micropipette").every(pipette => Math.abs(pipette.rotation.z - Math.PI / 2) < .03), "mobile pipettes lie horizontally");
+      } else assert.ok(bench.lab.position.x < 0 && bench.clinic.position.x > 0);
       assert.equal(bench.lab.getObjectsByProperty("name", "micropipette").length, 3);
       assert.equal(bench.lab.getObjectsByProperty("name", "culture-well").length, 6);
       assert.equal(bench.lab.getObjectByName("plate-frame").geometry.parameters.shapes.holes.length, 6);
       assert.equal(bench.lab.getObjectByName("bacterial-colonies").count, 64);
       for (const name of ["neurology-reflex-hammer", "neurology-tuning-fork", "neurological-penlight", "stethoscope"]) assert.ok(bench.clinic.getObjectByName(name));
       const matrices = [bench.lab.matrix.clone(), bench.clinic.matrix.clone()];
-      const height = Math.max(8.6, (aspect < 1.1 ? 11.4 : 17.5) / aspect);
+      const height = researchOverviewHeight(aspect);
+      if (aspect < .6) assert.ok(7.84 / (height * aspect) > .85 && 7.84 / (height * aspect) < .9, "the centrifuge fills 85–90% of a tall phone’s width");
       bench.group.traverse(object => {
         if (!object.geometry || object.geometry.type === "CircleGeometry") return;
         const positions = object.geometry.attributes.position;
@@ -227,6 +232,27 @@ test("the top-view tools stay stationary, on the correct sides, and clear of the
       }
     }
   } finally { bench.dispose(); }
+});
+
+test("mobile depth details preserve tube poses and restore the desktop materials", () => {
+  const model = createCentrifuge(colors);
+  try {
+    const cap = model.tubeGroups[0].getObjectByName("cap-top").material;
+    const color = cap.color.clone(), roughness = cap.roughness;
+    const positions = model.tubeGroups.map(tube => tube.position.clone());
+    model.setMobilePresentation(true);
+    assert.ok(model.base.getObjectByName("mobile-contact-shadow").visible);
+    assert.ok(model.assembly.getObjectByName("mobile-rotor-rim").visible);
+    model.tubeGroups.forEach((tube, index) => {
+      assert.ok(tube.position.equals(positions[index]));
+      assert.ok(tube.getObjectByName("cap-bevel").visible);
+      assert.equal(tube.getObjectByName("cap-top").material, cap);
+    });
+    model.setMobilePresentation(false);
+    assert.ok(cap.color.equals(color)); assert.equal(cap.roughness, roughness);
+    assert.ok(!model.base.getObjectByName("mobile-contact-shadow").visible);
+    assert.ok(model.tubeGroups.every(tube => !tube.getObjectByName("cap-bevel").visible));
+  } finally { model.dispose(); }
 });
 
 test("camera tilt never rotates the rotor and subsequent indexing preserves all tube poses", () => {

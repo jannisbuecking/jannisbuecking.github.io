@@ -120,8 +120,12 @@ culture plate with visible media, and a bacterial agar plate with 64 raised crea
 colonies. On the right are a ring-headed reflex hammer, tuning fork, penlight, and
 stethoscope. All equipment stays fixed on the work surface at its original
 opacity throughout scrolling. The camera naturally moves past it; no tools fade
-or disappear. Compact screens place them diagonally left and right to keep all
-six tubes visible.
+or disappear. Portrait screens use a vertical workbench: three horizontal
+pipettes, the six-well plate, and culture dish above the rotor, with the
+stethoscope and neurological tools in a compact band below. On tall phones the
+centrifuge occupies about 88% of the width. The camera moves closer as it lowers,
+with the tools fixed in place. Mobile rim highlights, rounded cap edges, satin
+green caps, and soft contact shading add depth; desktop placement is retained.
 The opening rotor spins clockwise at 3 radians per second (about one revolution
 every 2.1 seconds). The first scroll applies constant deceleration, finishing at
 the next equivalent 60° arrangement without reversing or accelerating. All six

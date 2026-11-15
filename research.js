@@ -1,7 +1,7 @@
 import * as THREE from "./vendor/three/three.module.js";
 import "./projects.js?v=green-particles";
-import { createResearchBench } from "./research-bench.js?v=phone-ending";
-import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE_PARTICLE_RADIUS, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=responsive-scroll";
+import { createResearchBench, isPortraitBench, researchOverviewHeight } from "./research-bench.js?v=portrait-bench";
+import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE_PARTICLE_RADIUS, createOpeningSpin, OPENING_END, EXPERIENCE_SLOTS, SAMPLE_SLOT, SLOT_RADIUS, RESEARCH_STOPS } from "./research-model.js?v=portrait-bench";
 
 (() => {
   const section = document.getElementById("research");
@@ -40,6 +40,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
   let baseLabels = [], sharpLabels = new Map(), labelWindow = [0], labelAnchor = 0, labelDirection = 1;
   let labelJob = null, lastScrollInput = -Infinity, labelPaints = 0;
   let readingQuality = false, qualityTimer;
+  let ambientLight, keyLight, fillLight, portraitLook;
   const spin = createOpeningSpin();
   let spinState = spin.snapshot(), hasOpened = false;
   const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
@@ -111,6 +112,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     world.add(bench.group);
     labelFactory = textureFactory(colors);
     model = createCentrifuge(colors, labelFactory);
+    portraitLook = undefined;
     baseLabels = EXPERIENCE_SLOTS.map(slot => model.tubeGroups[slot].getObjectByName("tube-label").material.map);
     sharpLabels = new Map(); labelWindow = [0]; labelAnchor = 0; labelDirection = 1; labelPaints = 0;
     world.add(model.assembly, model.base);
@@ -186,13 +188,9 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
       renderer.domElement.setAttribute("aria-describedby", articles.map(article => article.id).join(" "));
       visual.append(renderer.domElement);
       world = new THREE.Scene();
-      world.add(new THREE.HemisphereLight(0xffffff, 0x8d9a90, 2.3));
-      const key = new THREE.DirectionalLight(0xffffff, 3.3);
-      key.position.set(5, 9, 7);
-      world.add(key);
-      const fill = new THREE.DirectionalLight(0xffffff, 1.2);
-      fill.position.set(-6, 4, -3);
-      world.add(fill);
+      ambientLight = new THREE.HemisphereLight(0xffffff, 0x8d9a90, 2.3); world.add(ambientLight);
+      keyLight = new THREE.DirectionalLight(0xffffff, 3.3); keyLight.position.set(5, 9, 7); world.add(keyLight);
+      fillLight = new THREE.DirectionalLight(0xffffff, 1.2); fillLight.position.set(-6, 4, -3); world.add(fillLight);
       camera = new THREE.OrthographicCamera(-5, 5, 5, -5, .005, 100);
       buildModel();
       renderer.domElement.addEventListener("webglcontextlost", event => { event.preventDefault(); unavailable = true; refreshAnimation(); });
@@ -232,7 +230,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     stableHeight = sizeReference.getBoundingClientRect().height;
     if (motion.matches || unavailable) { heading.style.opacity = "1"; return; }
     const headingHeight = heading.getBoundingClientRect().height + 24;
-    const stageHeight = stableHeight - headingHeight - (width <= 760 ? 98 : 76);
+    const stageHeight = stableHeight - (width <= 760 ? 12 : headingHeight) - 76;
     if (width < 260 || stageHeight < 440 || !initializeRenderer()) { heading.style.opacity = "1"; return; }
     enabled = true;
     linked = Boolean(projects?.classList.contains("is-enhanced"));
@@ -292,14 +290,21 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
       canvasWidth = w; canvasHeight = h;
     }
     const aspect = w / h;
+    const portrait = isPortraitBench(aspect);
+    if (portraitLook !== portrait) {
+      portraitLook = portrait; model.setMobilePresentation(portrait);
+      ambientLight.intensity = portrait ? 1.75 : 2.3;
+      keyLight.intensity = portrait ? 4.2 : 3.3; keyLight.position.set(...(portrait ? [-5, 10, -6] : [5, 9, 7]));
+      fillLight.intensity = portrait ? 1 : 1.2; fillLight.position.set(...(portrait ? [5, 5, 4] : [-6, 4, -3]));
+    }
     const overview = (1 - smooth(tilt / .72)) * (1 - smooth(focus / .2));
     bench.update(aspect);
     const rotorHeight = Math.max(8.4, 8.55 / aspect);
-    const benchHeight = Math.max(8.6, (aspect < 1.1 ? 11.4 : 17.5) / aspect);
+    const benchHeight = researchOverviewHeight(aspect);
     const overviewHeight = rotorHeight + (benchHeight - rotorHeight) * overview;
     // Desktop stays at one reading distance. Narrow windows widen only enough
     // to bridge the physical gap between adjacent tubes without an empty view.
-    const readingHeightAtRest = Math.max(2.55, 1.28 / aspect);
+    const readingHeightAtRest = Math.max(portrait ? 2.85 : 2.55, 1.28 / aspect);
     const narrowPullback = Math.max(0, 3.93 / aspect - readingHeightAtRest);
     const labelHeight = readingHeightAtRest + narrowPullback * readingSpread;
     const readingHeight = overviewHeight + (labelHeight - overviewHeight) * closeUp;
@@ -312,8 +317,10 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     camera.top = viewHeight / 2;
     camera.bottom = -viewHeight / 2;
     camera.zoom = 1;
-    const targetY = (.1 + (.02 - .1) * closeUp) * (1 - dive) - .86 * dive;
-    const targetZ = (SLOT_RADIUS + .487) * closeUp * (1 - focus) + SLOT_RADIUS * focus;
+    const readingTargetY = portrait ? .22 : .02;
+    const targetY = (.1 + (readingTargetY - .1) * closeUp) * (1 - dive) - .86 * dive;
+    const targetZ = (SLOT_RADIUS + .487) * closeUp * (1 - focus) + SLOT_RADIUS * focus
+      + (portrait ? .45 * overview * (1 - closeUp) * (1 - focus) : 0);
     // Descend through the liquid surface and stop above its suspended particles.
     const cameraDistance = 18 * (1 - dive) + .24 * dive;
     camera.position.set(0, targetY + Math.cos(cameraAngle) * cameraDistance, targetZ + Math.sin(cameraAngle) * cameraDistance);
@@ -357,6 +364,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     section.dataset.spinAngle = spinState.angle.toFixed(5);
     section.dataset.spinMode = spinState.mode;
     section.dataset.benchVisible = bench.group.visible ? "1" : "0";
+    section.dataset.benchLayout = portrait ? "portrait" : "wide";
     section.dataset.activeTube = nearest.toString();
     section.dataset.sharpLabel = sharpLabels.has(nearest) ? nearest.toString() : "-1";
     section.dataset.labelPaints = labelPaints.toString();
