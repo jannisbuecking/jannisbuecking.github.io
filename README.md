@@ -203,8 +203,11 @@ They also run before each deployment.
 The Clinic is integrated immediately after the science
 projects. The RNA renderer settles at its stop codon and freezes its current
 geometry. `clinical-snapshot.js` paints the actual SVG, bases, project card, and
-scene text into a canvas used by the room's monitor. The monitor camera and image
-padding match the outgoing viewport, including portrait screens. A short overlap
+scene text into a canvas used by the room's monitor. The capture expands to
+the monitor’s landscape aspect ratio and reveals the scene beyond the phone’s
+horizontal crop, so the adjacent project card and mRNA fit on portrait screens.
+The newly revealed margins end between complete bases. Its centre retains the
+exact outgoing viewport crop. A short overlap
 holds that frame steady before the camera pulls back to reveal the room.
 
 The desk has the computer on the left, one small clipboard in the middle, and

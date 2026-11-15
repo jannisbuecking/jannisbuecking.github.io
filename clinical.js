@@ -2,7 +2,7 @@ import * as THREE from './vendor/three/three.module.js';
 import './projects.js?v=green-particles';
 import { createClinicalRoom, READING_STOPS, CLINICAL_FRACTION, CLINICAL_SCROLL_LENGTH, PHONE_STOP, clinicalScrollOffset, clinicalScrollProgress, smooth } from './previews/clinical-room-model.js?v=responsive-scroll';
 import { createClinicalTextures } from './previews/clinical-textures.js?v=five-clinical';
-import { captureRNAScene } from './clinical-snapshot.js?v=full-clinical';
+import { captureRNAScene } from './clinical-snapshot.js?v=monitor-fit';
 import { experiences } from './previews/clinical-data.js?v=five-clinical';
 import { createDeskPhone } from './desk-phone.js?v=responsive-scroll';
 
@@ -99,7 +99,7 @@ function ensureSnapshot() {
     capturePending = false;
     if (!enabled || journey.getBoundingClientRect().top > 1) return;
     try {
-      const snapshot = captureRNAScene(sourceScene);
+      const snapshot = captureRNAScene(sourceScene, { aspect: room.entrance.width / room.entrance.height });
       textures.setScreen(snapshot, getComputedStyle(document.documentElement).getPropertyValue('--background').trim());
       snapshotReady = true; section.dataset.snapshot = 'ready'; request();
     } catch {

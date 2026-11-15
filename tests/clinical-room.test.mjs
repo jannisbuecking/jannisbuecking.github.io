@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.js';
+import { monitorCaptureFrame } from '../clinical-snapshot.js';
 import { createClinicalRoom, clipboardPagePose, PAGE_LENGTH, BINDING_HEIGHT, BINDING_Y, READING_STOPS, PAGE_TURN_STARTS, PAGE_TURN_DURATION, CLINICAL_FRACTION, CLINICAL_SCROLL_LENGTH, clinicalScrollOffset, clinicalScrollProgress } from '../previews/clinical-room-model.js';
 
 test('clipboard scrolling takes 25 percent less distance without speeding up the room or phone', () => {
@@ -190,16 +191,21 @@ for (const variant of ['laboratory', 'consultation']) {
   });
 }
 
-test('integrated monitor matches the exact outgoing viewport with its image contained on the screen', () => {
+test('wide monitor capture preserves the outgoing viewport crop on portrait and desktop screens', () => {
   const room = createClinicalRoom('consultation', undefined, { matchEntrance: true });
   try {
-    for (const aspect of [1.104, 342 / 844, 1.8]) {
+    for (const aspect of [1.104, 342 / 844, 390 / 844, 430 / 932, 414 / 718, 1.8, 2.3]) {
       const view = room.pose(0, aspect), camera = new THREE.PerspectiveCamera(42, aspect, .01, 180);
       camera.position.copy(view.position); camera.up.copy(view.up); camera.lookAt(view.target); camera.updateMatrixWorld(true);
-      const w = Math.min(room.entrance.width, room.entrance.height * aspect), h = w / aspect;
-      for (const x of [-w / 2, w / 2]) for (const y of [-h / 2, h / 2]) {
-        const point = room.entrance.object.localToWorld(new THREE.Vector3(x, y, 0)).project(camera);
-        assert.ok(Math.abs(Math.abs(point.x) - 1) < 1e-9 && Math.abs(Math.abs(point.y) - 1) < 1e-9, 'the captured RNA image fills the viewport without shifting or stretching');
+      const width = aspect * 844, height = 844;
+      const frame = monitorCaptureFrame(width, height, room.entrance.width / room.entrance.height);
+      assert.ok(Math.abs(frame.width / frame.height - room.entrance.width / room.entrance.height) < 1e-12, 'the expanded scene fills the monitor without pillarboxing');
+      assert.ok(frame.left <= 0 && frame.top <= 0 && frame.left + frame.width >= width && frame.top + frame.height >= height);
+      for (const x of [0, width]) for (const y of [0, height]) {
+        const monitorX = ((x - frame.left) / frame.width - .5) * room.entrance.width;
+        const monitorY = (.5 - (y - frame.top) / frame.height) * room.entrance.height;
+        const point = room.entrance.object.localToWorld(new THREE.Vector3(monitorX, monitorY, 0)).project(camera);
+        assert.ok(Math.abs(point.x - (x ? 1 : -1)) < 1e-9 && Math.abs(point.y - (y ? -1 : 1)) < 1e-9, 'the central crop matches the outgoing view without shifting or stretching');
       }
     }
   } finally { room.dispose(); }

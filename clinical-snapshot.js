@@ -1,12 +1,32 @@
 // Paint the live SVG/HTML RNA scene directly into a canvas. No external images,
 // HTML screenshots, or network resources are needed for the monitor handoff.
-export function captureRNAScene(scene) {
-  const bounds = scene.getBoundingClientRect();
-  const canvas = document.createElement('canvas'), ratio = 2;
+export function monitorCaptureFrame(width, height, aspect = width / height) {
+  const expandedWidth = Math.max(width, height * aspect);
+  const expandedHeight = Math.max(height, width / aspect);
+  return { width: expandedWidth, height: expandedHeight, left: (width - expandedWidth) / 2, top: (height - expandedHeight) / 2 };
+}
+
+export function captureRNAScene(scene, { aspect } = {}) {
+  const viewport = scene.getBoundingClientRect();
+  const frame = monitorCaptureFrame(viewport.width, viewport.height, aspect);
+  const bounds = { width: frame.width, height: frame.height, left: viewport.left + frame.left, top: viewport.top + frame.top };
+  bounds.right = bounds.left + bounds.width; bounds.bottom = bounds.top + bounds.height;
+  // Match the monitor texture's resolution without allocating a huge portrait
+  // screenshot. The original viewport remains exactly centred in the image.
+  const canvas = document.createElement('canvas'), ratio = aspect ? Math.min(2, 2048 / bounds.width) : 2;
   canvas.width = Math.round(bounds.width * ratio); canvas.height = Math.round(bounds.height * ratio);
   const ctx = canvas.getContext('2d'); ctx.scale(ratio, ratio);
   const background = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
   ctx.fillStyle = background; ctx.fillRect(0, 0, bounds.width, bounds.height);
+  let stageLeft = aspect ? bounds.left : viewport.left;
+  let stageRight = aspect ? bounds.right : viewport.right;
+  if (aspect) for (const element of scene.querySelectorAll('.project,.nucleotide-mark')) {
+    const rect = element.getBoundingClientRect();
+    // Newly revealed margins end between complete bases/cards. Never trim the
+    // original viewport: it must remain identical at the start of the handoff.
+    if (rect.left < stageLeft && rect.right > stageLeft && rect.right <= viewport.left) stageLeft = Math.min(viewport.left, rect.right + 12);
+    if (rect.left < stageRight && rect.right > stageRight && rect.left >= viewport.right) stageRight = Math.max(viewport.right, rect.left - 12);
+  }
   function opacity(element) {
     let alpha = 1;
     for (let node = element; node && node !== scene.parentElement; node = node.parentElement) {
@@ -18,7 +38,8 @@ export function captureRNAScene(scene) {
   }
   function stageClip() {
     const rect = scene.querySelector('.rna-stage').getBoundingClientRect();
-    ctx.beginPath(); ctx.rect(rect.left - bounds.left, rect.top - bounds.top, rect.width, rect.height); ctx.clip();
+    // Once pulled back, reveal the scene beyond the phone's horizontal crop.
+    ctx.beginPath(); ctx.rect(aspect ? stageLeft - bounds.left : rect.left - bounds.left, rect.top - bounds.top, aspect ? stageRight - stageLeft : rect.width, rect.height); ctx.clip();
   }
   function drawSVG(svg) {
     ctx.save(); stageClip();
