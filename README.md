@@ -145,16 +145,18 @@ and end of the reading sequence. Narrow viewports widen just enough to keep
 adjacent tubes visible during the handover. There is no separate
 description panel. The same source text remains available to screen readers
 and in the automatic static fallback. Reading labels use 2048 × 3072 textures
-and up to the display’s native 3× pixel density. Framebuffer resolution stays
-fixed during the first camera tilt and becomes sharper after the first reading
-settles. Label preparation pauses during camera motion and when offscreen.
+and up to the display’s native 3× pixel density. Phones up to 760 CSS pixels wide
+use native density, capped at 3×, from the opening view through the camera tilt
+and reading sequence. Desktop keeps its lighter opening buffer and becomes
+sharper after the first reading settles. Neither changes framebuffer resolution
+during the first camera tilt. Label preparation pauses during camera motion and when offscreen.
 The opening prepares just the first sharp label. In the side view, up to three
 reading textures are prepared and uploaded ahead of time during idle periods,
 after scrolling pauses. Tube changes do not paint labels or upload replacement textures inside
 the animation frame. Eviction releases both GPU textures and their large canvas
 buffers while retaining the lightweight fallback labels. The 32 ridges on each
 cap are instanced together to reduce draw calls without changing their shape.
-The overhead view uses lighter rendering and solid, unlettered caps.
+The overhead view uses solid, unlettered caps.
 After the fifth research/education label, the camera pulls back and returns overhead before the rotor
 indexes to the project sample. Tube six, labeled **Projects**, opens: only its
 cap lifts and moves aside. All six tubes use the same green cap, translucent

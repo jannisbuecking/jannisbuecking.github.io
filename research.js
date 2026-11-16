@@ -180,7 +180,7 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     if (renderer) return true;
     try {
       renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "low-power" });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width <= 760 ? 3 : 1.5));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.1;
@@ -288,8 +288,9 @@ import { createCentrifuge, inspectionPose, molecularPose, sampleParticle, SAMPLE
     if (pose.progress < OPENING_END) readingQuality = false;
     if (pose.progress >= firstReadingReady && spinState.mode === "settled"
       && Math.abs(current - targetProgress()) < .00003 && performance.now() - lastScrollInput > 180) readingQuality = true;
-    // Allocate the sharper framebuffer only after the first reading settles.
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, readingQuality ? 3 : 1.5);
+    // Phones use native density from the opening frame and keep it through the
+    // camera move. Desktop allocates its sharper buffer after reading settles.
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, width <= 760 || readingQuality ? 3 : 1.5);
     if (renderer.getPixelRatio() !== pixelRatio) { renderer.setPixelRatio(pixelRatio); canvasWidth = 0; }
     if (w !== canvasWidth || h !== canvasHeight) {
       renderer.setSize(w, h, false);
