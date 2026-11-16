@@ -36,7 +36,7 @@ function initialize() {
   if (renderer) return true;
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'low-power' });
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, width <= 760 ? 3 : 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.2;
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.append(renderer.domElement);
@@ -76,7 +76,12 @@ function layout() {
   projects.style.setProperty('--clinical-viewport', `${height}px`);
   distance = Math.max(3600, height * (6.4 + Math.max(0, entries.length - 3))) / CLINICAL_FRACTION * CLINICAL_SCROLL_LENGTH;
   journey.style.height = `${height + distance}px`;
+  // Keep the phone's native density throughout the room, page turns, and phone
+  // approach. Only layout changes can resize the rendering buffer.
+  const pixelRatio = Math.min(devicePixelRatio || 1, width <= 760 ? 3 : 1.5);
+  if (renderer.getPixelRatio() !== pixelRatio) renderer.setPixelRatio(pixelRatio);
   renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix();
+  section.dataset.pixelRatio = String(pixelRatio);
   const background = getComputedStyle(document.documentElement).getPropertyValue('--background').trim(); renderer.setClearColor(background);
   if (wasPinned) scrollTo({ top: scrollY + journey.getBoundingClientRect().top + clinicalScrollOffset(previous) * distance, behavior: 'instant' });
   else if (wasAfter) scrollBy({ top: journey.getBoundingClientRect().bottom - before.bottom, behavior: 'instant' });

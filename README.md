@@ -225,7 +225,10 @@ a smaller iPhone on the right. Its rear surface provides a landing area for the
 turned sheets while its front edge stays in place. All items and pages fit on it.
 The tabletop and inset wooden apron meet without overlapping faces to prevent
 flickering; the camera also uses a larger near plane for better depth precision.
-The Clinic overview stays 14% closer to the desk. Scrolling holds the camera on
+The Clinic overview stays 14% closer to the desk. On phones up to 760 CSS pixels
+wide, the room and document text render at native pixel density, capped at 3×,
+throughout the page turns and phone
+approach. Desktop retains its 1.5× rendering cap. Scrolling holds the camera on
 the clipboard and turns its five sheets over the top clip: UT Southwestern,
 Great Ormond Street, Zomba (Pediatrics), University Medicine Oldenburg (Neurology),
 then John Radcliffe Hospital, Oxford University (Neurology). Two raised binding
