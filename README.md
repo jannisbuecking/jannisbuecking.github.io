@@ -3,8 +3,8 @@
 Website: **https://jannisbuecking.github.io/**
 
 A small static website hosted on GitHub Pages, showcasing the MAGEL2 multi-omics
-atlas, MAMMOTH, and the Institute of Human Genetics Heidelberg database and tool
-portal. It uses static HTML, CSS, and JavaScript, with no installation or build
+atlas, MAMMOTH, and a Prader-Willi syndrome case report. It uses static HTML,
+CSS, and JavaScript, with no installation or build
 step. The research and clinical-room illustrations use a locally vendored Three.js renderer.
 
 The page also includes concise research and education entries,
@@ -89,6 +89,8 @@ available through the Google Scholar app on the contact phone.
 The section is titled **Selected work**. All scenes use the same centered cue:
 “Scroll down to continue ↓”. There are no bottom progress bars. The website ends
 at the contact phone, without a footer.
+The third card links to the 2025 case report in the American Journal of Medical
+Genetics Part A (DOI: 10.1002/ajmg.a.64070), with a second link to its PubMed record.
 The project explorer adapts the mRNA strand, sugar-phosphate backbone, and two-part
 ribosome schematic from the owner's
 [Institute of Human Genetics Heidelberg portal](https://github.com/jannisbuecking/human-genetics-heidelberg-tools).
